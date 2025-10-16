@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Sun Set Padel Tee (Unisex)",
+    "priceEuro": 25,
+    "options": ["S", "M", "L", "XL"],
+    "image": "/images/merch/tee.jpg",
+    "buyLink": "https://buy.stripe.com/tee",
+    "description": "Cotton 180gsm, melange grey, chest logo."
+  },
+  {
+    "name": "Performance Hoodie",
+    "priceEuro": 45,
+    "options": ["S", "M", "L", "XL"],
+    "image": "/images/merch/hoodie.jpg",
+    "buyLink": "https://buy.stripe.com/hoodie",
+    "description": "Light athletic hoodie, black, chest logo."
+  }
+]

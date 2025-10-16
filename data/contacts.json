@@ -1,0 +1,17 @@
+{
+  "email": "hello@sunsetpadel.at",
+  "whatsapp": "https://wa.me/43XXXXXXXXX",
+  "instagram": "https://instagram.com/sunsetpadel",
+  "telegram": "https://t.me/sunsetpadel",
+  "maps": [
+    {
+      "name": "Padeldome Erdberg",
+      "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2659.1!2d16.4!3d48.2!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1"
+    },
+    {
+      "name": "Sportcenter DonauCity",
+      "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2658.5!2d16.43!3d48.23!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1"
+    }
+  ],
+  "contactFormEmbedUrl": "https://docs.google.com/forms/d/e/FORM_ID/viewform"
+}

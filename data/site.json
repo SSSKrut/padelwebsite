@@ -1,0 +1,12 @@
+{
+  "brand": "Sun Set Padel",
+  "tagline": "Padel in Vienna — weekly games, tournaments & community",
+  "ctaPrimaryLabel": "Join a match",
+  "ctaPrimaryHref": "/events",
+  "email": "hello@sunsetpadel.at",
+  "social": {
+    "instagram": "https://instagram.com/sunsetpadel",
+    "telegram": "https://t.me/sunsetpadel"
+  },
+  "address": "Vienna, Austria"
+}

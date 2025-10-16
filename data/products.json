@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Membership Standard",
+    "type": "membership",
+    "priceEuro": 89,
+    "description": "€3 discount per event + early access.",
+    "buyLink": "https://buy.stripe.com/standard"
+  },
+  {
+    "name": "Membership Plus",
+    "type": "membership",
+    "priceEuro": 139,
+    "description": "All Standard + priority for Perfect Match + 1 themed session/month.",
+    "buyLink": "https://buy.stripe.com/plus"
+  },
+  {
+    "name": "Guest Pass (Drop-in)",
+    "type": "addon",
+    "priceEuro": 5,
+    "description": "Bring a friend to a session.",
+    "buyLink": "https://buy.stripe.com/guest"
+  }
+]

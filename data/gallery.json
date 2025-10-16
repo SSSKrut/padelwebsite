@@ -1,0 +1,30 @@
+{
+  "albums": [
+    {
+      "title": "Ladies Night — October",
+      "embedUrl": "https://photos.app.goo.gl/ALBUM_LINK_1"
+    },
+    {
+      "title": "Perfect Match",
+      "embedUrl": "https://photos.app.goo.gl/ALBUM_LINK_2"
+    }
+  ],
+  "images": [
+    {
+      "src": "/images/gallery/1.jpg",
+      "caption": "Top court action"
+    },
+    {
+      "src": "/images/gallery/2.jpg",
+      "caption": "Mixed format game"
+    },
+    {
+      "src": "/images/gallery/3.jpg",
+      "caption": "Saturday tournament"
+    },
+    {
+      "src": "/images/gallery/4.jpg",
+      "caption": "Ladies night"
+    }
+  ]
+}

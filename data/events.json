@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Perfect Match — Mixed",
+    "date": "2025-10-22",
+    "time": "19:00–21:00",
+    "venue": "Padeldome Erdberg",
+    "level": "Mixed",
+    "priceEuro": 18,
+    "regLink": "https://lets-meet.org/reg1",
+    "description": "Structured 2-hour mix format. Rackets on request."
+  },
+  {
+    "title": "Saturday Ladder",
+    "date": "2025-10-25",
+    "time": "11:00–13:00",
+    "venue": "Sportcenter DonauCity",
+    "level": "Advanced",
+    "priceEuro": 16,
+    "regLink": "https://lets-meet.org/reg2",
+    "description": "Ladder by courts, photos & weekly results."
+  },
+  {
+    "title": "Ladies Night",
+    "date": "2025-10-28",
+    "time": "18:30–20:30",
+    "venue": "Padeldome Erdberg",
+    "level": "Beginner",
+    "priceEuro": 15,
+    "regLink": "https://lets-meet.org/reg3",
+    "description": "Women-only session with coaching tips."
+  }
+]

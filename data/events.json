@@ -8,29 +8,7 @@
     "priceEuro": 20,
     "regLink": "https://lets-meet.org/reg1",
     "regLinkVisible": false,
-    "description": "Structured 2-hour mix format. Rackets on request."
-  },
-  {
-    "title": "Saturday Ladder",
-    "date": "2025-10-25",
-    "time": "11:00–13:00",
-    "venue": "Sportcenter DonauCity",
-    "level": "Advanced",
-    "priceEuro": 16,
-    "regLink": "https://lets-meet.org/reg2",
-    "regLinkVisible": false,
-    "description": "Ladder by courts, photos & weekly results."
-  },
-  {
-    "title": "Ladies Night",
-    "date": "2025-10-28",
-    "time": "18:30–20:30",
-    "venue": "Padeldome Erdberg",
-    "level": "Beginner",
-    "priceEuro": 15,
-    "regLink": "https://lets-meet.org/reg3",
-    "regLinkVisible": false,
-    "description": "Women-only session with coaching tips."
+    "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   }
 ]
 

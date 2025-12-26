@@ -3,29 +3,29 @@
     "name": "Year Membership",
     "type": "membership",
     "priceEuro": 89,
-    "description": "Valid for 12 months. €3 discount per Sun Set Padel event + early access to registrations.",
-    "buyLink": "https://buy.stripe.com/standard"
+    "description": "Valid for 12 months. €3 discount per Sun Set event + early access to registrations.",
+    "buyLink": "https://pay.sumup.com/b2c/QDYX7XNK"
   },
   {
     "name": "6-Month Membership",
     "type": "membership",
-    "priceEuro": 59,
+    "priceEuro": 55,
     "description": "Valid for 6 months. €3 discount per Sun Set Padel event + early access to registrations.",
-    "buyLink": "https://buy.stripe.com/6months"
+    "buyLink": "https://pay.sumup.com/b2c/QIHHJ7PR"
   },
   {
     "name": "Winter Saturday Pass — 5 Games",
     "type": "pass",
     "priceEuro": 95,
     "description": "5-game pass, redeemable only for Saturday games during the winter season.",
-    "buyLink": "https://buy.stripe.com/winter5"
+    "buyLink": "https://pay.sumup.com/b2c/Q3WYX7FZ"
   },
   {
     "name": "Winter Saturday Pass — 10 Games",
     "type": "pass",
     "priceEuro": 180,
     "description": "10-game pass, redeemable only for Saturday games during the winter season.",
-    "buyLink": "https://buy.stripe.com/winter10"
+    "buyLink": "https://pay.sumup.com/b2c/QGIOEINR"
   },
   {
     "name": "Add-ons",

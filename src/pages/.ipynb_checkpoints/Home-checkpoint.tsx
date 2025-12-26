@@ -3,7 +3,7 @@ import { Hero } from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Trophy, Calendar, Heart } from "lucide-react";
+import { Users, Trophy, Heart, Briefcase } from "lucide-react";
 import siteData from "../../data/site.json";
 import eventsData from "../../data/events.json";
 import productsData from "../../data/products.json";
@@ -17,7 +17,7 @@ const Home = () => {
     { icon: Users, title: "Community", description: "Join 300+ Active Players" },
     { icon: Trophy, title: "Weekly Games", description: "Sessions 2x per Week" },
     { icon: Heart, title: "All Levels", description: "Beginner to Expert" },
-    { icon: "Gem Stone", title: "Corporate Tournaments", description: "Perfect Tournament for You" },
+    { icon: Briefcase, title: "Corporate Tournaments", description: "Perfect Tournament for You" },
   ];
 
   return (

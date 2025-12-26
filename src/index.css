@@ -3,13 +3,11 @@
 @tailwind utilities;
 
 /* Design system (HSL only) */
-
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 240 6% 10%;
 
-      
     --card: 0 0% 100%;
     --card-foreground: 240 6% 10%;
 
@@ -37,44 +35,5 @@
 
   body {
     @apply bg-background text-foreground font-sans;
-  }
-}
-
-
-  /* Optional: keep dark mode sensible */
-  .dark {
-    --background: 240 6% 10%;
-    --foreground: 0 0% 100%;
-
-    --card: 240 6% 12%;
-    --card-foreground: 0 0% 100%;
-
-    --popover: 240 6% 12%;
-    --popover-foreground: 0 0% 100%;
-
-    --primary: 348 100% 59%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 240 2% 20%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 4% 70%;
-
-    --accent: 348 100% 59%;
-    --accent-foreground: 0 0% 100%;
-
-    --border: 240 4% 22%;
-    --input: 240 4% 22%;
-    --ring: 348 100% 59%;
-  }
-
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    font-family: Roboto, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   }
 }

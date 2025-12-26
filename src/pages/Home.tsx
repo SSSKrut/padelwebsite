@@ -17,7 +17,7 @@ const Home = () => {
     { icon: Users, title: "Community", description: "Join 300+ Active Players" },
     { icon: Trophy, title: "Weekly Games", description: "Sessions 2x per Week" },
     { icon: Heart, title: "All Levels", description: "Beginner to Expert" },
-    { icon: Gem Stone, title: "Corporate Tournaments", description: "Perfect Tournament for You" },
+    { icon: "Gem Stone", title: "Corporate Tournaments", description: "Perfect Tournament for You" },
   ];
 
   return (

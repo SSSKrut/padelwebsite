@@ -8,7 +8,7 @@ import siteData from "../../data/site.json";
 import eventsData from "../../data/events.json";
 import productsData from "../../data/products.json";
 // import padelHero from "@/assets/padel-hero.jpg";
-import padelHero from "@/assets/title_page.png";
+import padelHero from "@/assets/Title_page.png";
 
 
 const Home = () => {

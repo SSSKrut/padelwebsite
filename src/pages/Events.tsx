@@ -54,16 +54,33 @@ const Events = () => {
                 </p>
                 <p className="text-sm text-muted-foreground">{event.time}</p>
               </CardHeader>
+
               <CardContent>
                 <p className="text-sm font-medium mb-2">{event.venue}</p>
-                <p className="text-sm text-muted-foreground mb-4">{event.description}</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {event.description}
+                </p>
+
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-xl text-primary">€{event.priceEuro}</span>
-                  <Button asChild>
-                    <a href={event.regLink} target="_blank" rel="noopener noreferrer">
-                      Register
-                    </a>
-                  </Button>
+                  <span className="font-bold text-xl text-primary">
+                    €{event.priceEuro}
+                  </span>
+
+                  {event.regLinkVisible ? (
+                    <Button asChild>
+                      <a
+                        href={event.regLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Register
+                      </a>
+                    </Button>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      Registration soon
+                    </span>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -72,7 +89,9 @@ const Events = () => {
 
         {filteredEvents.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No events found for this level.</p>
+            <p className="text-muted-foreground">
+              No events found for this level.
+            </p>
           </div>
         )}
       </section>

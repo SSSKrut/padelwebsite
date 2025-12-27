@@ -25,10 +25,10 @@
     "headline": "What it looks like",
     "subheadline": "Add 6–10 strong photos here: tournament moments, team groups, podium, branded details, food/drinks, smiling beginners.",
     "photos": [
-      { "src": "/images/corporate/gallery-1.jpg", "alt": "Teams arriving and welcome briefing" },
-      { "src": "/images/corporate/gallery-2.jpg", "alt": "Match action on court" },
-      { "src": "/images/corporate/gallery-3.jpg", "alt": "Group photo and awards moment" },
-      { "src": "/images/corporate/gallery-4.jpg", "alt": "Branded welcome desk or banners" }
+      { "src": "/images/corporate/teams_arrive.jpg", "alt": "Teams arriving and welcome briefing" },
+      { "src": "/images/corporate/match_action.jpg", "alt": "Match action on court" },
+      { "src": "/images/corporate/awards.jpg", "alt": "Group photo and awards moment" },
+      { "src": "/images/corporate/welcome.jpg", "alt": "Branded welcome desk or banners" }
     ],
     "cta": { "label": "Get a proposal in 24h", "href": "#request" }
   },

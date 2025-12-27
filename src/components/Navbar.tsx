@@ -3,7 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import siteData from "../../data/site.json";
-import logo from "@/assets/SunSetLogo.svg";
+import logo from "@/assets/SunSetLogoWhite.png";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

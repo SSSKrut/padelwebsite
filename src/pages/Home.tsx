@@ -7,7 +7,9 @@ import { Users, Trophy, Heart, Briefcase } from "lucide-react";
 import siteData from "../../data/site.json";
 import eventsData from "../../data/events.json";
 import productsData from "../../data/products.json";
-import padelHero from "@/assets/padel-hero.jpg";
+// import padelHero from "@/assets/padel-hero.jpg";
+import padelHero from "@/assets/title_page.png";
+
 
 const Home = () => {
   const memberships = productsData.filter((p) => p.type === "membership");

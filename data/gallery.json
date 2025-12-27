@@ -2,33 +2,27 @@
   "albums": [
     {
       "title": "Sun Set Christmas Grand Slam",
-      "embedUrl": "https://photos.app.goo.gl/ALBUM_LINK_1"
+      "embedUrl": "https://drive.google.com/drive/folders/11zBRwEY5qgz6_wZ-2qcsmIBRi1QjeLkQ?usp=share_link"
     }
   ],
   "images": [
     {
-      "src": "/images/gallery/1.jpg",
-      "caption": "Top court action"
+      "src": "/images/gallery/1.jpg"
     },
     {
-      "src": "/images/gallery/2.jpg",
-      "caption": "Mixed format game"
+      "src": "/images/gallery/2.jpg"
     },
     {
-      "src": "/images/gallery/3.jpg",
-      "caption": "Saturday tournament"
+      "src": "/images/gallery/3.jpg"
     },
     {
-      "src": "/images/gallery/4.jpg",
-      "caption": "Ladies night"
+      "src": "/images/gallery/4.jpg"
     }, 
       {
-      "src": "/images/gallery/5.jpg",
-      "caption": "Ladies night"
+      "src": "/images/gallery/5.jpg"
     }, 
       {
-      "src": "/images/gallery/6.jpg",
-      "caption": "Ladies night"
+      "src": "/images/gallery/6.jpg"
     }
   ]
 }

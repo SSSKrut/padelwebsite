@@ -22,7 +22,6 @@ const Memberships = () => {
 
   const getBadge = (name: string) => {
     if (name === "Year Membership") return { text: "Popular", variant: "secondary" as const };
-    if (name === "Winter Saturday Pass — 5 Games") return { text: "Best deal", variant: "default" as const };
     return null;
   };
 

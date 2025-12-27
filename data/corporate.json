@@ -14,16 +14,15 @@
   "socialProof": {
     "headline": "Why teams choose Sun Set Padel",
     "cards": [
-      { "title": "Beginner-friendly by design", "text": "We structure matches so mixed skill levels still feel fair and fun." },
-      { "title": "Run-of-show included", "text": "We handle schedule, scoring, rotations, and timekeeping." },
-      { "title": "Premium content", "text": "Photo & video moments included — perfect for internal comms and LinkedIn." },
-      { "title": "Vienna network", "text": "We work with trusted padel venues and partners across the city." }
+      { "title": "Beginner-friendly by design", "text": "e structure matches so mixed skill levels still feel fair and fun — and our skilled hosts/coaches help everyone take their first confident steps on court." },
+      { "title": "Run-of-show included", "text": "We keep the games dynamic and entertaining, and upgrade the vibe with on-site extras like snacks and drinks — so it feels like a friends event, not just court time." },
+      { "title": "Photo & video moments included", "text": "We capture photo and video highlights during the event — ideal for internal comms and LinkedIn, while your team connects naturally on court." },
+      { "title": "Venue partners across Austria", "text": "We work with trusted padel venues across Austria and help you choose the best location for your group size and goals." }
     ]
   },
 
   "photoSection": {
     "headline": "What it looks like",
-    "subheadline": "Add 6–10 strong photos here: tournament moments, team groups, podium, branded details, food/drinks, smiling beginners.",
     "photos": [
       { "src": "/images/corporate/teams_arrive.jpg", "alt": "Teams arriving and welcome briefing" },
       { "src": "/images/corporate/match_action.jpg", "alt": "Match action on court" },
@@ -58,25 +57,30 @@
     "packageCards": [
       {
         "name": "Start",
-        "badge": "Most Popular",
         "idealFor": "Small teams & first-time corporate padel",
         "highlights": [
           "Up to 12 players",
           "2–3 courts • 2 hours",
+          "Welcome briefing + rules explained",
           "Hosted match schedule + scoring",
-          "Rackets & balls (on request)",
-          "Group photo moment"
+          "Rackets & balls",
+          "Awards Ceremony",
+          "Music System,
+          "Players's photos"
         ],
         "cta": { "label": "Request Start package", "href": "#request" }
       },
       {
         "name": "Team Play",
+        "badge": "Most Popular",
         "idealFor": "Team-building with a stronger event feel",
         "highlights": [
           "Everything in Start",
-          "Welcome briefing + rules explained",
-          "Awards moment (medals/certificates)",
-          "Priority coordination with venue"
+          "Up to 30 players",
+          "3-5 courts • 2-4 hours",
+          "Priority coordination with venue",
+          "Organized snacks & drinks on courts",
+          "Games filming & professional photoshooting"
         ],
         "cta": { "label": "Request Team Play", "href": "#request" }
       },
@@ -86,16 +90,17 @@
         "idealFor": "Client events, celebrations, high-impact internal comms",
         "highlights": [
           "Everything in Team Play",
-          "Dedicated event host + on-court coordination",
-          "Professional photo set (highlights + group shots)",
-          "Short aftermovie / reels-ready clips (optional)",
-          "Branded details (welcome sign / simple court branding)",
-          "Awards ceremony + premium prize set (optional)"
+          "Up to 100 players",
+          "5-8 courts • 3-6 hours",
+          "Short aftermovie / reels-ready clips",
+          "Branded details (welcome sign & courts branding)",
+          "Premium custom-designed prize set",
+          "Organized catering and afterparty with premium drinks and food"  
         ],
         "cta": { "label": "Request Premium", "href": "#request" }
       }
     ],
-    "note": "Need more than 12 players? We can scale formats and courts — request a custom plan."
+    "note": "Need even more players? We can scale formats and courts — request a custom plan."
   },
 
   "interactiveBuilder": {
@@ -135,9 +140,9 @@
   "faq": {
     "headline": "FAQ",
     "items": [
-      { "q": "Do beginners need experience?", "a": "No. We can run a beginner-friendly format with short rules briefing and structured rotations." },
+      { "q": "Do beginners need experience?", "a": "No. We can run a beginner-friendly format with short rules briefing, coaching tipps and structured rotations." },
       { "q": "Can you do larger groups?", "a": "Yes. We scale courts and formats depending on venue availability and your event goals." },
-      { "q": "What’s included in the price?", "a": "Court time + tournament flow + organization. Add-ons (photo/video, catering, prizes) depend on package and venue." },
+      { "q": "What’s included in the price?", "a": "Court time + tournament flow + organization. We discussed the pricing of all add-ons with you before the event" },
       { "q": "How fast can we confirm a date?", "a": "If you share preferred dates and group size, we usually confirm a plan quickly based on venue availability." }
     ]
   },

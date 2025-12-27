@@ -10,7 +10,6 @@ import productsData from "../../data/products.json";
 // import padelHero from "@/assets/padel-hero.jpg";
 import padelHero from "@/assets/Title_page.png";
 
-
 const Home = () => {
   const memberships = productsData.filter((p) => p.type === "membership");
   const upcomingEvents = eventsData.slice(0, 3);
@@ -19,7 +18,11 @@ const Home = () => {
     { icon: Users, title: "Community", description: "Join 300+ Active Players" },
     { icon: Trophy, title: "Weekly Games", description: "Sessions 2x per Week" },
     { icon: Heart, title: "All Levels", description: "Beginner to Expert" },
-    { icon: Briefcase, title: "Corporate Tournaments", description: "Perfect Tournament for You" },
+    {
+      icon: Briefcase,
+      title: "Corporate Tournaments",
+      description: "Perfect Tournament for You",
+    },
   ];
 
   return (
@@ -29,12 +32,19 @@ const Home = () => {
         subtitle={siteData.tagline}
         backgroundImage={padelHero}
       >
-        <Button asChild size="lg">
-          <Link to={siteData.ctaPrimaryHref}>{siteData.ctaPrimaryLabel}</Link>
-        </Button>
-        <Button asChild variant="secondary" size="lg">
-          <Link to="/memberships">View Memberships</Link>
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button asChild size="lg">
+            <Link to={siteData.ctaPrimaryHref}>{siteData.ctaPrimaryLabel}</Link>
+          </Button>
+
+          <Button asChild variant="secondary" size="lg">
+            <Link to="/memberships">View Memberships</Link>
+          </Button>
+
+          <Button asChild variant="outline" size="lg">
+            <Link to="/corporate">Organise Custom Event</Link>
+          </Button>
+        </div>
       </Hero>
 
       {/* Why Play With Us */}
@@ -49,7 +59,9 @@ const Home = () => {
                 <feature.icon size={32} />
               </div>
               <h3 className="font-semibold mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>
@@ -78,15 +90,22 @@ const Home = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-2">{event.venue}</p>
-                <p className="text-sm text-muted-foreground mb-4">{event.description}</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {event.description}
+                </p>
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-lg">€{event.priceEuro}</span>
-                  <Button asChild size="sm">
-                    <a href={event.regLink} target="_blank" rel="noopener noreferrer">
-                      Register
-                    </a>
-                  </Button>
+                    {event.regLinkVisible ? (
+                    <Button asChild size="sm">
+                      <a href={event.regLink} target="_blank" rel="noopener noreferrer">
+                    Register
+                      </a>
+                    </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Registration soon</span>
+                      )}
                 </div>
+
               </CardContent>
             </Card>
           ))}
@@ -108,12 +127,20 @@ const Home = () => {
             <Card key={index} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>{membership.name}</CardTitle>
-                <p className="text-3xl font-bold text-primary">€{membership.priceEuro}</p>
+                <p className="text-3xl font-bold text-primary">
+                  €{membership.priceEuro}
+                </p>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">{membership.description}</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {membership.description}
+                </p>
                 <Button asChild className="w-full">
-                  <a href={membership.buyLink} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={membership.buyLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Become a Member
                   </a>
                 </Button>

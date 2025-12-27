@@ -15,7 +15,7 @@
     "headline": "Why teams choose Sun Set Padel",
     "cards": [
       { "title": "Beginner-friendly by design", "text": "We structure matches so mixed skill levels still feel fair and fun — and our skilled coaches help everyone take their first confident steps on court." },
-      { "title": "Run-of-show included", "text": "We keep the games dynamic and entertaining, and upgrade the vibe with on-site extras like snacks and drinks — so it feels like a friends event, not just court time." },
+      { "title": "Run-of-show & entertainment included", "text": "We keep the games dynamic and entertaining, and upgrade the vibe with on-site extras like snacks and drinks — so it feels like a friends event, not just court time." },
       { "title": "Photo & video moments included", "text": "We capture photo and video highlights during the event — ideal for internal comms and LinkedIn, while your team connects naturally on court." },
       { "title": "Venue partners across Austria", "text": "We work with trusted padel venues across Austria and help you choose the best location for your group size and goals." }
     ]
@@ -126,7 +126,7 @@
   "caseStudy": {
     "headline": "Example event (template)",
     "subheadline": "Replace this with your real corporate case as soon as you have it.",
-    "image": { "public": "/images/corporate/case-1.jpg", "alt": "Corporate padel group photo" },
+    "image": { "src": "/images/corporate/case-1.jpg", "alt": "Corporate padel group photo" },
     "bullets": [
       "Group size: 40+ players",
       "Format: mini-league + finals",

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import productsData from "../../data/products.json";
-import padelHero from "@/assets/padel-hero.jpg";
+import padelHero from "@/assets/memberships_title.png";
 
 type Product = {
   name: string;

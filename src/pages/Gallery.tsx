@@ -1,7 +1,7 @@
 import { Hero } from "@/components/Hero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import galleryData from "../../data/gallery.json";
-import padelHero from "@/assets/padel-hero.jpg";
+import padelHero from "@/assets/gallery_title.png";
 
 const Gallery = () => {
   return (

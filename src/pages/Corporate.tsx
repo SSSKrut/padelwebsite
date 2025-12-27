@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import corporateData from "../../data/corporate.json";
-import padelHero from "@/assets/padel-hero.jpg";
+import padelHero from "@/assets/corporate_title.png";
 
 const Corporate = () => {
   const hero = corporateData.hero;

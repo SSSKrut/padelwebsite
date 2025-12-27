@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, Instagram, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import contactsData from "../../data/contacts.json";
-import padelHero from "@/assets/padel-hero.jpg";
+import padelHero from "@/assets/contact_title.png";
 
 type FormState = "idle" | "sending" | "success" | "error";
 

@@ -126,7 +126,7 @@
   "caseStudy": {
     "headline": "Example event (template)",
     "subheadline": "Replace this with your real corporate case as soon as you have it.",
-    "image": { "src": "/images/corporate/case-1.jpg", "alt": "Corporate padel group photo" },
+    "image": { "src": "/images/corporate/case_1.jpg", "alt": "Corporate padel group photo" },
     "bullets": [
       "Group size: 40+ players",
       "Format: mini-league + finals",

@@ -5,9 +5,7 @@
     "primaryCta": { "label": "Request a corporate offer", "href": "#request" },
     "secondaryCta": { "label": "See packages", "href": "#packages" },
     "trustLine": "Ideal for team-building, client events, and company celebrations (beginner-friendly formats available).",
-
     "useLocalTitleImage": true,
-
     "heroImage": {
       "src": "/images/corporate/hero.jpg",
       "alt": "Corporate padel tournament atmosphere in Vienna"
@@ -151,24 +149,24 @@
   },
 
   "faq": {
-  "headline": "FAQ",
-  "items": [
-    {
-      "q": "Do beginners need experience?",
-      "a": "No. We can run a beginner-friendly format with short rules briefing, coaching tipps and structured rotations."
-    },
-    {
-      "q": "Can you do larger groups?",
-      "a": "Yes. We scale courts and formats depending on venue availability and your event goals."
-    },
-    {
-      "q": "What’s included in the price?",
-      "a": "Court time + tournament flow + organization. We discuss the pricing of all add-ons with you before the event"
-    },
-    {
-      "q": "How fast can we confirm a date?",
-      "a": "If you share preferred dates and group size, we usually confirm a plan quickly based on venue availability."
-    }
-  ]
-},
+    "headline": "FAQ",
+    "items": [
+      {
+        "q": "Do beginners need experience?",
+        "a": "No. We can run a beginner-friendly format with short rules briefing, coaching tipps and structured rotations."
+      },
+      {
+        "q": "Can you do larger groups?",
+        "a": "Yes. We scale courts and formats depending on venue availability and your event goals."
+      },
+      {
+        "q": "What’s included in the price?",
+        "a": "Court time + tournament flow + organization. We discuss the pricing of all add-ons with you before the event"
+      },
+      {
+        "q": "How fast can we confirm a date?",
+        "a": "If you share preferred dates and group size, we usually confirm a plan quickly based on venue availability."
+      }
+    ]
+  }
 }

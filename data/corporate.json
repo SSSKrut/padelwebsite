@@ -171,16 +171,4 @@
       }
     ]
   },
-
-  "requestSection": {
-    "anchorId": "request",
-    "headline": "Request your corporate offer",
-    "subheadline": "Tell us your date, group size, and goals. We’ll reply with a concept and pricing options.",
-    "ctaText": "Fill out the form below — it takes 60 seconds.",
-    "briefFormEmbedUrl": "https://docs.google.com/forms/d/e/FORM_ID/viewform",
-    "contactFallback": {
-      "email": "sunsetpadelvienna@gmail.com",
-      "text": "Prefer email? Send us your group size, date options, and budget range."
-    }
-  }
 }

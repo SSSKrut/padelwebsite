@@ -4,12 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import eventsData from "../../data/events.json";
-<<<<<<< HEAD
 import padelHero from "@/assets/padel-hero.png";
->>>>>>> b200c756cbad7a569057202585e7d309d5f47d1f
 
 const Events = () => {
   const [filter, setFilter] = useState<string>("All");
+
   const levels = ["All", ...Array.from(new Set(eventsData.map((e) => e.level)))];
 
   const filteredEvents =
@@ -47,6 +46,7 @@ const Events = () => {
                   <CardTitle className="text-xl">{event.title}</CardTitle>
                   <Badge>{event.level}</Badge>
                 </div>
+
                 <p className="text-sm text-muted-foreground">
                   {new Date(event.date).toLocaleDateString("en-GB", {
                     weekday: "long",
@@ -70,11 +70,7 @@ const Events = () => {
 
                   {event.regLinkVisible ? (
                     <Button asChild>
-                      <a
-                        href={event.regLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <a href={event.regLink} target="_blank" rel="noopener noreferrer">
                         Register
                       </a>
                     </Button>
@@ -91,9 +87,7 @@ const Events = () => {
 
         {filteredEvents.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No events found for this level.
-            </p>
+            <p className="text-muted-foreground">No events found for this level.</p>
           </div>
         )}
       </section>

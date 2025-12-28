@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import corporateData from "../../data/corporate.json";
-import padelHero from "@/assets/corporate_title.png";
+import corporateTitleImage from "@/assets/corporate_title.png";
 
 const Corporate = () => {
   const hero = corporateData.hero;
@@ -13,12 +13,20 @@ const Corporate = () => {
   const faqItems = corporateData.faq?.items ?? [];
   const request = corporateData.requestSection;
 
+  // IMPORTANT:
+  // If hero.useLocalTitleImage is true, we always use the imported asset from src/assets.
+  // Otherwise we use hero.heroImage.src (typically a /public path), and fallback to the local title image.
+  const heroBg =
+    (hero as any)?.useLocalTitleImage === true
+      ? corporateTitleImage
+      : hero.heroImage?.src ?? corporateTitleImage;
+
   return (
     <div className="min-h-screen">
       <Hero
         title={hero.headline}
         subtitle={hero.subheadline}
-        backgroundImage={hero.heroImage?.src ? hero.heroImage.src : padelHero}
+        backgroundImage={heroBg}
         compact
       >
         <Button asChild size="lg">
@@ -52,9 +60,13 @@ const Corporate = () => {
         {/* Photos */}
         <div className="max-w-6xl mx-auto mb-16">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold">{corporateData.photoSection?.headline ?? "What it looks like"}</h2>
+            <h2 className="text-3xl font-bold">
+              {corporateData.photoSection?.headline ?? "What it looks like"}
+            </h2>
             {corporateData.photoSection?.subheadline && (
-              <p className="text-muted-foreground mt-2">{corporateData.photoSection.subheadline}</p>
+              <p className="text-muted-foreground mt-2">
+                {corporateData.photoSection.subheadline}
+              </p>
             )}
           </div>
 
@@ -62,7 +74,6 @@ const Corporate = () => {
             <div className="grid md:grid-cols-4 gap-4">
               {photos.map((p, i) => (
                 <div key={i} className="rounded-lg overflow-hidden bg-muted/30 aspect-[4/3]">
-                  {/* If you use <img>, this will work with public/ paths */}
                   <img
                     src={p.src}
                     alt={p.alt}
@@ -139,83 +150,10 @@ const Corporate = () => {
               <CardHeader>
                 <CardTitle>{corporateData.caseStudy.headline}</CardTitle>
                 {corporateData.caseStudy.subheadline && (
-                  <p className="text-muted-foreground mt-2">{corporateData.caseStudy.subheadline}</p>
+                  <p className="text-muted-foreground mt-2">
+                    {corporateData.caseStudy.subheadline}
+                  </p>
                 )}
               </CardHeader>
               <CardContent>
-                {corporateData.caseStudy.image?.src && (
-                  <div className="rounded-lg overflow-hidden bg-muted/30 mb-6 aspect-[16/9]">
-                    <img
-                      src={corporateData.caseStudy.image.src}
-                      alt={corporateData.caseStudy.image.alt ?? "Corporate event"}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-                <ul className="space-y-2">
-                  {(corporateData.caseStudy.bullets ?? []).map((b: string, i: number) => (
-                    <li key={i} className="text-sm">• {b}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* FAQ */}
-        {faqItems.length > 0 && (
-          <div className="max-w-4xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-center mb-8">{corporateData.faq.headline}</h2>
-            <div className="grid gap-4">
-              {faqItems.map((it: any, i: number) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{it.q}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{it.a}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Request section */}
-        <div id="request" className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-3">{request.headline}</h2>
-          {request.subheadline && (
-            <p className="text-center text-muted-foreground mb-8">{request.subheadline}</p>
-          )}
-
-          <div className="bg-card rounded-lg p-4 shadow-card">
-            <iframe
-              src={request.briefFormEmbedUrl}
-              width="100%"
-              height="800"
-              frameBorder="0"
-              marginHeight={0}
-              marginWidth={0}
-              className="rounded"
-            >
-              Loading…
-            </iframe>
-          </div>
-
-          {request.contactFallback?.email && (
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              {request.contactFallback.text}{" "}
-              <a className="underline" href={`mailto:${request.contactFallback.email}`}>
-                {request.contactFallback.email}
-              </a>
-            </p>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-};
-
-export default Corporate;
-
+                {corporateData.caseStud

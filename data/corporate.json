@@ -5,6 +5,9 @@
     "primaryCta": { "label": "Request a corporate offer", "href": "#request" },
     "secondaryCta": { "label": "See packages", "href": "#packages" },
     "trustLine": "Ideal for team-building, client events, and company celebrations (beginner-friendly formats available).",
+
+    "useLocalTitleImage": true,
+
     "heroImage": {
       "src": "/images/corporate/hero.jpg",
       "alt": "Corporate padel tournament atmosphere in Vienna"
@@ -14,10 +17,22 @@
   "socialProof": {
     "headline": "Why teams choose Sun Set Padel",
     "cards": [
-      { "title": "Beginner-friendly by design", "text": "We structure matches so mixed skill levels still feel fair and fun — and our skilled coaches help everyone take their first confident steps on court." },
-      { "title": "Run-of-show & entertainment included", "text": "We keep the games dynamic and entertaining, and upgrade the vibe with on-site extras like snacks and drinks — so it feels like a friends event, not just court time." },
-      { "title": "Photo & video moments included", "text": "We capture photo and video highlights during the event — ideal for internal comms and LinkedIn, while your team connects naturally on court." },
-      { "title": "Venue partners across Austria", "text": "We work with trusted padel venues across Austria and help you choose the best location for your group size and goals." }
+      {
+        "title": "Beginner-friendly by design",
+        "text": "We structure matches so mixed skill levels still feel fair and fun — and our skilled coaches help everyone take their first confident steps on court."
+      },
+      {
+        "title": "Run-of-show & entertainment included",
+        "text": "We keep the games dynamic and entertaining, and upgrade the vibe with on-site extras like snacks and drinks — so it feels like a friends event, not just court time."
+      },
+      {
+        "title": "Photo & video moments included",
+        "text": "We capture photo and video highlights during the event — ideal for internal comms and LinkedIn, while your team connects naturally on court."
+      },
+      {
+        "title": "Venue partners across Austria",
+        "text": "We work with trusted padel venues across Austria and help you choose the best location for your group size and goals."
+      }
     ]
   },
 
@@ -93,7 +108,7 @@
           "Short aftermovie / reels-ready clips",
           "Branded details (welcome sign & courts branding)",
           "Premium custom-designed prize set",
-          "Organized catering and afterparty with premium drinks and food"  
+          "Organized catering and afterparty with premium drinks and food"
         ],
         "cta": { "label": "Request Premium package", "href": "#request" }
       }
@@ -138,10 +153,22 @@
   "faq": {
     "headline": "FAQ",
     "items": [
-      { "q": "Do beginners need experience?", "a": "No. We can run a beginner-friendly format with short rules briefing, coaching tipps and structured rotations." },
-      { "q": "Can you do larger groups?", "a": "Yes. We scale courts and formats depending on venue availability and your event goals." },
-      { "q": "What’s included in the price?", "a": "Court time + tournament flow + organization. We discuss the pricing of all add-ons with you before the event" },
-      { "q": "How fast can we confirm a date?", "a": "If you share preferred dates and group size, we usually confirm a plan quickly based on venue availability." }
+      {
+        "q": "Do beginners need experience?",
+        "a": "No. We can run a beginner-friendly format with short rules briefing, coaching tipps and structured rotations."
+      },
+      {
+        "q": "Can you do larger groups?",
+        "a": "Yes. We scale courts and formats depending on venue availability and your event goals."
+      },
+      {
+        "q": "What’s included in the price?",
+        "a": "Court time + tournament flow + organization. We discuss the pricing of all add-ons with you before the event"
+      },
+      {
+        "q": "How fast can we confirm a date?",
+        "a": "If you share preferred dates and group size, we usually confirm a plan quickly based on venue availability."
+      }
     ]
   },
 
@@ -157,4 +184,3 @@
     }
   }
 }
-

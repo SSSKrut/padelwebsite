@@ -128,7 +128,7 @@ const Terms = () => {
             <h2 className="text-xl font-semibold mb-2">Contact</h2>
             <p className="text-muted-foreground">
               For questions regarding these Terms, please contact{" "}
-              <a className="text-primary hover:underline" href="mailto:hello@sunsetpadel.at">
+              <a className="text-primary hover:underline" href="mailto:sunsetpadelvienna@gmail.com">
                 hello@sunsetpadel.at
               </a>
               .

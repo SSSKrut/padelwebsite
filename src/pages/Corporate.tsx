@@ -6,8 +6,6 @@ import { Check } from "lucide-react";
 import corporateData from "../../data/corporate.json";
 import corporateTitleImage from "@/assets/corporate_title.png";
 
-type CorporateJson = typeof corporateData;
-
 type PackageCard = {
   name: string;
   badge?: string;
@@ -16,18 +14,37 @@ type PackageCard = {
   cta?: { label?: string; href?: string };
 };
 
-const Corporate = () => {
-  const data = corporateData as CorporateJson;
+type CorporateRequestSection = {
+  anchorId?: string;
+  headline: string;
+  subheadline?: string;
+  ctaText?: string;
+  briefFormEmbedUrl: string;
+  contactFallback?: { email?: string; text?: string };
+};
 
-  const hero = data.hero;
-  const packages: PackageCard[] = (data.packages?.packageCards ?? []) as PackageCard[];
-  const photos = data.photoSection?.photos ?? [];
-  const faqItems = data.faq?.items ?? [];
-  const request = data.requestSection;
+const Corporate = () => {
+  const hero = corporateData.hero;
+  const packages: PackageCard[] = (corporateData.packages?.packageCards ?? []) as PackageCard[];
+  const photos = corporateData.photoSection?.photos ?? [];
+  const faqItems = corporateData.faq?.items ?? [];
+
+  // IMPORTANT FIX:
+  // requestSection may be missing -> provide a safe default so the page never crashes.
+  const request: CorporateRequestSection =
+    (corporateData as any).requestSection ?? {
+      headline: "Request your corporate offer",
+      subheadline: "Tell us your date, group size, and goals. We’ll reply with a concept and pricing options.",
+      briefFormEmbedUrl: "https://docs.google.com/forms/d/e/FORM_ID/viewform",
+      contactFallback: {
+        email: "sunsetpadelvienna@gmail.com",
+        text: "Prefer email? Send us your group size, date options, and budget range."
+      }
+    };
 
   // If useLocalTitleImage is true, always use the imported local image.
   // Otherwise use hero.heroImage.src (public path) and fallback to local.
-  const useLocalTitleImage = Boolean((hero as any).useLocalTitleImage);
+  const useLocalTitleImage = hero?.useLocalTitleImage === true;
 
   const heroBg: string = useLocalTitleImage
     ? String(corporateTitleImage)
@@ -53,11 +70,11 @@ const Corporate = () => {
         {/* Social proof */}
         <div className="max-w-5xl mx-auto mb-16">
           <h2 className="text-3xl font-bold text-center mb-8">
-            {data.socialProof?.headline ?? "Why teams choose Sun Set Padel"}
+            {corporateData.socialProof?.headline ?? "Why teams choose Sun Set Padel"}
           </h2>
 
           <div className="grid md:grid-cols-4 gap-6">
-            {(data.socialProof?.cards ?? []).map((c, i) => (
+            {(corporateData.socialProof?.cards ?? []).map((c, i) => (
               <Card key={i}>
                 <CardHeader>
                   <CardTitle className="text-lg">{c.title}</CardTitle>
@@ -74,10 +91,12 @@ const Corporate = () => {
         <div className="max-w-6xl mx-auto mb-16">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold">
-              {data.photoSection?.headline ?? "What it looks like"}
+              {corporateData.photoSection?.headline ?? "What it looks like"}
             </h2>
-            {data.photoSection?.subheadline && (
-              <p className="text-muted-foreground mt-2">{data.photoSection.subheadline}</p>
+            {corporateData.photoSection?.subheadline && (
+              <p className="text-muted-foreground mt-2">
+                {corporateData.photoSection.subheadline}
+              </p>
             )}
           </div>
 
@@ -98,8 +117,8 @@ const Corporate = () => {
 
           <div className="text-center mt-8">
             <Button asChild size="lg">
-              <a href={data.photoSection?.cta?.href ?? "#request"}>
-                {data.photoSection?.cta?.label ?? "Get a proposal"}
+              <a href={corporateData.photoSection?.cta?.href ?? "#request"}>
+                {corporateData.photoSection?.cta?.label ?? "Get a proposal"}
               </a>
             </Button>
           </div>
@@ -108,11 +127,11 @@ const Corporate = () => {
         {/* Packages */}
         <div id="packages" className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-4">
-            {data.packages?.headline ?? "Corporate Packages"}
+            {corporateData.packages?.headline ?? "Corporate Packages"}
           </h2>
-          {data.packages?.subheadline && (
+          {corporateData.packages?.subheadline && (
             <p className="text-center text-muted-foreground mb-10">
-              {data.packages.subheadline}
+              {corporateData.packages.subheadline}
             </p>
           )}
 
@@ -149,28 +168,32 @@ const Corporate = () => {
             ))}
           </div>
 
-          {data.packages?.note && (
-            <p className="text-center text-muted-foreground mt-8">{data.packages.note}</p>
+          {corporateData.packages?.note && (
+            <p className="text-center text-muted-foreground mt-8">
+              {corporateData.packages.note}
+            </p>
           )}
         </div>
 
         {/* Case study */}
-        {data.caseStudy && (
+        {corporateData.caseStudy && (
           <div className="max-w-5xl mx-auto mb-16">
             <Card>
               <CardHeader>
-                <CardTitle>{data.caseStudy.headline}</CardTitle>
-                {data.caseStudy.subheadline && (
-                  <p className="text-muted-foreground mt-2">{data.caseStudy.subheadline}</p>
+                <CardTitle>{corporateData.caseStudy.headline}</CardTitle>
+                {corporateData.caseStudy.subheadline && (
+                  <p className="text-muted-foreground mt-2">
+                    {corporateData.caseStudy.subheadline}
+                  </p>
                 )}
               </CardHeader>
 
               <CardContent>
-                {data.caseStudy.image?.src && (
+                {corporateData.caseStudy.image?.src && (
                   <div className="rounded-lg overflow-hidden bg-muted/30 mb-6 aspect-[16/9]">
                     <img
-                      src={data.caseStudy.image.src}
-                      alt={data.caseStudy.image.alt ?? "Corporate event"}
+                      src={corporateData.caseStudy.image.src}
+                      alt={corporateData.caseStudy.image.alt ?? "Corporate event"}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
@@ -178,7 +201,7 @@ const Corporate = () => {
                 )}
 
                 <ul className="space-y-2">
-                  {(data.caseStudy.bullets ?? []).map((b, i) => (
+                  {(corporateData.caseStudy.bullets ?? []).map((b, i) => (
                     <li key={i} className="text-sm">
                       • {b}
                     </li>
@@ -192,7 +215,9 @@ const Corporate = () => {
         {/* FAQ */}
         {faqItems.length > 0 && (
           <div className="max-w-4xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-center mb-8">{data.faq.headline}</h2>
+            <h2 className="text-3xl font-bold text-center mb-8">
+              {corporateData.faq?.headline ?? "FAQ"}
+            </h2>
             <div className="grid gap-4">
               {faqItems.map((it, i) => (
                 <Card key={i}>
@@ -211,6 +236,7 @@ const Corporate = () => {
         {/* Request section */}
         <div id="request" className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-3">{request.headline}</h2>
+
           {request.subheadline && (
             <p className="text-center text-muted-foreground mb-8">{request.subheadline}</p>
           )}
@@ -232,7 +258,7 @@ const Corporate = () => {
 
           {request.contactFallback?.email && (
             <p className="text-center text-sm text-muted-foreground mt-6">
-              {request.contactFallback.text}{" "}
+              {request.contactFallback.text ?? "Prefer email?"}{" "}
               <a className="underline" href={`mailto:${request.contactFallback.email}`}>
                 {request.contactFallback.email}
               </a>

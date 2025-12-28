@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import merchData from "../../data/merch.json";
-import padelHero from "@/assets/padel-hero.jpg";
+import padelHero from "@/assets/merch_title.png";
 
 const Merch = () => {
   return (

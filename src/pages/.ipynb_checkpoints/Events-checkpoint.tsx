@@ -4,9 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import eventsData from "../../data/events.json";
-<<<<<<< HEAD
-import padelHero from "@/assets/padel-hero.png";
->>>>>>> b200c756cbad7a569057202585e7d309d5f47d1f
+import padelHero from "@/assets/events_title.png";
 
 const Events = () => {
   const [filter, setFilter] = useState<string>("All");

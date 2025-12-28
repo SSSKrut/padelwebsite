@@ -4,21 +4,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import corporateData from "../../data/corporate.json";
-import padelHero from "@/assets/padel-hero.jpg";
+import corporateTitleImage from "@/assets/corporate_title.png";
+
+type CorporateJson = typeof corporateData;
+
+type PackageCard = {
+  name: string;
+  badge?: string;
+  idealFor?: string;
+  highlights?: string[];
+  cta?: { label?: string; href?: string };
+};
 
 const Corporate = () => {
-  const hero = corporateData.hero;
-  const packages = corporateData.packages?.packageCards ?? [];
-  const photos = corporateData.photoSection?.photos ?? [];
-  const faqItems = corporateData.faq?.items ?? [];
-  const request = corporateData.requestSection;
+  const data = corporateData as CorporateJson;
+
+  const hero = data.hero;
+  const packages: PackageCard[] = (data.packages?.packageCards ?? []) as PackageCard[];
+  const photos = data.photoSection?.photos ?? [];
+  const faqItems = data.faq?.items ?? [];
+  const request = data.requestSection;
+
+  // If useLocalTitleImage is true, always use the imported local image.
+  // Otherwise use hero.heroImage.src (public path) and fallback to local.
+  const useLocalTitleImage = Boolean((hero as any).useLocalTitleImage);
+
+  const heroBg: string = useLocalTitleImage
+    ? String(corporateTitleImage)
+    : String(hero.heroImage?.src ?? corporateTitleImage);
 
   return (
     <div className="min-h-screen">
       <Hero
         title={hero.headline}
         subtitle={hero.subheadline}
-        backgroundImage={hero.heroImage?.src ? hero.heroImage.src : padelHero}
+        backgroundImage={heroBg}
         compact
       >
         <Button asChild size="lg">
@@ -33,10 +53,11 @@ const Corporate = () => {
         {/* Social proof */}
         <div className="max-w-5xl mx-auto mb-16">
           <h2 className="text-3xl font-bold text-center mb-8">
-            {corporateData.socialProof?.headline ?? "Why teams choose Sun Set Padel"}
+            {data.socialProof?.headline ?? "Why teams choose Sun Set Padel"}
           </h2>
+
           <div className="grid md:grid-cols-4 gap-6">
-            {(corporateData.socialProof?.cards ?? []).map((c, i) => (
+            {(data.socialProof?.cards ?? []).map((c, i) => (
               <Card key={i}>
                 <CardHeader>
                   <CardTitle className="text-lg">{c.title}</CardTitle>
@@ -52,9 +73,11 @@ const Corporate = () => {
         {/* Photos */}
         <div className="max-w-6xl mx-auto mb-16">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold">{corporateData.photoSection?.headline ?? "What it looks like"}</h2>
-            {corporateData.photoSection?.subheadline && (
-              <p className="text-muted-foreground mt-2">{corporateData.photoSection.subheadline}</p>
+            <h2 className="text-3xl font-bold">
+              {data.photoSection?.headline ?? "What it looks like"}
+            </h2>
+            {data.photoSection?.subheadline && (
+              <p className="text-muted-foreground mt-2">{data.photoSection.subheadline}</p>
             )}
           </div>
 
@@ -62,7 +85,6 @@ const Corporate = () => {
             <div className="grid md:grid-cols-4 gap-4">
               {photos.map((p, i) => (
                 <div key={i} className="rounded-lg overflow-hidden bg-muted/30 aspect-[4/3]">
-                  {/* If you use <img>, this will work with public/ paths */}
                   <img
                     src={p.src}
                     alt={p.alt}
@@ -76,8 +98,8 @@ const Corporate = () => {
 
           <div className="text-center mt-8">
             <Button asChild size="lg">
-              <a href={corporateData.photoSection?.cta?.href ?? "#request"}>
-                {corporateData.photoSection?.cta?.label ?? "Get a proposal"}
+              <a href={data.photoSection?.cta?.href ?? "#request"}>
+                {data.photoSection?.cta?.label ?? "Get a proposal"}
               </a>
             </Button>
           </div>
@@ -86,16 +108,16 @@ const Corporate = () => {
         {/* Packages */}
         <div id="packages" className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-4">
-            {corporateData.packages?.headline ?? "Corporate Packages"}
+            {data.packages?.headline ?? "Corporate Packages"}
           </h2>
-          {corporateData.packages?.subheadline && (
+          {data.packages?.subheadline && (
             <p className="text-center text-muted-foreground mb-10">
-              {corporateData.packages.subheadline}
+              {data.packages.subheadline}
             </p>
           )}
 
           <div className="grid md:grid-cols-3 gap-6">
-            {packages.map((pkg: any, index: number) => (
+            {packages.map((pkg, index) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
@@ -106,15 +128,17 @@ const Corporate = () => {
                     <p className="text-sm text-muted-foreground mt-2">{pkg.idealFor}</p>
                   )}
                 </CardHeader>
+
                 <CardContent>
                   <ul className="space-y-3 mb-6">
-                    {(pkg.highlights ?? []).map((bullet: string, i: number) => (
+                    {(pkg.highlights ?? []).map((bullet, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <Check className="text-primary mt-1 flex-shrink-0" size={18} />
                         <span className="text-sm">{bullet}</span>
                       </li>
                     ))}
                   </ul>
+
                   {pkg.cta?.href && pkg.cta?.label && (
                     <Button asChild className="w-full">
                       <a href={pkg.cta.href}>{pkg.cta.label}</a>
@@ -125,37 +149,39 @@ const Corporate = () => {
             ))}
           </div>
 
-          {corporateData.packages?.note && (
-            <p className="text-center text-muted-foreground mt-8">
-              {corporateData.packages.note}
-            </p>
+          {data.packages?.note && (
+            <p className="text-center text-muted-foreground mt-8">{data.packages.note}</p>
           )}
         </div>
 
         {/* Case study */}
-        {corporateData.caseStudy && (
+        {data.caseStudy && (
           <div className="max-w-5xl mx-auto mb-16">
             <Card>
               <CardHeader>
-                <CardTitle>{corporateData.caseStudy.headline}</CardTitle>
-                {corporateData.caseStudy.subheadline && (
-                  <p className="text-muted-foreground mt-2">{corporateData.caseStudy.subheadline}</p>
+                <CardTitle>{data.caseStudy.headline}</CardTitle>
+                {data.caseStudy.subheadline && (
+                  <p className="text-muted-foreground mt-2">{data.caseStudy.subheadline}</p>
                 )}
               </CardHeader>
+
               <CardContent>
-                {corporateData.caseStudy.image?.src && (
+                {data.caseStudy.image?.src && (
                   <div className="rounded-lg overflow-hidden bg-muted/30 mb-6 aspect-[16/9]">
                     <img
-                      src={corporateData.caseStudy.image.src}
-                      alt={corporateData.caseStudy.image.alt ?? "Corporate event"}
+                      src={data.caseStudy.image.src}
+                      alt={data.caseStudy.image.alt ?? "Corporate event"}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
                   </div>
                 )}
+
                 <ul className="space-y-2">
-                  {(corporateData.caseStudy.bullets ?? []).map((b: string, i: number) => (
-                    <li key={i} className="text-sm">• {b}</li>
+                  {(data.caseStudy.bullets ?? []).map((b, i) => (
+                    <li key={i} className="text-sm">
+                      • {b}
+                    </li>
                   ))}
                 </ul>
               </CardContent>
@@ -166,9 +192,9 @@ const Corporate = () => {
         {/* FAQ */}
         {faqItems.length > 0 && (
           <div className="max-w-4xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-center mb-8">{corporateData.faq.headline}</h2>
+            <h2 className="text-3xl font-bold text-center mb-8">{data.faq.headline}</h2>
             <div className="grid gap-4">
-              {faqItems.map((it: any, i: number) => (
+              {faqItems.map((it, i) => (
                 <Card key={i}>
                   <CardHeader>
                     <CardTitle className="text-lg">{it.q}</CardTitle>
@@ -194,10 +220,11 @@ const Corporate = () => {
               src={request.briefFormEmbedUrl}
               width="100%"
               height="800"
-              frameBorder="0"
+              frameBorder={0}
               marginHeight={0}
               marginWidth={0}
               className="rounded"
+              title="Corporate Request Form"
             >
               Loading…
             </iframe>
@@ -218,4 +245,3 @@ const Corporate = () => {
 };
 
 export default Corporate;
-

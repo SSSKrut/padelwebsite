@@ -5,9 +5,7 @@
     "primaryCta": { "label": "Request a corporate offer", "href": "#request" },
     "secondaryCta": { "label": "See packages", "href": "#packages" },
     "trustLine": "Ideal for team-building, client events, and company celebrations (beginner-friendly formats available).",
-
     "useLocalTitleImage": true,
-
     "heroImage": {
       "src": "/images/corporate/hero.jpg",
       "alt": "Corporate padel tournament atmosphere in Vienna"

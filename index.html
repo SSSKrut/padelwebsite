@@ -18,11 +18,13 @@
       name="description"
       content="Join Vienna's premier padel community. Weekly games, corporate tournaments, memberships and merch. Play padel at Padeldome Erdberg and DonauCity."
     />
-
-    <!-- You can remove this author tag entirely, but replacing is also fine -->
     <meta name="author" content="Sun Set Padel Vienna" />
 
-    <!-- Open Graph (what shows in WhatsApp/FB/LinkedIn previews) -->
+    <!-- Canonical -->
+    <link rel="canonical" href="https://sunsetpadel.at/" />
+
+    <!-- Open Graph (WhatsApp / Facebook / Messenger / LinkedIn) -->
+    <meta property="og:site_name" content="Sun Set Padel Vienna" />
     <meta property="og:title" content="Sun Set Padel Vienna - Padel Community, Events & Tournaments" />
     <meta
       property="og:description"
@@ -30,22 +32,28 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sunsetpadel.at/" />
-    <!-- Replace this with your own image when you have it -->
-    <!-- <meta property="og:image" content="https://sunsetpadel.at/og-image.png" /> -->
 
-    <!-- Twitter/X preview -->
+    <!-- IMPORTANT: Add a real image at /public/og-image.png (recommended 1200x630) -->
+    <meta property="og:image" content="https://sunsetpadel.at/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Sun Set Padel Vienna" />
+
+    <!-- Twitter/X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <!-- Optional: only if you actually have an X/Twitter handle -->
+    <meta name="twitter:title" content="Sun Set Padel Vienna - Padel Community, Events & Tournaments" />
+    <meta
+      name="twitter:description"
+      content="Weekly games, tournaments, corporate events and memberships. Join the community and play padel in Vienna."
+    />
+    <meta name="twitter:image" content="https://sunsetpadel.at/og-image.png" />
+
+    <!-- Optional: if you have an X/Twitter handle -->
     <!-- <meta name="twitter:site" content="@sunset_padel_vienna" /> -->
-    <!-- Optional: should match og:image -->
-    <!-- <meta name="twitter:image" content="https://sunsetpadel.at/og-image.png" /> -->
   </head>
 
   <body>
-    <!-- DO NOT remove this -->
     <div id="root"></div>
-
-    <!-- DO NOT remove this (or change the path unless your entry file changed) -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -23,7 +23,6 @@ const Corporate = () => {
   const packages: PackageCard[] = (data.packages?.packageCards ?? []) as PackageCard[];
   const photos = data.photoSection?.photos ?? [];
   const faqItems = data.faq?.items ?? [];
-  const request = data.requestSection;
 
   // If useLocalTitleImage is true, always use the imported local image.
   // Otherwise use hero.heroImage.src (public path) and fallback to local.
@@ -98,8 +97,8 @@ const Corporate = () => {
 
           <div className="text-center mt-8">
             <Button asChild size="lg">
-              <a href={data.photoSection?.cta?.href ?? "#request"}>
-                {data.photoSection?.cta?.label ?? "Get a proposal"}
+              <a href={data.photoSection?.cta?.href ?? "#packages"}>
+                {data.photoSection?.cta?.label ?? "See packages"}
               </a>
             </Button>
           </div>
@@ -207,38 +206,6 @@ const Corporate = () => {
             </div>
           </div>
         )}
-
-        {/* Request section */}
-        <div id="request" className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-3">{request.headline}</h2>
-          {request.subheadline && (
-            <p className="text-center text-muted-foreground mb-8">{request.subheadline}</p>
-          )}
-
-          <div className="bg-card rounded-lg p-4 shadow-card">
-            <iframe
-              src={request.briefFormEmbedUrl}
-              width="100%"
-              height="800"
-              frameBorder={0}
-              marginHeight={0}
-              marginWidth={0}
-              className="rounded"
-              title="Corporate Request Form"
-            >
-              Loading…
-            </iframe>
-          </div>
-
-          {request.contactFallback?.email && (
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              {request.contactFallback.text}{" "}
-              <a className="underline" href={`mailto:${request.contactFallback.email}`}>
-                {request.contactFallback.email}
-              </a>
-            </p>
-          )}
-        </div>
       </section>
     </div>
   );

@@ -2,7 +2,7 @@ import { Hero } from "@/components/Hero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, Instagram, Send } from "lucide-react";
 import contactsData from "../../data/contacts.json";
-import padelHero from "@/assets/padel-hero.jpg";
+import padelHero from "@/assets/contact_title.png";
 
 const Contacts = () => {
   return (
@@ -82,24 +82,6 @@ const Contacts = () => {
               </a>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Contact Form */}
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8">Send Us a Message</h2>
-          <div className="bg-card rounded-lg p-4 shadow-card">
-            <iframe
-              src={contactsData.contactFormEmbedUrl}
-              width="100%"
-              height="800"
-              frameBorder="0"
-              marginHeight={0}
-              marginWidth={0}
-              className="rounded"
-            >
-              Loading…
-            </iframe>
-          </div>
         </div>
       </section>
     </div>

@@ -26,11 +26,11 @@ const Corporate = () => {
 
   // If useLocalTitleImage is true, always use the imported local image.
   // Otherwise use hero.heroImage.src (public path) and fallback to local.
-  const useLocalTitleImage = Boolean((hero as any).useLocalTitleImage);
+  const useLocalTitleImage = (hero as any)?.useLocalTitleImage === true;
 
   const heroBg: string = useLocalTitleImage
     ? String(corporateTitleImage)
-    : String(hero.heroImage?.src ?? corporateTitleImage);
+    : String((hero as any)?.heroImage?.src ?? corporateTitleImage);
 
   return (
     <div className="min-h-screen">
@@ -110,9 +110,7 @@ const Corporate = () => {
             {data.packages?.headline ?? "Corporate Packages"}
           </h2>
           {data.packages?.subheadline && (
-            <p className="text-center text-muted-foreground mb-10">
-              {data.packages.subheadline}
-            </p>
+            <p className="text-center text-muted-foreground mb-10">{data.packages.subheadline}</p>
           )}
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -191,7 +189,9 @@ const Corporate = () => {
         {/* FAQ */}
         {faqItems.length > 0 && (
           <div className="max-w-4xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-center mb-8">{data.faq.headline}</h2>
+            <h2 className="text-3xl font-bold text-center mb-8">
+              {data.faq?.headline ?? "FAQ"}
+            </h2>
             <div className="grid gap-4">
               {faqItems.map((it, i) => (
                 <Card key={i}>

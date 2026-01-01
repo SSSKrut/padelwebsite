@@ -2,16 +2,16 @@
   {
     "name": "Year Membership",
     "type": "membership",
-    "priceEuro": 89,
+    "priceEuro": 99,
     "description": "Valid for 12 months. €3 discount per Sun Set event + early access to registrations.",
-    "buyLink": "https://pay.sumup.com/b2c/QDYX7XNK"
+    "buyLink": "https://pay.sumup.com/b2c/QJFF74QY"
   },
   {
     "name": "6-Months Membership",
     "type": "membership",
-    "priceEuro": 55,
+    "priceEuro": 65,
     "description": "Valid for 6 months. €3 discount per Sun Set Padel event + early access to registrations.",
-    "buyLink": "https://pay.sumup.com/b2c/QIHHJ7PR"
+    "buyLink": "https://pay.sumup.com/b2c/Q899Q52F"
   },
   {
     "name": "Winter Saturday Pass — 5 Games",

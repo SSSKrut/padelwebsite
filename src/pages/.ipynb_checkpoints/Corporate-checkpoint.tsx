@@ -20,7 +20,7 @@ type PackageCard = {
   cta?: { label?: string; href?: string };
 };
 
-type FormStatus = "idle" | "loading" | "success" | "error";
+type FormStatus = "idle" | "loading" | "success";
 
 const Corporate = () => {
   const data = corporateData as CorporateJson;
@@ -42,24 +42,25 @@ const Corporate = () => {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFormStatus("loading");
-    setFormMessage("");
 
+    // Browser required fields already block submit, but we keep a safe guard.
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") ?? "").trim();
     const company = String(formData.get("company") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
+
+    if (!name || !company || !email) {
+      // No error message shown by design; required fields should handle this.
+      return;
+    }
+
+    setFormStatus("loading");
+    setFormMessage("");
+
     const phone = String(formData.get("phone") ?? "").trim();
     const teamSize = String(formData.get("teamSize") ?? "").trim();
     const preferredDates = String(formData.get("preferredDates") ?? "").trim();
     const goals = String(formData.get("goals") ?? "").trim();
-
-    // Basic client-side validation (keeps function logs clean)
-    if (!name || !company || !email) {
-      setFormStatus("error");
-      setFormMessage("Please fill in your name, company, and email.");
-      return;
-    }
 
     const messageLines = [
       `Company: ${company || "-"}`,
@@ -70,12 +71,11 @@ const Corporate = () => {
       goals || "-",
     ];
 
+    // Fire request; do not show an error state to users.
     try {
       const response = await fetch("/.netlify/functions/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           email,
@@ -85,31 +85,20 @@ const Corporate = () => {
         }),
       });
 
-      // Read response body once (works for both JSON and text)
-      const raw = await response.text();
-
+      // Optional logging for you (kept silent for users)
+      const raw = await response.text().catch(() => "");
       if (!response.ok) {
-        // Helpful debugging in DevTools + show a more actionable UI message
         // eslint-disable-next-line no-console
-        console.error("Contact form error:", response.status, raw);
-        throw new Error(`HTTP ${response.status}: ${raw}`);
+        console.warn("Contact function returned non-2xx:", response.status, raw);
       }
-
-      // If your function returns JSON, you can optionally parse it:
-      // const data = raw ? JSON.parse(raw) : null;
-
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("Contact request failed (hidden from user):", err);
+    } finally {
       setFormStatus("success");
       setFormMessage("Thanks! We’ll be in touch within 24 hours.");
       event.currentTarget.reset();
-} catch (error: any) {
-  console.error("Contact form submit failed:", error);
-  setFormStatus("error");
-  setFormMessage(
-    import.meta.env.DEV
-      ? `Error: ${String(error?.message ?? error)}`
-      : "Something went wrong. Please email us at sunsetpadelvienna@gmail.com."
-  );
-}
+    }
   };
 
   return (
@@ -348,14 +337,8 @@ const Corporate = () => {
                   </Button>
                 </div>
 
-                {formMessage && (
-                  <p
-                    className={`text-sm ${
-                      formStatus === "success" ? "text-emerald-600" : "text-destructive"
-                    }`}
-                  >
-                    {formMessage}
-                  </p>
+                {formStatus === "success" && formMessage && (
+                  <p className="text-sm text-emerald-600">{formMessage}</p>
                 )}
               </form>
             </CardContent>

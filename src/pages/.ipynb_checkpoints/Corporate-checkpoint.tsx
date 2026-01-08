@@ -101,16 +101,15 @@ const Corporate = () => {
       setFormStatus("success");
       setFormMessage("Thanks! We’ll be in touch within 24 hours.");
       event.currentTarget.reset();
-    } catch (error: any) {
-      // eslint-disable-next-line no-console
-      console.error("Contact form submit failed:", error);
-
-      setFormStatus("error");
-      // Keep user-facing message friendly; details are in console/network
-      setFormMessage(
-        "Something went wrong. Please email us at sunsetpadelvienna@gmail.com."
-      );
-    }
+} catch (error: any) {
+  console.error("Contact form submit failed:", error);
+  setFormStatus("error");
+  setFormMessage(
+    import.meta.env.DEV
+      ? `Error: ${String(error?.message ?? error)}`
+      : "Something went wrong. Please email us at sunsetpadelvienna@gmail.com."
+  );
+}
   };
 
   return (

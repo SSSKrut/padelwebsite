@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from "react";
 import { Hero } from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +20,12 @@ type PackageCard = {
   cta?: { label?: string; href?: string };
 };
 
+type FormStatus = "idle" | "loading" | "success" | "error";
+
 const Corporate = () => {
   const data = corporateData as CorporateJson;
+  const [formStatus, setFormStatus] = useState<FormStatus>("idle");
+  const [formMessage, setFormMessage] = useState<string>("");
 
   const hero = data.hero;
   const packages: PackageCard[] = (data.packages?.packageCards ?? []) as PackageCard[];
@@ -34,6 +39,57 @@ const Corporate = () => {
   const heroBg: string = useLocalTitleImage
     ? String(corporateTitleImage)
     : String((hero as any)?.heroImage?.src ?? corporateTitleImage);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormStatus("loading");
+    setFormMessage("");
+
+    const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") ?? "");
+    const company = String(formData.get("company") ?? "");
+    const email = String(formData.get("email") ?? "");
+    const phone = String(formData.get("phone") ?? "");
+    const teamSize = String(formData.get("teamSize") ?? "");
+    const preferredDates = String(formData.get("preferredDates") ?? "");
+    const goals = String(formData.get("goals") ?? "");
+
+    const messageLines = [
+      `Company: ${company || "-"}`,
+      `Group size: ${teamSize || "-"}`,
+      `Preferred dates: ${preferredDates || "-"}`,
+      "",
+      "Goals & add-ons:",
+      goals || "-",
+    ];
+
+    try {
+      const response = await fetch("/.netlify/functions/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          subject: "Corporate event request",
+          message: messageLines.join("\n"),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      setFormStatus("success");
+      setFormMessage("Thanks! We’ll be in touch within 24 hours.");
+      event.currentTarget.reset();
+    } catch (error) {
+      setFormStatus("error");
+      setFormMessage("Something went wrong. Please email us at sunsetpadelvienna@gmail.com.");
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -199,19 +255,7 @@ const Corporate = () => {
               </p>
             </CardHeader>
             <CardContent>
-              <form
-                name="corporate-request"
-                method="POST"
-                data-netlify="true"
-                netlify-honeypot="bot-field"
-                className="space-y-6"
-              >
-                <input type="hidden" name="form-name" value="corporate-request" />
-                <div className="hidden">
-                  <Label htmlFor="bot-field">Don’t fill this out if you’re human</Label>
-                  <Input id="bot-field" name="bot-field" />
-                </div>
-
+              <form className="space-y-6" onSubmit={handleSubmit}>
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full name</Label>
@@ -253,10 +297,19 @@ const Corporate = () => {
                   <p className="text-sm text-muted-foreground">
                     By submitting, you agree to be contacted about your corporate event inquiry.
                   </p>
-                  <Button type="submit" size="lg">
-                    Send request
+                  <Button type="submit" size="lg" disabled={formStatus === "loading"}>
+                    {formStatus === "loading" ? "Sending..." : "Send request"}
                   </Button>
                 </div>
+                {formMessage && (
+                  <p
+                    className={`text-sm ${
+                      formStatus === "success" ? "text-emerald-600" : "text-destructive"
+                    }`}
+                  >
+                    {formMessage}
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>

@@ -46,13 +46,20 @@ const Corporate = () => {
     setFormMessage("");
 
     const formData = new FormData(event.currentTarget);
-    const name = String(formData.get("name") ?? "");
-    const company = String(formData.get("company") ?? "");
-    const email = String(formData.get("email") ?? "");
-    const phone = String(formData.get("phone") ?? "");
-    const teamSize = String(formData.get("teamSize") ?? "");
-    const preferredDates = String(formData.get("preferredDates") ?? "");
-    const goals = String(formData.get("goals") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const company = String(formData.get("company") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const phone = String(formData.get("phone") ?? "").trim();
+    const teamSize = String(formData.get("teamSize") ?? "").trim();
+    const preferredDates = String(formData.get("preferredDates") ?? "").trim();
+    const goals = String(formData.get("goals") ?? "").trim();
+
+    // Basic client-side validation (keeps function logs clean)
+    if (!name || !company || !email) {
+      setFormStatus("error");
+      setFormMessage("Please fill in your name, company, and email.");
+      return;
+    }
 
     const messageLines = [
       `Company: ${company || "-"}`,
@@ -78,16 +85,31 @@ const Corporate = () => {
         }),
       });
 
+      // Read response body once (works for both JSON and text)
+      const raw = await response.text();
+
       if (!response.ok) {
-        throw new Error("Request failed");
+        // Helpful debugging in DevTools + show a more actionable UI message
+        // eslint-disable-next-line no-console
+        console.error("Contact form error:", response.status, raw);
+        throw new Error(`HTTP ${response.status}: ${raw}`);
       }
+
+      // If your function returns JSON, you can optionally parse it:
+      // const data = raw ? JSON.parse(raw) : null;
 
       setFormStatus("success");
       setFormMessage("Thanks! We’ll be in touch within 24 hours.");
       event.currentTarget.reset();
-    } catch (error) {
+    } catch (error: any) {
+      // eslint-disable-next-line no-console
+      console.error("Contact form submit failed:", error);
+
       setFormStatus("error");
-      setFormMessage("Something went wrong. Please email us at sunsetpadelvienna@gmail.com.");
+      // Keep user-facing message friendly; details are in console/network
+      setFormMessage(
+        "Something went wrong. Please email us at sunsetpadelvienna@gmail.com."
+      );
     }
   };
 
@@ -135,14 +157,19 @@ const Corporate = () => {
               {data.photoSection?.headline ?? "What it looks like"}
             </h2>
             {data.photoSection?.subheadline && (
-              <p className="text-muted-foreground mt-2">{data.photoSection.subheadline}</p>
+              <p className="text-muted-foreground mt-2">
+                {data.photoSection.subheadline}
+              </p>
             )}
           </div>
 
           {photos.length > 0 && (
             <div className="grid md:grid-cols-4 gap-4">
               {photos.map((p, i) => (
-                <div key={i} className="rounded-lg overflow-hidden bg-muted/30 aspect-[4/3]">
+                <div
+                  key={i}
+                  className="rounded-lg overflow-hidden bg-muted/30 aspect-[4/3]"
+                >
                   <img
                     src={p.src}
                     alt={p.alt}
@@ -169,19 +196,26 @@ const Corporate = () => {
             {data.packages?.headline ?? "Corporate Packages"}
           </h2>
           {data.packages?.subheadline && (
-            <p className="text-center text-muted-foreground mb-10">{data.packages.subheadline}</p>
+            <p className="text-center text-muted-foreground mb-10">
+              {data.packages.subheadline}
+            </p>
           )}
 
           <div className="grid md:grid-cols-3 gap-6">
             {packages.map((pkg, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={index}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
                     <CardTitle className="text-2xl">{pkg.name}</CardTitle>
                     {pkg.badge && <Badge>{pkg.badge}</Badge>}
                   </div>
                   {pkg.idealFor && (
-                    <p className="text-sm text-muted-foreground mt-2">{pkg.idealFor}</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {pkg.idealFor}
+                    </p>
                   )}
                 </CardHeader>
 
@@ -189,7 +223,10 @@ const Corporate = () => {
                   <ul className="space-y-3 mb-6">
                     {(pkg.highlights ?? []).map((bullet, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <Check className="text-primary mt-1 flex-shrink-0" size={18} />
+                        <Check
+                          className="text-primary mt-1 flex-shrink-0"
+                          size={18}
+                        />
                         <span className="text-sm">{bullet}</span>
                       </li>
                     ))}
@@ -206,7 +243,9 @@ const Corporate = () => {
           </div>
 
           {data.packages?.note && (
-            <p className="text-center text-muted-foreground mt-8">{data.packages.note}</p>
+            <p className="text-center text-muted-foreground mt-8">
+              {data.packages.note}
+            </p>
           )}
         </div>
 
@@ -217,7 +256,9 @@ const Corporate = () => {
               <CardHeader>
                 <CardTitle>{data.caseStudy.headline}</CardTitle>
                 {data.caseStudy.subheadline && (
-                  <p className="text-muted-foreground mt-2">{data.caseStudy.subheadline}</p>
+                  <p className="text-muted-foreground mt-2">
+                    {data.caseStudy.subheadline}
+                  </p>
                 )}
               </CardHeader>
 
@@ -267,7 +308,13 @@ const Corporate = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Work email</Label>
-                    <Input id="email" name="email" type="email" placeholder="you@company.com" required />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="you@company.com"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone</Label>
@@ -301,6 +348,7 @@ const Corporate = () => {
                     {formStatus === "loading" ? "Sending..." : "Send request"}
                   </Button>
                 </div>
+
                 {formMessage && (
                   <p
                     className={`text-sm ${

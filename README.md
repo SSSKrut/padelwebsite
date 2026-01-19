@@ -56,6 +56,46 @@ Contact information:
 - Google Maps embeds for venues
 - Contact form embed URL
 
+#### `/data/players.json`
+Player celebration board:
+- Ranking position and player name
+- Weekly achievements list
+- Rating points and weekly rating change
+
+### Updating Player Rankings from Excel
+
+The simplest workflow is to export your Excel sheet to CSV and run the helper script:
+
+1. In Excel, save your sheet as **CSV (Comma delimited)**. The converter looks for:
+   - **Name** (required)
+   - **Total points** (required; used for rating points)
+   - **Latest change** (required; weekly rating delta)
+   - **Rank** (optional; if missing, rank is calculated from total points)
+   - **Achievements** (optional; semicolon-separated)
+2. Keep any other columns you need (e.g., `ID`, `ELO_coeff`, weekly date columns). They are ignored by the converter.
+3. Save the file as `data/players.csv` (or any filename you prefer).
+4. Run the conversion script:
+
+```bash
+python scripts/players_from_csv.py data/players.csv data/players.json
+```
+
+You can use `data/players.csv` as a template for the correct format (including extra weekly columns).
+
+#### Adding Achievements Manually
+
+If you want to keep achievements separate from the CSV, add them to `data/players_achievements.json`.
+Keys can be **player ID** (recommended) or **player name**, and values are arrays of achievements:
+
+```json
+{
+  "101": ["Club champion 2024", "Most aces in April"],
+  "Sofia Lind": ["Mixed league MVP"]
+}
+```
+
+These achievements are merged with any achievements found in the CSV.
+
 ### How to Update External Links
 
 **Payment Links (Stripe/Mollie):**

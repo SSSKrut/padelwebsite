@@ -16,6 +16,7 @@ export const Navbar = () => {
     { label: "Memberships", href: "/memberships" },
     { label: "Merch", href: "/merch" },
     { label: "Gallery", href: "/gallery" },
+    { label: "Players", href: "/players" },
     { label: "Contacts", href: "/contacts" },
   ];
 

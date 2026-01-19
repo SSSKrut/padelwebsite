@@ -33,34 +33,11 @@ const Players = () => {
   return (
     <div className="min-h-screen">
       <Hero
-        title="Player Celebration Board"
-        subtitle="A weekly spotlight on rankings, achievements, and rising stars."
+        title="Player Rating Board"
+        subtitle="A weekly spotlight on rankings, achievements, and our rising stars."
         backgroundImage={padelHero}
         compact
       />
-
-      <section className="container mx-auto px-4 py-12 space-y-8">
-        <Card className="border-primary/20 bg-muted/30">
-          <CardContent className="py-6 flex flex-col gap-2">
-            <p className="text-lg font-semibold">Weekly update tip</p>
-            <p className="text-sm text-muted-foreground">
-              Edit <span className="font-medium text-foreground">data/players.json</span> to
-              update ranks, achievements, and rating changes without touching the layout.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Tip: export your Excel sheet to CSV and convert it with{" "}
-              <span className="font-medium text-foreground">scripts/players_from_csv.py</span>.
-              Extra columns (ID, ELO, weekly dates) are ignored.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Add manual achievements in{" "}
-              <span className="font-medium text-foreground">
-                data/players_achievements.json
-              </span>
-              .
-            </p>
-          </CardContent>
-        </Card>
 
         <div className="rounded-2xl border bg-background/80 shadow-sm">
           <Table>

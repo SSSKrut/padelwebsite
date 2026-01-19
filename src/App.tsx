@@ -11,6 +11,7 @@ import Memberships from "./pages/Memberships";
 import Merch from "./pages/Merch";
 import Gallery from "./pages/Gallery";
 import Contacts from "./pages/Contacts";
+import Players from "./pages/Players";
 import Impressum from "./pages/legal/Impressum";
 import Privacy from "./pages/legal/Privacy";
 import Terms from "./pages/legal/Terms";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/merch" element={<Merch />} />
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/contacts" element={<Contacts />} />
+              <Route path="/players" element={<Players />} />
               <Route path="/legal/impressum" element={<Impressum />} />
               <Route path="/legal/privacy" element={<Privacy />} />
               <Route path="/legal/terms" element={<Terms />} />

@@ -1,37 +1,1010 @@
 [
   {
     "rank": 1,
-    "name": "Lina Bergström",
-    "achievements": ["Club champion 2024", "8-match win streak", "Most aces in April"],
-    "ratingPoints": 2140,
-    "ratingDelta": 32
+    "name": "Marton",
+    "achievements": [],
+    "ratingPoints": 2646,
+    "ratingDelta": 0
   },
   {
     "rank": 2,
-    "name": "Mateo Alvarez",
-    "achievements": ["Doubles finalist", "Top 5 for 10 weeks"],
-    "ratingPoints": 2085,
-    "ratingDelta": 12
+    "name": "Andrej",
+    "achievements": [],
+    "ratingPoints": 2405,
+    "ratingDelta": 0
   },
   {
     "rank": 3,
-    "name": "Sofia Lind",
-    "achievements": ["Mixed league MVP", "Fastest serve: 132 km/h"],
-    "ratingPoints": 2022,
+    "name": "Mauricio",
+    "achievements": [],
+    "ratingPoints": 2378,
     "ratingDelta": 0
   },
   {
     "rank": 4,
-    "name": "Noah Svensson",
-    "achievements": ["Most improved", "3 podium finishes"],
-    "ratingPoints": 1978,
-    "ratingDelta": -6
+    "name": "Vladlen",
+    "achievements": [],
+    "ratingPoints": 2366,
+    "ratingDelta": -28
   },
   {
     "rank": 5,
-    "name": "Amira Hassan",
-    "achievements": ["Junior champion", "Perfect tie-break record"],
-    "ratingPoints": 1935,
-    "ratingDelta": 18
+    "name": "Nikola",
+    "achievements": [],
+    "ratingPoints": 2357,
+    "ratingDelta": 76
+  },
+  {
+    "rank": 6,
+    "name": "Armen",
+    "achievements": [],
+    "ratingPoints": 2350,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 7,
+    "name": "Laura",
+    "achievements": [],
+    "ratingPoints": 2340,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 8,
+    "name": "Sasha",
+    "achievements": [],
+    "ratingPoints": 2307,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 9,
+    "name": "Fernando",
+    "achievements": [],
+    "ratingPoints": 2300,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 10,
+    "name": "Thomas G.",
+    "achievements": [],
+    "ratingPoints": 2268,
+    "ratingDelta": -12
+  },
+  {
+    "rank": 11,
+    "name": "Markus P.",
+    "achievements": [],
+    "ratingPoints": 2264,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 12,
+    "name": "Luis",
+    "achievements": [],
+    "ratingPoints": 2246,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 13,
+    "name": "Arthur",
+    "achievements": [],
+    "ratingPoints": 2242,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 14,
+    "name": "Lai Ao",
+    "achievements": [],
+    "ratingPoints": 2194,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 15,
+    "name": "Amin",
+    "achievements": [],
+    "ratingPoints": 2176,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 16,
+    "name": "Marcelo",
+    "achievements": [],
+    "ratingPoints": 2106,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 17,
+    "name": "Gleb K.",
+    "achievements": [],
+    "ratingPoints": 2095,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 18,
+    "name": "Ilya",
+    "achievements": [],
+    "ratingPoints": 2084,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 19,
+    "name": "Wolfgang",
+    "achievements": [],
+    "ratingPoints": 2036,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 20,
+    "name": "Uliana",
+    "achievements": [],
+    "ratingPoints": 2027,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 21,
+    "name": "Cristian",
+    "achievements": [],
+    "ratingPoints": 2022,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 22,
+    "name": "Anna",
+    "achievements": [],
+    "ratingPoints": 1987,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 23,
+    "name": "Emanuel",
+    "achievements": [],
+    "ratingPoints": 1974,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 24,
+    "name": "Paul",
+    "achievements": [],
+    "ratingPoints": 1971,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 25,
+    "name": "Urska",
+    "achievements": [],
+    "ratingPoints": 1948,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 26,
+    "name": "Mario",
+    "achievements": [],
+    "ratingPoints": 1944,
+    "ratingDelta": -36
+  },
+  {
+    "rank": 27,
+    "name": "Alexander S.",
+    "achievements": [],
+    "ratingPoints": 1943,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 28,
+    "name": "Christian",
+    "achievements": [],
+    "ratingPoints": 1896,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 29,
+    "name": "Jacqueline",
+    "achievements": [],
+    "ratingPoints": 1889,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 30,
+    "name": "Thomas",
+    "achievements": [],
+    "ratingPoints": 1873,
+    "ratingDelta": -15
+  },
+  {
+    "rank": 31,
+    "name": "Karl",
+    "achievements": [],
+    "ratingPoints": 1869,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 32,
+    "name": "Aleksei",
+    "achievements": [],
+    "ratingPoints": 1832,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 33,
+    "name": "Daniel",
+    "achievements": [],
+    "ratingPoints": 1816,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 34,
+    "name": "George",
+    "achievements": [],
+    "ratingPoints": 1815,
+    "ratingDelta": 68
+  },
+  {
+    "rank": 35,
+    "name": "Markus Q.",
+    "achievements": [],
+    "ratingPoints": 1782,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 36,
+    "name": "Anna V.",
+    "achievements": [],
+    "ratingPoints": 1744,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 37,
+    "name": "Silvia",
+    "achievements": [],
+    "ratingPoints": 1740,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 38,
+    "name": "Sigge",
+    "achievements": [],
+    "ratingPoints": 1737,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 39,
+    "name": "Felix",
+    "achievements": [],
+    "ratingPoints": 1718,
+    "ratingDelta": -12
+  },
+  {
+    "rank": 40,
+    "name": "Farhan",
+    "achievements": [],
+    "ratingPoints": 1713,
+    "ratingDelta": 16
+  },
+  {
+    "rank": 41,
+    "name": "Dennis",
+    "achievements": [],
+    "ratingPoints": 1684,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 42,
+    "name": "Eva",
+    "achievements": [],
+    "ratingPoints": 1680,
+    "ratingDelta": -54
+  },
+  {
+    "rank": 43,
+    "name": "Federico",
+    "achievements": [],
+    "ratingPoints": 1652,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 44,
+    "name": "Jim",
+    "achievements": [],
+    "ratingPoints": 1648,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 45,
+    "name": "Jonathan",
+    "achievements": [],
+    "ratingPoints": 1642,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 46,
+    "name": "Arbab",
+    "achievements": [],
+    "ratingPoints": 1640,
+    "ratingDelta": -20
+  },
+  {
+    "rank": 47,
+    "name": "Maximilian",
+    "achievements": [],
+    "ratingPoints": 1640,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 48,
+    "name": "Hauke",
+    "achievements": [],
+    "ratingPoints": 1612,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 49,
+    "name": "Octavian",
+    "achievements": [],
+    "ratingPoints": 1593,
+    "ratingDelta": -5
+  },
+  {
+    "rank": 50,
+    "name": "Stefan",
+    "achievements": [],
+    "ratingPoints": 1586,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 51,
+    "name": "Jan Patrick",
+    "achievements": [],
+    "ratingPoints": 1585,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 52,
+    "name": "Jasi",
+    "achievements": [],
+    "ratingPoints": 1550,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 53,
+    "name": "Michael",
+    "achievements": [],
+    "ratingPoints": 1524,
+    "ratingDelta": 72
+  },
+  {
+    "rank": 54,
+    "name": "Christopher",
+    "achievements": [],
+    "ratingPoints": 1500,
+    "ratingDelta": -35
+  },
+  {
+    "rank": 55,
+    "name": "Alex M.",
+    "achievements": [],
+    "ratingPoints": 1490,
+    "ratingDelta": -54
+  },
+  {
+    "rank": 56,
+    "name": "Simone",
+    "achievements": [],
+    "ratingPoints": 1484,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 57,
+    "name": "Fabricio",
+    "achievements": [],
+    "ratingPoints": 1456,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 58,
+    "name": "Cesar",
+    "achievements": [],
+    "ratingPoints": 1432,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 59,
+    "name": "Gleb",
+    "achievements": [],
+    "ratingPoints": 1388,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 60,
+    "name": "Mauricio Gabriel",
+    "achievements": [],
+    "ratingPoints": 1388,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 61,
+    "name": "Andreas",
+    "achievements": [],
+    "ratingPoints": 1385,
+    "ratingDelta": 8
+  },
+  {
+    "rank": 62,
+    "name": "Agustin",
+    "achievements": [],
+    "ratingPoints": 1376,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 63,
+    "name": "Stanislav K.",
+    "achievements": [],
+    "ratingPoints": 1376,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 64,
+    "name": "Lisa-Sophie",
+    "achievements": [],
+    "ratingPoints": 1365,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 65,
+    "name": "Valeria",
+    "achievements": [],
+    "ratingPoints": 1362,
+    "ratingDelta": -28
+  },
+  {
+    "rank": 66,
+    "name": "Markus S.",
+    "achievements": [],
+    "ratingPoints": 1349,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 67,
+    "name": "Patrick S.",
+    "achievements": [],
+    "ratingPoints": 1318,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 68,
+    "name": "Ahmed",
+    "achievements": [],
+    "ratingPoints": 1296,
+    "ratingDelta": 72
+  },
+  {
+    "rank": 69,
+    "name": "Ilia A.",
+    "achievements": [],
+    "ratingPoints": 1254,
+    "ratingDelta": 68
+  },
+  {
+    "rank": 70,
+    "name": "Mark",
+    "achievements": [],
+    "ratingPoints": 1245,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 71,
+    "name": "Kate",
+    "achievements": [],
+    "ratingPoints": 1244,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 72,
+    "name": "Malte",
+    "achievements": [],
+    "ratingPoints": 1212,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 73,
+    "name": "Markus F.",
+    "achievements": [],
+    "ratingPoints": 1210,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 74,
+    "name": "Arina",
+    "achievements": [],
+    "ratingPoints": 1204,
+    "ratingDelta": -32
+  },
+  {
+    "rank": 75,
+    "name": "Misha",
+    "achievements": [],
+    "ratingPoints": 1201,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 76,
+    "name": "Anna",
+    "achievements": [],
+    "ratingPoints": 1195,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 77,
+    "name": "Christian",
+    "achievements": [],
+    "ratingPoints": 1193,
+    "ratingDelta": -40
+  },
+  {
+    "rank": 78,
+    "name": "Ilia",
+    "achievements": [],
+    "ratingPoints": 1188,
+    "ratingDelta": -8
+  },
+  {
+    "rank": 79,
+    "name": "Daria",
+    "achievements": [],
+    "ratingPoints": 1181,
+    "ratingDelta": 95
+  },
+  {
+    "rank": 80,
+    "name": "Osman",
+    "achievements": [],
+    "ratingPoints": 1171,
+    "ratingDelta": -8
+  },
+  {
+    "rank": 81,
+    "name": "Lucy",
+    "achievements": [],
+    "ratingPoints": 1167,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 82,
+    "name": "Patrick",
+    "achievements": [],
+    "ratingPoints": 1164,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 83,
+    "name": "Chris",
+    "achievements": [],
+    "ratingPoints": 1145,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 84,
+    "name": "Vanya Z.",
+    "achievements": [],
+    "ratingPoints": 1145,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 85,
+    "name": "Nadja",
+    "achievements": [],
+    "ratingPoints": 1144,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 86,
+    "name": "Konstantin",
+    "achievements": [],
+    "ratingPoints": 1136,
+    "ratingDelta": -40
+  },
+  {
+    "rank": 87,
+    "name": "Simone A.",
+    "achievements": [],
+    "ratingPoints": 1130,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 88,
+    "name": "Steffen",
+    "achievements": [],
+    "ratingPoints": 1124,
+    "ratingDelta": 56
+  },
+  {
+    "rank": 89,
+    "name": "Maria K.",
+    "achievements": [],
+    "ratingPoints": 1122,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 90,
+    "name": "Margarita",
+    "achievements": [],
+    "ratingPoints": 1119,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 91,
+    "name": "Nico",
+    "achievements": [],
+    "ratingPoints": 1109,
+    "ratingDelta": -36
+  },
+  {
+    "rank": 92,
+    "name": "Maria",
+    "achievements": [],
+    "ratingPoints": 1034,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 93,
+    "name": "Sergiu",
+    "achievements": [],
+    "ratingPoints": 1030,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 94,
+    "name": "Guilherme",
+    "achievements": [],
+    "ratingPoints": 1012,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 95,
+    "name": "Selma-Rina",
+    "achievements": [],
+    "ratingPoints": 1009,
+    "ratingDelta": 5
+  },
+  {
+    "rank": 96,
+    "name": "Carina",
+    "achievements": [],
+    "ratingPoints": 974,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 97,
+    "name": "Varvara",
+    "achievements": [],
+    "ratingPoints": 966,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 98,
+    "name": "Maria L.",
+    "achievements": [],
+    "ratingPoints": 965,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 99,
+    "name": "Stephanie",
+    "achievements": [],
+    "ratingPoints": 962,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 100,
+    "name": "Frederico",
+    "achievements": [],
+    "ratingPoints": 931,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 101,
+    "name": "Silvo",
+    "achievements": [],
+    "ratingPoints": 930,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 102,
+    "name": "Nathanael",
+    "achievements": [],
+    "ratingPoints": 898,
+    "ratingDelta": -10
+  },
+  {
+    "rank": 103,
+    "name": "Deniz",
+    "achievements": [],
+    "ratingPoints": 888,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 104,
+    "name": "Aleksei",
+    "achievements": [],
+    "ratingPoints": 885,
+    "ratingDelta": -4
+  },
+  {
+    "rank": 105,
+    "name": "Henry",
+    "achievements": [],
+    "ratingPoints": 842,
+    "ratingDelta": 42
+  },
+  {
+    "rank": 106,
+    "name": "Verena",
+    "achievements": [],
+    "ratingPoints": 837,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 107,
+    "name": "Elizabeth",
+    "achievements": [],
+    "ratingPoints": 826,
+    "ratingDelta": 28
+  },
+  {
+    "rank": 108,
+    "name": "Elena",
+    "achievements": [],
+    "ratingPoints": 806,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 109,
+    "name": "Karan",
+    "achievements": [],
+    "ratingPoints": 788,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 110,
+    "name": "Bernando",
+    "achievements": [],
+    "ratingPoints": 782,
+    "ratingDelta": -18
+  },
+  {
+    "rank": 111,
+    "name": "Petr",
+    "achievements": [],
+    "ratingPoints": 782,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 112,
+    "name": "Albert",
+    "achievements": [],
+    "ratingPoints": 777,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 113,
+    "name": "Jason",
+    "achievements": [],
+    "ratingPoints": 776,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 114,
+    "name": "Simone W",
+    "achievements": [],
+    "ratingPoints": 774,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 115,
+    "name": "Kateryna",
+    "achievements": [],
+    "ratingPoints": 773,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 116,
+    "name": "Sofia",
+    "achievements": [],
+    "ratingPoints": 736,
+    "ratingDelta": 10
+  },
+  {
+    "rank": 117,
+    "name": "Veronika",
+    "achievements": [],
+    "ratingPoints": 736,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 118,
+    "name": "Simon R.",
+    "achievements": [],
+    "ratingPoints": 734,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 119,
+    "name": "Ludivine",
+    "achievements": [],
+    "ratingPoints": 732,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 120,
+    "name": "Alina",
+    "achievements": [],
+    "ratingPoints": 726,
+    "ratingDelta": -24
+  },
+  {
+    "rank": 121,
+    "name": "Vlad",
+    "achievements": [],
+    "ratingPoints": 724,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 122,
+    "name": "Luisa",
+    "achievements": [],
+    "ratingPoints": 704,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 123,
+    "name": "Miriam",
+    "achievements": [],
+    "ratingPoints": 690,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 124,
+    "name": "Stephanie",
+    "achievements": [],
+    "ratingPoints": 690,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 125,
+    "name": "Nikita",
+    "achievements": [],
+    "ratingPoints": 670,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 126,
+    "name": "Anna S.",
+    "achievements": [],
+    "ratingPoints": 658,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 127,
+    "name": "Michaela",
+    "achievements": [],
+    "ratingPoints": 644,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 128,
+    "name": "Sarah",
+    "achievements": [],
+    "ratingPoints": 638,
+    "ratingDelta": 12
+  },
+  {
+    "rank": 129,
+    "name": "Aliz",
+    "achievements": [],
+    "ratingPoints": 612,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 130,
+    "name": "Viktoria",
+    "achievements": [],
+    "ratingPoints": 588,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 131,
+    "name": "Marina",
+    "achievements": [],
+    "ratingPoints": 586,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 132,
+    "name": "Bishakha",
+    "achievements": [],
+    "ratingPoints": 570,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 133,
+    "name": "Karina D.",
+    "achievements": [],
+    "ratingPoints": 555,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 134,
+    "name": "Vivian",
+    "achievements": [],
+    "ratingPoints": 550,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 135,
+    "name": "Katja",
+    "achievements": [],
+    "ratingPoints": 544,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 136,
+    "name": "Katharina",
+    "achievements": [],
+    "ratingPoints": 530,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 137,
+    "name": "Muhammad",
+    "achievements": [],
+    "ratingPoints": 519,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 138,
+    "name": "Anna K.",
+    "achievements": [],
+    "ratingPoints": 516,
+    "ratingDelta": -84
+  },
+  {
+    "rank": 139,
+    "name": "Mila",
+    "achievements": [],
+    "ratingPoints": 512,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 140,
+    "name": "Pavel",
+    "achievements": [],
+    "ratingPoints": 510,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 141,
+    "name": "Edona",
+    "achievements": [],
+    "ratingPoints": 494,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 142,
+    "name": "Kateryna",
+    "achievements": [],
+    "ratingPoints": 486,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 143,
+    "name": "Iana",
+    "achievements": [],
+    "ratingPoints": 438,
+    "ratingDelta": -78
+  },
+  {
+    "rank": 144,
+    "name": "Jane",
+    "achievements": [],
+    "ratingPoints": 215,
+    "ratingDelta": 0
   }
 ]

@@ -1,0 +1,37 @@
+[
+  {
+    "rank": 1,
+    "name": "Lina Bergström",
+    "achievements": ["Club champion 2024", "8-match win streak", "Most aces in April"],
+    "ratingPoints": 2140,
+    "ratingDelta": 32
+  },
+  {
+    "rank": 2,
+    "name": "Mateo Alvarez",
+    "achievements": ["Doubles finalist", "Top 5 for 10 weeks"],
+    "ratingPoints": 2085,
+    "ratingDelta": 12
+  },
+  {
+    "rank": 3,
+    "name": "Sofia Lind",
+    "achievements": ["Mixed league MVP", "Fastest serve: 132 km/h"],
+    "ratingPoints": 2022,
+    "ratingDelta": 0
+  },
+  {
+    "rank": 4,
+    "name": "Noah Svensson",
+    "achievements": ["Most improved", "3 podium finishes"],
+    "ratingPoints": 1978,
+    "ratingDelta": -6
+  },
+  {
+    "rank": 5,
+    "name": "Amira Hassan",
+    "achievements": ["Junior champion", "Perfect tie-break record"],
+    "ratingPoints": 1935,
+    "ratingDelta": 18
+  }
+]

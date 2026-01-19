@@ -7,27 +7,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import playersData from "../../data/players.json";
+import playersDataRaw from "../../data/players.json";
 import padelHero from "@/assets/padel-hero.png";
 
+type Player = {
+  rank: number;
+  name: string;
+  achievements: string[];
+  ratingPoints: number;
+  ratingDelta: number;
+};
+
+const playersData = playersDataRaw as Player[];
+
 const ratingDeltaStyles = (delta: number) => {
-  if (delta > 0) {
-    return "text-emerald-600";
-  }
-  if (delta < 0) {
-    return "text-red-500";
-  }
+  if (delta > 0) return "text-emerald-600";
+  if (delta < 0) return "text-red-500";
   return "text-muted-foreground";
 };
 
-const formatDelta = (delta: number) => {
-  if (delta > 0) {
-    return `+${delta}`;
-  }
-  return `${delta}`;
-};
+const formatDelta = (delta: number) => (delta > 0 ? `+${delta}` : `${delta}`);
 
 const Players = () => {
   return (
@@ -39,6 +39,7 @@ const Players = () => {
         compact
       />
 
+      <section className="mx-auto w-full max-w-6xl px-4 py-10">
         <div className="rounded-2xl border bg-background/80 shadow-sm">
           <Table>
             <TableHeader>
@@ -49,26 +50,36 @@ const Players = () => {
                 <TableHead className="text-right">Rating</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {playersData.map((player) => (
-                <TableRow key={player.rank}>
+                <TableRow key={`${player.rank}-${player.name}`}>
                   <TableCell className="font-semibold text-primary">
                     #{player.rank}
                   </TableCell>
+
                   <TableCell className="font-medium">{player.name}</TableCell>
+
                   <TableCell>
                     <div className="flex flex-wrap gap-2">
-                      {player.achievements.map((achievement) => (
-                        <Badge key={achievement} variant="secondary">
+                      {(player.achievements ?? []).map((achievement) => (
+                        <Badge key={`${player.name}-${achievement}`} variant="secondary">
                           {achievement}
                         </Badge>
                       ))}
                     </div>
                   </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <span className="text-lg font-semibold">{player.ratingPoints}</span>
-                      <span className={`text-xs font-semibold ${ratingDeltaStyles(player.ratingDelta)}`}>
+                      <span className="text-lg font-semibold">
+                        {player.ratingPoints}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold ${ratingDeltaStyles(
+                          player.ratingDelta
+                        )}`}
+                      >
                         {formatDelta(player.ratingDelta)}
                       </span>
                     </div>

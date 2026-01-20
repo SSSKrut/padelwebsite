@@ -2,14 +2,14 @@
   {
     "rank": 1,
     "name": "Marton",
-    "achievements": ["❄️ Christmas Grand Slam Champion 2024"],
+    "achievements": ["☀️ La Ville Grand Slam Champion 2025", "❄️ Christmas Grand Slam Champion 2024"],
     "ratingPoints": 2646,
     "ratingDelta": 0
   },
   {
     "rank": 2,
     "name": "Andrej",
-    "achievements": [],
+    "achievements": ["☀️ La Ville Grand Slam Champion 2024", "🌸 Spring Grand Slam Champion 2024"],
     "ratingPoints": 2405,
     "ratingDelta": 0
   },
@@ -30,7 +30,7 @@
   {
     "rank": 5,
     "name": "Nikola",
-    "achievements": [],
+    "achievements": ["☀️ Starter La Ville Grand Slam Champion 2025"],
     "ratingPoints": 2357,
     "ratingDelta": 76
   },
@@ -51,7 +51,7 @@
   {
     "rank": 8,
     "name": "Sasha",
-    "achievements": [],
+    "achievements": ["❄️ Christmas Grand Slam Champion 2025"],
     "ratingPoints": 2307,
     "ratingDelta": 0
   },
@@ -79,14 +79,14 @@
   {
     "rank": 12,
     "name": "Luis",
-    "achievements": [],
+    "achievements": ["🍁 Sportcenter Grand Slam Champion 2025],
     "ratingPoints": 2246,
     "ratingDelta": 0
   },
   {
     "rank": 13,
     "name": "Arthur",
-    "achievements": [],
+    "achievements": ["❄️ Christmas Grand Slam Champion 2025"],
     "ratingPoints": 2242,
     "ratingDelta": 0
   },
@@ -100,7 +100,7 @@
   {
     "rank": 15,
     "name": "Amin",
-    "achievements": [],
+    "achievements": ["🌸 Spring Grand Slam Champion 2025"],
     "ratingPoints": 2176,
     "ratingDelta": 0
   },
@@ -135,7 +135,7 @@
   {
     "rank": 20,
     "name": "Uliana",
-    "achievements": [],
+    "achievements": ["❄️ Christmas Grand Slam Champion 2025"],
     "ratingPoints": 2027,
     "ratingDelta": 0
   },
@@ -163,7 +163,7 @@
   {
     "rank": 24,
     "name": "Paul",
-    "achievements": [],
+    "achievements": ["☀️ La Ville Grand Slam Champion 2025"],
     "ratingPoints": 1971,
     "ratingDelta": 0
   },
@@ -219,7 +219,7 @@
   {
     "rank": 32,
     "name": "Aleksei",
-    "achievements": [],
+    "achievements": ["❄️ Christmas Grand Slam Champion 2023"],
     "ratingPoints": 1832,
     "ratingDelta": 0
   },
@@ -303,7 +303,7 @@
   {
     "rank": 44,
     "name": "Jim",
-    "achievements": [],
+    "achievements": ["❄️ Starter Christmas Grand Slam Champion 2025"],
     "ratingPoints": 1648,
     "ratingDelta": 0
   },
@@ -478,7 +478,7 @@
   {
     "rank": 69,
     "name": "Ilia A.",
-    "achievements": [],
+    "achievements": ["❄️ Starter Christmas Grand Slam Champion 2025", "☀️ Starter La Ville Grand Slam Champion 2025"],
     "ratingPoints": 1254,
     "ratingDelta": 68
   },
@@ -555,7 +555,7 @@
   {
     "rank": 80,
     "name": "Osman",
-    "achievements": [],
+    "achievements": ["❄️ Christmas Grand Slam Champion 2024"],
     "ratingPoints": 1171,
     "ratingDelta": -8
   },
@@ -583,7 +583,7 @@
   {
     "rank": 84,
     "name": "Vanya Z.",
-    "achievements": [],
+    "achievements": ["❄️ Starter Christmas Grand Slam Champion 2025"],
     "ratingPoints": 1145,
     "ratingDelta": 0
   },
@@ -744,7 +744,7 @@
   {
     "rank": 107,
     "name": "Elizabeth",
-    "achievements": [],
+    "achievements": ["🌸 Spring Grand Slam Champion 2024", "❄️ Christmas Grand Slam Champion 2023"],
     "ratingPoints": 826,
     "ratingDelta": 28
   },

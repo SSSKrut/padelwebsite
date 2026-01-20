@@ -16,7 +16,7 @@
   {
     "rank": 3,
     "name": "Mauricio",
-    "achievements": [],
+    "achievements": ["🏆 Absolute Big Saturday Winner"],
     "ratingPoints": 2378,
     "ratingDelta": 0
   },
@@ -37,7 +37,7 @@
   {
     "rank": 6,
     "name": "Armen",
-    "achievements": [],
+    "achievements": ["🏆 8x Absolute Big Saturday Winner"],
     "ratingPoints": 2350,
     "ratingDelta": 0
   },
@@ -72,7 +72,7 @@
   {
     "rank": 11,
     "name": "Markus P.",
-    "achievements": [],
+    "achievements": ["2x 🏆 Absolute Big Saturday Winner"],
     "ratingPoints": 2264,
     "ratingDelta": 0
   },
@@ -93,7 +93,7 @@
   {
     "rank": 14,
     "name": "Lai Ao",
-    "achievements": [],
+    "achievements": ["🏆 Advanced Big Saturday Winner"],
     "ratingPoints": 2194,
     "ratingDelta": 0
   },
@@ -156,7 +156,7 @@
   {
     "rank": 23,
     "name": "Emanuel",
-    "achievements": [],
+    "achievements": ["🏆 Absolute Big Saturday Winner"],
     "ratingPoints": 1974,
     "ratingDelta": 0
   },
@@ -191,7 +191,7 @@
   {
     "rank": 28,
     "name": "Christian",
-    "achievements": [],
+    "achievements": ["⭐ Advanced Big Saturday Winner"],
     "ratingPoints": 1896,
     "ratingDelta": 0
   },
@@ -205,14 +205,14 @@
   {
     "rank": 30,
     "name": "Thomas",
-    "achievements": [],
+    "achievements": ["⭐ Advanced Big Saturday Winner"],
     "ratingPoints": 1873,
     "ratingDelta": -15
   },
   {
     "rank": 31,
     "name": "Karl",
-    "achievements": [],
+    "achievements": ["⭐ 3x Advanced Big Saturday Winner"],
     "ratingPoints": 1869,
     "ratingDelta": 0
   },
@@ -233,7 +233,7 @@
   {
     "rank": 34,
     "name": "George",
-    "achievements": [],
+    "achievements": ["⭐ 2x Advanced Big Saturday Winner", "🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1815,
     "ratingDelta": 68
   },
@@ -275,7 +275,7 @@
   {
     "rank": 40,
     "name": "Farhan",
-    "achievements": [],
+    "achievements": ["🚀 2x Starter Big Saturday Winner"],
     "ratingPoints": 1713,
     "ratingDelta": 16
   },
@@ -303,7 +303,7 @@
   {
     "rank": 44,
     "name": "Jim",
-    "achievements": ["❄️ Starter Christmas Grand Slam Champion 2025"],
+    "achievements": ["❄️ Starter Christmas Grand Slam Champion 2025", "⭐ Advanced Big Saturday Winner"],
     "ratingPoints": 1648,
     "ratingDelta": 0
   },
@@ -331,21 +331,21 @@
   {
     "rank": 48,
     "name": "Hauke",
-    "achievements": [],
+    "achievements": ["🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1612,
     "ratingDelta": 0
   },
   {
     "rank": 49,
     "name": "Octavian",
-    "achievements": [],
+    "achievements": ["⭐ Advanced Big Saturday Winner", "🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1593,
     "ratingDelta": -5
   },
   {
     "rank": 50,
     "name": "Stefan",
-    "achievements": [],
+    "achievements": ["⭐ Advanced Big Saturday Winner", "🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1586,
     "ratingDelta": 0
   },
@@ -373,7 +373,7 @@
   {
     "rank": 54,
     "name": "Christopher",
-    "achievements": [],
+    "achievements": ["🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1500,
     "ratingDelta": -35
   },
@@ -394,7 +394,7 @@
   {
     "rank": 57,
     "name": "Fabricio",
-    "achievements": [],
+    "achievements": ["🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1456,
     "ratingDelta": 0
   },
@@ -422,7 +422,7 @@
   {
     "rank": 61,
     "name": "Andreas",
-    "achievements": [],
+    "achievements": ["🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1385,
     "ratingDelta": 8
   },
@@ -436,14 +436,14 @@
   {
     "rank": 63,
     "name": "Stanislav K.",
-    "achievements": [],
+    "achievements": ["🚀 Starter Big Saturday Winner"],
     "ratingPoints": 1376,
     "ratingDelta": 0
   },
   {
     "rank": 64,
     "name": "Lisa-Sophie",
-    "achievements": [],
+    "achievements": ["🚀 2x Starter Big Saturday Winner"],
     "ratingPoints": 1365,
     "ratingDelta": 0
   },

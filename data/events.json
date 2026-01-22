@@ -1,24 +1,35 @@
 [
   {
     "title": "Big Saturday Padel",
-    "date": "2026-01-17",
+    "date": "2026-01-24",
     "time": "10:00–12:30",
     "venue": "Padeldome Erdberg",
     "level": "All Levels",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/b2d0153856d9370e29",
+    "regLink": "https://lets-meet.org/reg/7173b718529648e32d",
     "regLinkVisible": true,
     "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   },
   {
     "title": "Ladies Night",
-    "date": "2026-01-15",
+    "date": "2026-01-28",
     "time": "19:00–21:00",
     "venue": "Padeldome Erdberg",
     "level": "Women",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/24b771e7aece0247d0",
+    "regLink": "https://lets-meet.org/reg/2fdf6b4e08b8176a79",
     "regLinkVisible": true,
     "description": "Our GIRLS ONLY Games"
+  }, 
+    {
+    "title": "Boys Special",
+    "date": "2026-01-26",
+    "time": "19:00–21:00",
+    "venue": "Padelzone Floridsdorf",
+    "level": "Men",
+    "priceEuro": 20,
+    "regLink": "https://lets-meet.org/reg/c96e9679e799376ec1",
+    "regLinkVisible": true,
+    "description": "Boys battle for special prizes"
   }
 ]

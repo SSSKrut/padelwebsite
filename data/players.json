@@ -11,15 +11,24 @@
   },
   {
     "rank": 2,
+    "name": "Manuel",
+    "achievements": [
+      "🏆 Absolute Big Saturday Winner"
+    ],
+    "ratingPoints": 2520,
+    "ratingDelta": 20
+  },
+  {
+    "rank": 3,
     "name": "Mauricio",
     "achievements": [
       "🏆 2x Absolute Big Saturday Winner"
     ],
-    "ratingPoints": 2480,
-    "ratingDelta": 52
+    "ratingPoints": 2512,
+    "ratingDelta": 32
   },
   {
-    "rank": 3,
+    "rank": 4,
     "name": "Andrej",
     "achievements": [
       "☀️ La Ville Grand Slam Champion 2024",
@@ -29,7 +38,7 @@
     "ratingDelta": 0
   },
   {
-    "rank": 4,
+    "rank": 5,
     "name": "Nikola",
     "achievements": [
       "☀️ Starter La Ville Grand Slam Champion 2025"
@@ -38,60 +47,51 @@
     "ratingDelta": 0
   },
   {
-    "rank": 5,
+    "rank": 6,
     "name": "Armen",
     "achievements": [
       "🏆 9x Absolute Big Saturday Winner"
     ],
-    "ratingPoints": 2350,
-    "ratingDelta": -20
+    "ratingPoints": 2354,
+    "ratingDelta": 4
   },
   {
-    "rank": 6,
+    "rank": 7,
     "name": "Vladlen",
     "achievements": [
       "🏆 Absolute Big Saturday Winner"
     ],
-    "ratingPoints": 2343,
-    "ratingDelta": 0
+    "ratingPoints": 2351,
+    "ratingDelta": 8
   },
   {
-    "rank": 7,
+    "rank": 8,
     "name": "Laura",
     "achievements": [],
     "ratingPoints": 2340,
     "ratingDelta": 0
   },
   {
-    "rank": 8,
+    "rank": 9,
     "name": "Fernando",
     "achievements": [],
     "ratingPoints": 2300,
     "ratingDelta": 0
   },
   {
-    "rank": 9,
+    "rank": 10,
     "name": "Sasha",
     "achievements": [
       "❄️ Christmas Grand Slam Champion 2025"
     ],
     "ratingPoints": 2299,
-    "ratingDelta": -8
-  },
-  {
-    "rank": 10,
-    "name": "Thomas G.",
-    "achievements": [],
-    "ratingPoints": 2268,
     "ratingDelta": 0
   },
   {
     "rank": 11,
-    "name": "Markus P.",
-    "achievements": [
-      "2x 🏆 Absolute Big Saturday Winner"
-    ],
-    "ratingPoints": 2264,
+    "name": "Thomas G.",
+    "achievements": [],
+    "ratingPoints": 2268,
     "ratingDelta": 0
   },
   {
@@ -114,6 +114,15 @@
   },
   {
     "rank": 14,
+    "name": "Markus P.",
+    "achievements": [
+      "2x 🏆 Absolute Big Saturday Winner"
+    ],
+    "ratingPoints": 2200,
+    "ratingDelta": -64
+  },
+  {
+    "rank": 15,
     "name": "Amin",
     "achievements": [
       "🌸 Spring Grand Slam Champion 2025"
@@ -122,69 +131,71 @@
     "ratingDelta": 0
   },
   {
-    "rank": 15,
+    "rank": 16,
     "name": "Alexander S.",
     "achievements": [
       "⭐ Advanced Big Saturday Winner"
     ],
     "ratingPoints": 2158,
-    "ratingDelta": 24
+    "ratingDelta": 0
   },
   {
-    "rank": 16,
+    "rank": 17,
     "name": "Lai Ao",
     "achievements": [
       "🏆 Advanced Big Saturday Winner"
     ],
-    "ratingPoints": 2142,
-    "ratingDelta": -44
+    "ratingPoints": 2130,
+    "ratingDelta": -12
   },
   {
-    "rank": 17,
+    "rank": 18,
     "name": "Marcelo",
     "achievements": [],
     "ratingPoints": 2106,
     "ratingDelta": 0
   },
   {
-    "rank": 18,
+    "rank": 19,
+    "name": "Ilya",
+    "achievements": [
+      "⭐ Advanced Big Saturday Winner"
+    ],
+    "ratingPoints": 2100,
+    "ratingDelta": 16
+  },
+  {
+    "rank": 20,
     "name": "Gleb K.",
     "achievements": [],
     "ratingPoints": 2095,
     "ratingDelta": 0
   },
   {
-    "rank": 19,
-    "name": "Ilya",
-    "achievements": [],
-    "ratingPoints": 2084,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 20,
+    "rank": 21,
     "name": "Wolfgang",
     "achievements": [],
     "ratingPoints": 2036,
     "ratingDelta": 0
   },
   {
-    "rank": 21,
+    "rank": 22,
     "name": "Uliana",
     "achievements": [
       "❄️ Christmas Grand Slam Champion 2025"
     ],
     "ratingPoints": 2007,
-    "ratingDelta": -20
+    "ratingDelta": 0
   },
   {
-    "rank": 22,
+    "rank": 23,
     "name": "Anna",
     "achievements": [],
     "ratingPoints": 1987,
     "ratingDelta": 0
   },
   {
-    "rank": 23,
+    "rank": 24,
     "name": "Christian",
     "achievements": [
       "⭐ Advanced Big Saturday Winner"
@@ -193,7 +204,7 @@
     "ratingDelta": 0
   },
   {
-    "rank": 24,
+    "rank": 25,
     "name": "Emanuel",
     "achievements": [
       "🏆 Absolute Big Saturday Winner"
@@ -202,7 +213,7 @@
     "ratingDelta": 0
   },
   {
-    "rank": 25,
+    "rank": 26,
     "name": "Paul",
     "achievements": [
       "☀️ La Ville Grand Slam Champion 2025"
@@ -211,14 +222,14 @@
     "ratingDelta": 0
   },
   {
-    "rank": 26,
+    "rank": 27,
     "name": "Urska",
     "achievements": [],
     "ratingPoints": 1948,
     "ratingDelta": 0
   },
   {
-    "rank": 27,
+    "rank": 28,
     "name": "Karl",
     "achievements": [
       "⭐ 3x Advanced Big Saturday Winner"
@@ -227,28 +238,28 @@
     "ratingDelta": 0
   },
   {
-    "rank": 28,
+    "rank": 29,
     "name": "Mario",
     "achievements": [],
     "ratingPoints": 1944,
     "ratingDelta": 0
   },
   {
-    "rank": 29,
+    "rank": 30,
     "name": "Cristian",
     "achievements": [],
     "ratingPoints": 1930,
     "ratingDelta": 0
   },
   {
-    "rank": 30,
+    "rank": 31,
     "name": "Jacqueline",
     "achievements": [],
     "ratingPoints": 1889,
     "ratingDelta": 0
   },
   {
-    "rank": 31,
+    "rank": 32,
     "name": "Thomas",
     "achievements": [
       "⭐ Advanced Big Saturday Winner"
@@ -257,7 +268,7 @@
     "ratingDelta": 0
   },
   {
-    "rank": 32,
+    "rank": 33,
     "name": "Aleksei V.",
     "achievements": [
       "❄️ Christmas Grand Slam Champion 2023"
@@ -266,14 +277,14 @@
     "ratingDelta": 0
   },
   {
-    "rank": 33,
+    "rank": 34,
     "name": "Daniel",
     "achievements": [],
     "ratingPoints": 1816,
     "ratingDelta": 0
   },
   {
-    "rank": 34,
+    "rank": 35,
     "name": "Dennis",
     "achievements": [
       "⭐ Advanced Big Saturday Winner"
@@ -282,126 +293,127 @@
     "ratingDelta": 0
   },
   {
-    "rank": 35,
+    "rank": 36,
     "name": "Markus Q.",
     "achievements": [],
     "ratingPoints": 1782,
     "ratingDelta": 0
   },
   {
-    "rank": 36,
-    "name": "George",
+    "rank": 37,
+    "name": "Farhan",
     "achievements": [
-      "⭐ 2x Advanced Big Saturday Winner",
-      "🚀 Starter Big Saturday Winner"
+      "🚀 2x Starter Big Saturday Winner"
     ],
-    "ratingPoints": 1747,
-    "ratingDelta": -12
+    "ratingPoints": 1753,
+    "ratingDelta": 36
   },
   {
-    "rank": 37,
+    "rank": 38,
     "name": "Anna V.",
     "achievements": [],
     "ratingPoints": 1744,
     "ratingDelta": 0
   },
   {
-    "rank": 38,
+    "rank": 39,
     "name": "Silvia",
     "achievements": [],
     "ratingPoints": 1740,
     "ratingDelta": 0
   },
   {
-    "rank": 39,
+    "rank": 40,
     "name": "Sigge",
     "achievements": [],
     "ratingPoints": 1737,
     "ratingDelta": 0
   },
   {
-    "rank": 40,
-    "name": "Farhan",
-    "achievements": [
-      "🚀 2x Starter Big Saturday Winner"
-    ],
-    "ratingPoints": 1717,
-    "ratingDelta": 16
-  },
-  {
     "rank": 41,
-    "name": "Arbab",
-    "achievements": [
-      "🚀 Starter Big Saturday Winner"
-    ],
-    "ratingPoints": 1692,
-    "ratingDelta": 0
+    "name": "Suomi",
+    "achievements": [],
+    "ratingPoints": 1734,
+    "ratingDelta": 66
   },
   {
     "rank": 42,
     "name": "Michael",
     "achievements": [
-      "⭐ 2x Advanced Big Saturday Winner"
+      "⭐ 2x Advanced Big Saturday Winner",
+      "🚀 Starter Big Saturday Winner"
     ],
-    "ratingPoints": 1681,
-    "ratingDelta": 60
+    "ratingPoints": 1726,
+    "ratingDelta": 45
   },
   {
     "rank": 43,
-    "name": "Suomi",
-    "achievements": [],
-    "ratingPoints": 1668,
-    "ratingDelta": 108
+    "name": "George",
+    "achievements": [
+      "⭐ 2x Advanced Big Saturday Winner",
+      "🚀 Starter Big Saturday Winner"
+    ],
+    "ratingPoints": 1719,
+    "ratingDelta": -28
   },
   {
     "rank": 44,
+    "name": "Octavian",
+    "achievements": [
+      "⭐ Advanced Big Saturday Winner",
+      "🚀 Starter Big Saturday Winner"
+    ],
+    "ratingPoints": 1688,
+    "ratingDelta": 80
+  },
+  {
+    "rank": 45,
+    "name": "Roland",
+    "achievements": [],
+    "ratingPoints": 1670,
+    "ratingDelta": -30
+  },
+  {
+    "rank": 46,
+    "name": "Arbab",
+    "achievements": [
+      "🚀 Starter Big Saturday Winner"
+    ],
+    "ratingPoints": 1668,
+    "ratingDelta": -24
+  },
+  {
+    "rank": 47,
     "name": "Federico",
     "achievements": [],
     "ratingPoints": 1652,
     "ratingDelta": 0
   },
   {
-    "rank": 45,
-    "name": "Felix",
-    "achievements": [
-      "🚀 Starter Big Saturday Winner"
-    ],
-    "ratingPoints": 1646,
-    "ratingDelta": 72
-  },
-  {
-    "rank": 46,
+    "rank": 48,
     "name": "Jonathan",
     "achievements": [],
     "ratingPoints": 1642,
     "ratingDelta": 0
   },
   {
-    "rank": 47,
+    "rank": 49,
     "name": "Maximilian",
     "achievements": [],
     "ratingPoints": 1640,
     "ratingDelta": 0
   },
   {
-    "rank": 48,
-    "name": "Stefan",
+    "rank": 50,
+    "name": "Felix",
     "achievements": [
-      "⭐ Advanced Big Saturday Winner",
       "🚀 Starter Big Saturday Winner"
     ],
-    "ratingPoints": 1622,
-    "ratingDelta": 16
+    "ratingPoints": 1631,
+    "ratingDelta": -15
   },
   {
-    "rank": 49,
-    "name": "Eva",
-    "achievements": [],
-    "ratingPoints": 1614,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 50,
+    "rank": 51,
     "name": "Hauke",
     "achievements": [
       "🚀 Starter Big Saturday Winner"
@@ -410,31 +422,31 @@
     "ratingDelta": 0
   },
   {
-    "rank": 51,
-    "name": "Octavian",
+    "rank": 52,
+    "name": "Eva",
+    "achievements": [],
+    "ratingPoints": 1590,
+    "ratingDelta": -24
+  },
+  {
+    "rank": 53,
+    "name": "Stefan",
     "achievements": [
       "⭐ Advanced Big Saturday Winner",
       "🚀 Starter Big Saturday Winner"
     ],
-    "ratingPoints": 1608,
-    "ratingDelta": 0
+    "ratingPoints": 1586,
+    "ratingDelta": -36
   },
   {
-    "rank": 52,
-    "name": "Jan Patrick",
-    "achievements": [],
-    "ratingPoints": 1565,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 53,
+    "rank": 54,
     "name": "Jasi",
     "achievements": [],
     "ratingPoints": 1550,
     "ratingDelta": 0
   },
   {
-    "rank": 54,
+    "rank": 55,
     "name": "Christopher",
     "achievements": [
       "🚀 Starter Big Saturday Winner"
@@ -443,68 +455,84 @@
     "ratingDelta": 0
   },
   {
-    "rank": 55,
+    "rank": 56,
+    "name": "Jan Patrick",
+    "achievements": [],
+    "ratingPoints": 1521,
+    "ratingDelta": -44
+  },
+  {
+    "rank": 57,
     "name": "Alex M.",
     "achievements": [],
     "ratingPoints": 1490,
     "ratingDelta": 0
   },
   {
-    "rank": 56,
+    "rank": 58,
     "name": "Simone",
     "achievements": [],
     "ratingPoints": 1484,
     "ratingDelta": 0
   },
   {
-    "rank": 57,
-    "name": "Valeria",
+    "rank": 59,
+    "name": "Agustin",
     "achievements": [],
-    "ratingPoints": 1442,
-    "ratingDelta": 16
+    "ratingPoints": 1418,
+    "ratingDelta": 24
   },
   {
-    "rank": 58,
+    "rank": 60,
+    "name": "Valeria",
+    "achievements": [],
+    "ratingPoints": 1410,
+    "ratingDelta": -32
+  },
+  {
+    "rank": 61,
     "name": "Fabricio",
     "achievements": [
       "🚀 Starter Big Saturday Winner"
     ],
     "ratingPoints": 1396,
-    "ratingDelta": 24
+    "ratingDelta": 0
   },
   {
-    "rank": 59,
-    "name": "Agustin",
-    "achievements": [],
-    "ratingPoints": 1394,
-    "ratingDelta": 18
+    "rank": 62,
+    "name": "Lisa-Sophie",
+    "achievements": [
+      "🚀 2x Starter Big Saturday Winner"
+    ],
+    "ratingPoints": 1389,
+    "ratingDelta": 72
   },
   {
-    "rank": 60,
+    "rank": 63,
     "name": "Gleb",
     "achievements": [],
     "ratingPoints": 1388,
     "ratingDelta": 0
   },
   {
-    "rank": 61,
+    "rank": 64,
     "name": "Jim",
     "achievements": [
       "❄️ Starter Christmas Grand Slam Champion 2025",
       "⭐ Advanced Big Saturday Winner"
     ],
     "ratingPoints": 1388,
-    "ratingDelta": -215
+    "ratingDelta": 0
   },
   {
-    "rank": 62,
+    "rank": 65,
     "name": "Mauricio Gabriel",
     "achievements": [],
     "ratingPoints": 1388,
     "ratingDelta": 0
   },
   {
-    "rank": 63,
+    "rank": 66,
     "name": "Stanislav K.",
     "achievements": [
       "🚀 Starter Big Saturday Winner"
@@ -513,14 +541,7 @@
     "ratingDelta": 0
   },
   {
-    "rank": 64,
-    "name": "Cesar",
-    "achievements": [],
-    "ratingPoints": 1368,
-    "ratingDelta": 8
-  },
-  {
-    "rank": 65,
+    "rank": 67,
     "name": "Andreas",
     "achievements": [
       "🚀 Starter Big Saturday Winner"
@@ -529,37 +550,35 @@
     "ratingDelta": 0
   },
   {
-    "rank": 66,
-    "name": "Markus S.",
+    "rank": 68,
+    "name": "Cesar",
     "achievements": [],
-    "ratingPoints": 1329,
-    "ratingDelta": -40
+    "ratingPoints": 1348,
+    "ratingDelta": -20
   },
   {
-    "rank": 67,
+    "rank": 69,
     "name": "Patrick S.",
     "achievements": [],
     "ratingPoints": 1318,
     "ratingDelta": 0
   },
   {
-    "rank": 68,
-    "name": "Lisa-Sophie",
-    "achievements": [
-      "🚀 2x Starter Big Saturday Winner"
-    ],
-    "ratingPoints": 1317,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 69,
+    "rank": 70,
     "name": "Markus F.",
     "achievements": [],
     "ratingPoints": 1293,
-    "ratingDelta": 95
+    "ratingDelta": 0
   },
   {
-    "rank": 70,
+    "rank": 71,
+    "name": "Daria",
+    "achievements": [],
+    "ratingPoints": 1278,
+    "ratingDelta": 44
+  },
+  {
+    "rank": 72,
     "name": "Ilia A.",
     "achievements": [
       "❄️ Starter Christmas Grand Slam Champion 2025",
@@ -569,119 +588,119 @@
     "ratingDelta": 0
   },
   {
-    "rank": 71,
+    "rank": 73,
+    "name": "Markus S.",
+    "achievements": [],
+    "ratingPoints": 1269,
+    "ratingDelta": -60
+  },
+  {
+    "rank": 74,
+    "name": "Manuela",
+    "achievements": [],
+    "ratingPoints": 1256,
+    "ratingDelta": 6
+  },
+  {
+    "rank": 75,
     "name": "Mark",
     "achievements": [],
     "ratingPoints": 1245,
     "ratingDelta": 0
   },
   {
-    "rank": 72,
+    "rank": 76,
     "name": "Kate",
     "achievements": [],
     "ratingPoints": 1244,
     "ratingDelta": 0
   },
   {
-    "rank": 73,
-    "name": "Daria",
-    "achievements": [],
-    "ratingPoints": 1234,
-    "ratingDelta": 12
-  },
-  {
-    "rank": 74,
-    "name": "Arina",
-    "achievements": [],
-    "ratingPoints": 1228,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 75,
+    "rank": 77,
     "name": "Steffen",
     "achievements": [],
-    "ratingPoints": 1220,
-    "ratingDelta": -64
+    "ratingPoints": 1228,
+    "ratingDelta": 8
   },
   {
-    "rank": 76,
+    "rank": 78,
     "name": "Ahmed",
     "achievements": [],
-    "ratingPoints": 1212,
-    "ratingDelta": 24
+    "ratingPoints": 1222,
+    "ratingDelta": 10
   },
   {
-    "rank": 77,
+    "rank": 79,
     "name": "Malte",
     "achievements": [],
     "ratingPoints": 1212,
     "ratingDelta": 0
   },
   {
-    "rank": 78,
+    "rank": 80,
     "name": "Christian H.",
     "achievements": [],
     "ratingPoints": 1208,
     "ratingDelta": 0
   },
   {
-    "rank": 79,
+    "rank": 81,
     "name": "Ilia",
     "achievements": [],
     "ratingPoints": 1208,
-    "ratingDelta": 60
+    "ratingDelta": 0
   },
   {
-    "rank": 80,
+    "rank": 82,
+    "name": "Margarita",
+    "achievements": [],
+    "ratingPoints": 1207,
+    "ratingDelta": 56
+  },
+  {
+    "rank": 83,
     "name": "Misha",
     "achievements": [],
     "ratingPoints": 1201,
     "ratingDelta": 0
   },
   {
-    "rank": 81,
+    "rank": 84,
     "name": "Anna",
     "achievements": [],
     "ratingPoints": 1195,
     "ratingDelta": 0
   },
   {
-    "rank": 82,
+    "rank": 85,
+    "name": "Arina",
+    "achievements": [],
+    "ratingPoints": 1184,
+    "ratingDelta": -44
+  },
+  {
+    "rank": 86,
     "name": "Hugo",
     "achievements": [],
     "ratingPoints": 1168,
-    "ratingDelta": 174
+    "ratingDelta": 0
   },
   {
-    "rank": 83,
+    "rank": 87,
     "name": "Patrick",
     "achievements": [],
     "ratingPoints": 1164,
     "ratingDelta": 0
   },
   {
-    "rank": 84,
+    "rank": 88,
     "name": "Konstantin",
     "achievements": [],
     "ratingPoints": 1160,
-    "ratingDelta": -8
+    "ratingDelta": 0
   },
   {
-    "rank": 85,
-    "name": "Margarita",
-    "achievements": [],
-    "ratingPoints": 1151,
-    "ratingDelta": 32
-  },
-  {
-    "rank": 86,
-    "name": "Hesham",
-    "achievements": [],
-    "ratingPoints": 1149,
-    "ratingDelta": 48
-  },
-  {
-    "rank": 87,
+    "rank": 89,
     "name": "Vanya Z.",
     "achievements": [
       "❄️ Starter Christmas Grand Slam Champion 2025"
@@ -690,35 +709,42 @@
     "ratingDelta": 0
   },
   {
-    "rank": 88,
+    "rank": 90,
     "name": "Simone A.",
     "achievements": [],
     "ratingPoints": 1130,
     "ratingDelta": 0
   },
   {
-    "rank": 89,
+    "rank": 91,
     "name": "Chris",
     "achievements": [],
     "ratingPoints": 1129,
     "ratingDelta": 0
   },
   {
-    "rank": 90,
+    "rank": 92,
+    "name": "Lucy",
+    "achievements": [],
+    "ratingPoints": 1127,
+    "ratingDelta": 16
+  },
+  {
+    "rank": 93,
+    "name": "Hesham",
+    "achievements": [],
+    "ratingPoints": 1119,
+    "ratingDelta": -30
+  },
+  {
+    "rank": 94,
     "name": "Nadja",
     "achievements": [],
     "ratingPoints": 1119,
-    "ratingDelta": -80
+    "ratingDelta": 0
   },
   {
-    "rank": 91,
-    "name": "Lucy",
-    "achievements": [],
-    "ratingPoints": 1111,
-    "ratingDelta": -72
-  },
-  {
-    "rank": 92,
+    "rank": 95,
     "name": "Osman",
     "achievements": [
       "❄️ Christmas Grand Slam Champion 2024"
@@ -727,154 +753,161 @@
     "ratingDelta": 0
   },
   {
-    "rank": 93,
-    "name": "Maria K.",
+    "rank": 96,
+    "name": "Nico",
     "achievements": [],
-    "ratingPoints": 1069,
-    "ratingDelta": 0
+    "ratingPoints": 1085,
+    "ratingDelta": 52
   },
   {
-    "rank": 94,
+    "rank": 97,
     "name": "Maria",
     "achievements": [],
     "ratingPoints": 1034,
     "ratingDelta": 0
   },
   {
-    "rank": 95,
-    "name": "Nico",
-    "achievements": [],
-    "ratingPoints": 1033,
-    "ratingDelta": -112
-  },
-  {
-    "rank": 96,
+    "rank": 98,
     "name": "Sergiu",
     "achievements": [],
     "ratingPoints": 1030,
     "ratingDelta": 0
   },
   {
-    "rank": 97,
+    "rank": 99,
     "name": "Guilherme",
     "achievements": [],
     "ratingPoints": 1012,
     "ratingDelta": 0
   },
   {
-    "rank": 98,
-    "name": "Varvara",
+    "rank": 100,
+    "name": "Maria K.",
     "achievements": [],
-    "ratingPoints": 990,
-    "ratingDelta": 104
+    "ratingPoints": 1009,
+    "ratingDelta": -60
   },
   {
-    "rank": 99,
+    "rank": 101,
     "name": "Carina",
     "achievements": [],
     "ratingPoints": 974,
     "ratingDelta": 0
   },
   {
-    "rank": 100,
-    "name": "Aleksei",
-    "achievements": [],
-    "ratingPoints": 973,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 101,
+    "rank": 102,
     "name": "Stephanie",
     "achievements": [],
     "ratingPoints": 962,
     "ratingDelta": 0
   },
   {
-    "rank": 102,
+    "rank": 103,
+    "name": "Varvara",
+    "achievements": [],
+    "ratingPoints": 954,
+    "ratingDelta": -36
+  },
+  {
+    "rank": 104,
+    "name": "Aleksei",
+    "achievements": [],
+    "ratingPoints": 953,
+    "ratingDelta": -20
+  },
+  {
+    "rank": 105,
     "name": "Nathanael",
     "achievements": [],
     "ratingPoints": 933,
-    "ratingDelta": 70
+    "ratingDelta": 0
   },
   {
-    "rank": 103,
+    "rank": 106,
     "name": "Frederico",
     "achievements": [],
     "ratingPoints": 931,
     "ratingDelta": 0
   },
   {
-    "rank": 104,
+    "rank": 107,
     "name": "Silvo",
     "achievements": [],
     "ratingPoints": 930,
     "ratingDelta": 0
   },
   {
-    "rank": 105,
-    "name": "Maria L.",
+    "rank": 108,
+    "name": "Bernando",
     "achievements": [],
-    "ratingPoints": 925,
+    "ratingPoints": 926,
+    "ratingDelta": 84
+  },
+  {
+    "rank": 109,
+    "name": "Selma-Rina",
+    "achievements": [],
+    "ratingPoints": 919,
     "ratingDelta": 20
   },
   {
-    "rank": 106,
-    "name": "Selma-Rina",
+    "rank": 110,
+    "name": "Maria L.",
     "achievements": [],
-    "ratingPoints": 899,
-    "ratingDelta": -100
+    "ratingPoints": 910,
+    "ratingDelta": -15
   },
   {
-    "rank": 107,
+    "rank": 111,
     "name": "Deniz",
     "achievements": [],
     "ratingPoints": 888,
     "ratingDelta": 0
   },
   {
-    "rank": 108,
+    "rank": 112,
+    "name": "Patrycja",
+    "achievements": [],
+    "ratingPoints": 888,
+    "ratingDelta": 36
+  },
+  {
+    "rank": 113,
     "name": "Thomas F.",
     "achievements": [],
     "ratingPoints": 870,
     "ratingDelta": 0
   },
   {
-    "rank": 109,
-    "name": "Patrycja",
-    "achievements": [],
-    "ratingPoints": 852,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 110,
-    "name": "Elena",
-    "achievements": [],
-    "ratingPoints": 845,
-    "ratingDelta": -25
-  },
-  {
-    "rank": 111,
-    "name": "Bernando",
-    "achievements": [],
-    "ratingPoints": 842,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 112,
+    "rank": 114,
     "name": "Henry",
     "achievements": [],
     "ratingPoints": 842,
     "ratingDelta": 0
   },
   {
-    "rank": 113,
+    "rank": 115,
     "name": "Verena",
     "achievements": [],
     "ratingPoints": 837,
     "ratingDelta": 0
   },
   {
-    "rank": 114,
+    "rank": 116,
+    "name": "Elena",
+    "achievements": [],
+    "ratingPoints": 835,
+    "ratingDelta": -10
+  },
+  {
+    "rank": 117,
+    "name": "Benjamin",
+    "achievements": [],
+    "ratingPoints": 830,
+    "ratingDelta": 30
+  },
+  {
+    "rank": 118,
     "name": "Elizabeth",
     "achievements": [
       "🌸 Spring Grand Slam Champion 2024",
@@ -884,259 +917,266 @@
     "ratingDelta": 0
   },
   {
-    "rank": 115,
+    "rank": 119,
     "name": "Karolina",
     "achievements": [],
     "ratingPoints": 820,
-    "ratingDelta": -72
+    "ratingDelta": 0
   },
   {
-    "rank": 116,
+    "rank": 120,
+    "name": "Veronika",
+    "achievements": [],
+    "ratingPoints": 820,
+    "ratingDelta": 84
+  },
+  {
+    "rank": 121,
     "name": "Karan",
     "achievements": [],
     "ratingPoints": 788,
     "ratingDelta": 0
   },
   {
-    "rank": 117,
+    "rank": 122,
     "name": "Petr",
     "achievements": [],
     "ratingPoints": 782,
     "ratingDelta": 0
   },
   {
-    "rank": 118,
+    "rank": 123,
     "name": "Albert",
     "achievements": [],
     "ratingPoints": 777,
     "ratingDelta": 0
   },
   {
-    "rank": 119,
+    "rank": 124,
     "name": "Jason",
     "achievements": [],
     "ratingPoints": 776,
     "ratingDelta": 0
   },
   {
-    "rank": 120,
+    "rank": 125,
     "name": "Simone W",
     "achievements": [],
     "ratingPoints": 774,
     "ratingDelta": 0
   },
   {
-    "rank": 121,
+    "rank": 126,
     "name": "Kateryna",
     "achievements": [],
-    "ratingPoints": 773,
-    "ratingDelta": 0
+    "ratingPoints": 743,
+    "ratingDelta": -30
   },
   {
-    "rank": 122,
-    "name": "Sofia",
-    "achievements": [],
-    "ratingPoints": 741,
-    "ratingDelta": 5
-  },
-  {
-    "rank": 123,
-    "name": "Veronika",
-    "achievements": [],
-    "ratingPoints": 736,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 124,
+    "rank": 127,
     "name": "Simon R.",
     "achievements": [],
     "ratingPoints": 734,
     "ratingDelta": 0
   },
   {
-    "rank": 125,
+    "rank": 128,
     "name": "Alina",
     "achievements": [],
     "ratingPoints": 732,
     "ratingDelta": 0
   },
   {
-    "rank": 126,
+    "rank": 129,
     "name": "Ludivine",
     "achievements": [],
     "ratingPoints": 732,
     "ratingDelta": 0
   },
   {
-    "rank": 127,
+    "rank": 130,
+    "name": "Valeriia G.",
+    "achievements": [],
+    "ratingPoints": 726,
+    "ratingDelta": -24
+  },
+  {
+    "rank": 131,
     "name": "Vlad",
     "achievements": [],
     "ratingPoints": 724,
     "ratingDelta": 0
   },
   {
-    "rank": 128,
+    "rank": 132,
     "name": "Luisa",
     "achievements": [],
     "ratingPoints": 704,
     "ratingDelta": 0
   },
   {
-    "rank": 129,
+    "rank": 133,
     "name": "Miriam",
     "achievements": [],
     "ratingPoints": 690,
     "ratingDelta": 0
   },
   {
-    "rank": 130,
+    "rank": 134,
     "name": "Stephanie",
     "achievements": [],
     "ratingPoints": 690,
     "ratingDelta": 0
   },
   {
-    "rank": 131,
+    "rank": 135,
+    "name": "Sofia",
+    "achievements": [],
+    "ratingPoints": 676,
+    "ratingDelta": -65
+  },
+  {
+    "rank": 136,
     "name": "Nikita",
     "achievements": [],
     "ratingPoints": 670,
     "ratingDelta": 0
   },
   {
-    "rank": 132,
+    "rank": 137,
     "name": "Anna S.",
     "achievements": [],
     "ratingPoints": 658,
     "ratingDelta": 0
   },
   {
-    "rank": 133,
+    "rank": 138,
     "name": "Michaela",
     "achievements": [],
     "ratingPoints": 644,
     "ratingDelta": 0
   },
   {
-    "rank": 134,
+    "rank": 139,
     "name": "Sarah",
     "achievements": [],
     "ratingPoints": 638,
     "ratingDelta": 0
   },
   {
-    "rank": 135,
+    "rank": 140,
     "name": "Aliz",
     "achievements": [],
     "ratingPoints": 612,
     "ratingDelta": 0
   },
   {
-    "rank": 136,
+    "rank": 141,
     "name": "Viktoria",
     "achievements": [],
     "ratingPoints": 588,
     "ratingDelta": 0
   },
   {
-    "rank": 137,
+    "rank": 142,
     "name": "Marina",
     "achievements": [],
     "ratingPoints": 586,
     "ratingDelta": 0
   },
   {
-    "rank": 138,
+    "rank": 143,
     "name": "Bishakha",
     "achievements": [],
     "ratingPoints": 570,
     "ratingDelta": 0
   },
   {
-    "rank": 139,
+    "rank": 144,
     "name": "Karina D.",
     "achievements": [],
     "ratingPoints": 555,
     "ratingDelta": 0
   },
   {
-    "rank": 140,
+    "rank": 145,
     "name": "Vivian",
     "achievements": [],
     "ratingPoints": 550,
     "ratingDelta": 0
   },
   {
-    "rank": 141,
+    "rank": 146,
     "name": "Katharina",
     "achievements": [],
     "ratingPoints": 530,
     "ratingDelta": 0
   },
   {
-    "rank": 142,
+    "rank": 147,
     "name": "Muhammad",
     "achievements": [],
     "ratingPoints": 519,
     "ratingDelta": 0
   },
   {
-    "rank": 143,
-    "name": "Anna K.",
+    "rank": 148,
+    "name": "Olga",
     "achievements": [],
     "ratingPoints": 516,
-    "ratingDelta": 0
+    "ratingDelta": 6
   },
   {
-    "rank": 144,
+    "rank": 149,
     "name": "Mila",
     "achievements": [],
     "ratingPoints": 512,
     "ratingDelta": 0
   },
   {
-    "rank": 145,
-    "name": "Olga",
-    "achievements": [],
-    "ratingPoints": 510,
-    "ratingDelta": 0
-  },
-  {
-    "rank": 146,
+    "rank": 150,
     "name": "Pavel",
     "achievements": [],
     "ratingPoints": 510,
     "ratingDelta": 0
   },
   {
-    "rank": 147,
+    "rank": 151,
     "name": "Edona",
     "achievements": [],
     "ratingPoints": 494,
     "ratingDelta": 0
   },
   {
-    "rank": 148,
+    "rank": 152,
     "name": "Kateryna",
     "achievements": [],
     "ratingPoints": 486,
     "ratingDelta": 0
   },
   {
-    "rank": 149,
+    "rank": 153,
+    "name": "Anna K.",
+    "achievements": [],
+    "ratingPoints": 474,
+    "ratingDelta": -42
+  },
+  {
+    "rank": 154,
     "name": "Katja",
     "achievements": [],
     "ratingPoints": 464,
-    "ratingDelta": -80
+    "ratingDelta": 0
   },
   {
-    "rank": 150,
+    "rank": 155,
     "name": "Iana",
     "achievements": [],
-    "ratingPoints": 382,
-    "ratingDelta": -15
+    "ratingPoints": 322,
+    "ratingDelta": -60
   },
   {
-    "rank": 151,
+    "rank": 156,
     "name": "Jane",
     "achievements": [],
     "ratingPoints": 215,

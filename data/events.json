@@ -1,24 +1,24 @@
 [
   {
-    "title": "Big Saturday Padel: Valentine's Special",
-    "date": "2026-02-14",
+    "title": "Big Saturday Padel",
+    "date": "2026-02-21",
     "time": "10:00–12:30",
     "venue": "Padeldome Erdberg",
     "level": "All Levels",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/fa10e5477153ee7222",
-    "regLinkVisible": true,
+    "regLink": "https://lets-meet.org/reg/a94da32fe9e8b79c7f",
+    "regLinkVisible": false,
     "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   },
   {
     "title": "Ladies Night",
-    "date": "2026-02-12",
-    "time": "18:30–20:30",
+    "date": "2026-02-27",
+    "time": "17:00–19:00",
     "venue": "Padeldome Erdberg",
     "level": "Women",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/38e9b2b6182bdd0999",
-    "regLinkVisible": true,
+    "regLink": "https://lets-meet.org/reg/b4cd14b9a75863a1af",
+    "regLinkVisible": false,
     "description": "Our GIRLS ONLY Games"
   }, 
   {

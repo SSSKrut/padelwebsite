@@ -1,13 +1,13 @@
 [
   {
     "title": "Big Saturday Padel",
-    "date": "2026-02-21",
+    "date": "2026-02-28",
     "time": "10:00–12:30",
     "venue": "Padeldome Erdberg",
     "level": "All Levels",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/a94da32fe9e8b79c7f",
-    "regLinkVisible": true,
+    "regLink": "https://lets-meet.org/reg/08590a7bcf83722524",
+    "regLinkVisible": false,
     "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   },
   {
@@ -23,24 +23,35 @@
   }, 
   {
     "title": "Perfect Match",
-    "date": "2026-02-19",
-    "time": "19:00–21:00",
+    "date": "2026-03-05",
+    "time": "18:00–20:00",
     "venue": "Padelzone Floridsdorf",
     "level": "All Levels",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/058fc43a3522ea796f",
-    "regLinkVisible": true,
+    "regLink": "https://lets-meet.org/reg/bef0cf7abdf98d3e34",
+    "regLinkVisible": false,
     "description": "Mixed class. Who is going to match today?"
   }, 
       {
     "title": "Boys Special",
-    "date": "2026-02-17",
+    "date": "2026-02-26",
     "time": "20:00–22:00",
     "venue": "Padelzone Floridsdorf",
-    "level": "All Levels",
+    "level": "Men",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/d187d45af1ebd1eede",
+    "regLink": "https://lets-meet.org/reg/ab027b7502d5a03af3",
     "regLinkVisible": true,
     "description": "Games closed for boys with special prize"
+  }, 
+          {
+    "title": "Sun Set Sunday Relax",
+    "date": "2026-03-01",
+    "time": "17:00–19:00",
+    "venue": "Padedome Erdberg",
+    "level": "All Levels",
+    "priceEuro": 23,
+    "regLink": "https://lets-meet.org/reg/4b554f4005d1e9e4db",
+    "regLinkVisible": false,
+    "description": "Games to finish the week strong. No points lost, only win"
   }
 ]

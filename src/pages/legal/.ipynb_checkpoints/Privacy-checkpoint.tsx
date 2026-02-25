@@ -11,7 +11,7 @@ const Privacy = () => {
         <CardContent className="prose prose-sm max-w-none space-y-6">
           <section>
             <h2 className="text-xl font-semibold mb-2">Last updated</h2>
-            <p className="text-muted-foreground">[Insert date]</p>
+            <p className="text-muted-foreground">25.02.2026</p>
           </section>
 
           <section>

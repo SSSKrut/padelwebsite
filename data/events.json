@@ -7,7 +7,7 @@
     "level": "All Levels",
     "priceEuro": 20,
     "regLink": "https://lets-meet.org/reg/08590a7bcf83722524",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   },
   {
@@ -29,7 +29,7 @@
     "level": "All Levels",
     "priceEuro": 20,
     "regLink": "https://lets-meet.org/reg/bef0cf7abdf98d3e34",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Mixed class. Who is going to match today?"
   }, 
       {
@@ -51,7 +51,7 @@
     "level": "All Levels",
     "priceEuro": 23,
     "regLink": "https://lets-meet.org/reg/4b554f4005d1e9e4db",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Games to finish the week strong. No points lost, only win"
   }
 ]

@@ -1,13 +1,13 @@
 [
   {
     "title": "Big Saturday Padel",
-    "date": "2026-03-07",
+    "date": "2026-03-14",
     "time": "10:00–12:30",
     "venue": "Padeldome Erdberg",
     "level": "All Levels",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/fc4857180a7e333841",
-    "regLinkVisible": true,
+    "regLink": "https://lets-meet.org/reg/53a720ad3a4c277b75",
+    "regLinkVisible": false,
     "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   },
   {
@@ -20,18 +20,7 @@
     "regLink": "https://lets-meet.org/reg/7cd93fc439032a52c3",
     "regLinkVisible": true,
     "description": "Our GIRLS ONLY Games"
-  }, 
-  {
-    "title": "Perfect Match",
-    "date": "2026-03-05",
-    "time": "18:00–20:00",
-    "venue": "Padelzone Floridsdorf",
-    "level": "All Levels",
-    "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/bef0cf7abdf98d3e34",
-    "regLinkVisible": true,
-    "description": "Mixed class. Who is going to match today?"
-  }, 
+  },
     {
     "title": "Sun Set Sunday Relax",
     "date": "2026-03-08",
@@ -42,5 +31,16 @@
     "regLink": "https://lets-meet.org/reg/9e3a5a3a4928d2e4e8",
     "regLinkVisible": true,
     "description": "Games to finish the week strong. No points lost, only win"
+  }, 
+        {
+    "title": "Boys Special",
+    "date": "2026-03-17",
+    "time": "18:00–20:00",
+    "venue": "Padedome Alte Donau",
+    "level": "Men",
+    "priceEuro": 24,
+    "regLink": "https://lets-meet.org/reg/18d7fd0c583cdf4c55",
+    "regLinkVisible": false,
+    "description": "Our special event only for boys with special prizes"
   }
 ]

@@ -7,7 +7,7 @@
     "level": "All Levels",
     "priceEuro": 20,
     "regLink": "https://lets-meet.org/reg/53a720ad3a4c277b75",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   },
   {
@@ -23,12 +23,12 @@
   },
     {
     "title": "Sun Set Sunday Relax",
-    "date": "2026-03-08",
+    "date": "2026-03-15",
     "time": "17:00–19:00",
     "venue": "Padedome Erdberg",
     "level": "All Levels",
     "priceEuro": 20,
-    "regLink": "https://lets-meet.org/reg/9e3a5a3a4928d2e4e8",
+    "regLink": "https://lets-meet.org/reg/e1507292139148295d",
     "regLinkVisible": true,
     "description": "Games to finish the week strong. No points lost, only win"
   }, 
@@ -40,7 +40,7 @@
     "level": "Men",
     "priceEuro": 24,
     "regLink": "https://lets-meet.org/reg/18d7fd0c583cdf4c55",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Our special event only for boys with special prizes"
   }
 ]

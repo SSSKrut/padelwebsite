@@ -1,13 +1,23 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
 import siteData from "../../data/site.json";
 import logo from "@/assets/SunSetLogoWhite.png";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const links = [
     { label: "About", href: "/" },
@@ -21,6 +31,45 @@ export const Navbar = () => {
   ];
 
   const isActive = (href: string) => location.pathname === href;
+
+  const AuthButton = () => {
+    if (user) {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <User size={16} />
+              {user.firstName}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{user.firstName} {user.lastName}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground -mt-2">
+              {user.email}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/admin">Admin Dashboard</Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              className="text-red-600 cursor-pointer"
+              onClick={() => logout()}
+            >
+              <LogOut size={14} className="mr-2" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+    return (
+      <Button variant="outline" size="sm" asChild>
+        <Link to="/login">Log in</Link>
+      </Button>
+    );
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -44,6 +93,7 @@ export const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            <AuthButton />
             <Button asChild>
               <Link to={siteData.ctaPrimaryHref}>{siteData.ctaPrimaryLabel}</Link>
             </Button>
@@ -74,6 +124,26 @@ export const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            {user ? (
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm font-medium text-primary">
+                  {user.firstName} {user.lastName}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 gap-1"
+                  onClick={() => { logout(); setIsOpen(false); }}
+                >
+                  <LogOut size={14} />
+                  Log out
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/login" onClick={() => setIsOpen(false)}>Log in</Link>
+              </Button>
+            )}
             <Button asChild className="w-full">
               <Link to={siteData.ctaPrimaryHref} onClick={() => setIsOpen(false)}>
                 {siteData.ctaPrimaryLabel}

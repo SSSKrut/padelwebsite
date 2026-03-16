@@ -5,10 +5,87 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// Перечисление для ролей
+enum Role {
+  SUPER_ADMIN
+  UNVERIFIED_USER
+  USER
+  ADMIN
+}
+
+// Перечисление для статусов ивентов
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  createdAt    DateTime @default(now())
+
+  role         Role     @default(UNVERIFIED_USER)
+  elo          Int      @default(1000)
+
+  achievements UserAchievement[]
+  registrations EventRegistration[]
+}
+
+model Event {
+  id              String      @id @default(uuid())
+  title           String
+  description     String?
+  date            DateTime
+  location        String?
+  status          EventStatus @default(DRAFT)
+  maxParticipants Int         @default(16)
+  createdAt       DateTime    @default(now())
+
+  participants EventRegistration[]
+}
+
+model EventRegistration {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  eventId   String
+  userId    String
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  title       String   @unique
+  description String?
+  icon        String?
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  dateAwarded   DateTime @default(now())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 }

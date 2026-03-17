@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Hero } from "@/components/Hero";
+import { EventCard } from "@/components/EventCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,39 +41,7 @@ const Events = () => {
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {upcomingEvents.map((event: any) => (
-            <Card key={event.id} className="hover:shadow-lg transition-shadow flex flex-col">
-              <CardHeader>
-                <div className="flex items-start justify-between mb-2">
-                  <CardTitle className="text-xl">{event.title}</CardTitle>
-                </div>
-
-                <p className="text-sm text-muted-foreground">
-                  {new Date(event.date).toLocaleDateString("en-GB", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  })}
-                </p>
-              </CardHeader>
-
-              <CardContent className="flex-1 flex flex-col">
-                <p className="text-sm font-medium mb-2">{event.location}</p>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                  {event.description}
-                </p>
-
-                <div className="mt-auto flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-muted-foreground">
-                    {event._count?.participants || 0} / {event.maxParticipants || 16} participants
-                  </span>
-                  <Button asChild>
-                    <Link to={`/events/${event.id}`}>View Details</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <EventCard key={event.id} event={event} />
           ))}
           {upcomingEvents.length === 0 && (
             <div className="col-span-full text-center py-12 bg-muted/50 rounded-xl">

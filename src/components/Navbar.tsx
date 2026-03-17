@@ -48,6 +48,9 @@ export const Navbar = () => {
               {user.email}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link to="/profile">My Profile</Link>
+            </DropdownMenuItem>
             {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
               <DropdownMenuItem asChild className="cursor-pointer">
                 <Link to="/admin">Admin Dashboard</Link>

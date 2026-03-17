@@ -17,6 +17,7 @@ import Contacts from "./pages/Contacts";
 import Players from "./pages/Players";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 import Impressum from "./pages/legal/Impressum";
 import Privacy from "./pages/legal/Privacy";
 import Terms from "./pages/legal/Terms";
@@ -45,6 +46,7 @@ const App = () => (
                 <Route path="/players" element={<Players />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/legal/impressum" element={<Impressum />} />
                 <Route path="/legal/privacy" element={<Privacy />} />

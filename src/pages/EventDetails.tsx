@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, MapPin, Loader2, Users, ArrowLeft, Trophy, CheckCircle } from "lucide-react";
+import { UserRole } from "@/context/AuthContext";
 
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -184,6 +185,7 @@ const EventDetails = () => {
 
                 {!isCompleted && (() => {
                   const isRegistered = user && event.participants?.some((p: any) => p.user.id === user.id);
+                  const userIsUnverified = user && user.role === UserRole.UNVERIFIED_USER;
                   const isFull = (event.participants?.length || 0) >= (event.maxParticipants || 16);
 
                   if (!user) {
@@ -205,6 +207,19 @@ const EventDetails = () => {
                       >
                         {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
                         Cancel Registration
+                      </Button>
+                    );
+                  }
+
+                  if (userIsUnverified) {
+                    return (
+                      <Button 
+                        variant="outline"
+                        className="w-full mt-4" 
+                        size="lg"
+                        disabled
+                      >
+                        Admin must verify your account
                       </Button>
                     );
                   }

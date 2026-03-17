@@ -7,7 +7,7 @@
     "level": "All Levels",
     "priceEuro": 20,
     "regLink": "https://lets-meet.org/reg/dbf35f159f1f8b4304",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Classic Saturday Format. The Winner of the 1st court gets the main Prize"
   },
     {
@@ -16,9 +16,9 @@
     "time": "16:00–18:00",
     "venue": "Padedome Erdberg",
     "level": "All Levels",
-    "priceEuro": 24,
+    "priceEuro": 16,
     "regLink": "https://lets-meet.org/reg/d4a35af0ba110953dd",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Games to finish the week strong. No points lost, only win"
   }, 
         {
@@ -29,7 +29,7 @@
     "level": "Men",
     "priceEuro": 20,
     "regLink": "https://lets-meet.org/reg/5df6ce5658be5f0a1b",
-    "regLinkVisible": false,
+    "regLinkVisible": true,
     "description": "Our special event only for boys with special prizes"
   }
 ]

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handler } from './profile';
-import { prisma } from './lib/prisma';
-import { verifyUser } from './lib/auth';
+import { handler } from '../functions/profile';
+import { prisma } from '../functions/lib/prisma';
+import { verifyUser } from '../functions/lib/auth';
 
 // Mock dependencies
-vi.mock('./lib/prisma', () => ({
+vi.mock('../functions/lib/prisma', () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('./lib/prisma', () => ({
   },
 }));
 
-vi.mock('./lib/auth', () => ({
+vi.mock('../functions/lib/auth', () => ({
   verifyUser: vi.fn(),
 }));
 
@@ -41,7 +41,7 @@ describe('profile function', () => {
     } as any);
 
     const response = await handler(createEvent('GET'), {} as any);
-    
+
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body!);
     expect(body.passwordHash).toBeUndefined();
@@ -52,7 +52,7 @@ describe('profile function', () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
     const response = await handler(createEvent('GET'), {} as any);
-    
+
     expect(response.statusCode).toBe(404);
   });
 
@@ -70,7 +70,7 @@ describe('profile function', () => {
       firstName: 'Jane',
       phone: '12345'
     }), {} as any);
-    
+
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body!);
     expect(body.user.passwordHash).toBeUndefined();
@@ -84,7 +84,7 @@ describe('profile function', () => {
 
   it('PATCH /profile requires at least one field to update', async () => {
     const response = await handler(createEvent('PATCH', {}), {} as any);
-    
+
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body!)).toEqual({ error: 'No fields provided to update' });
     expect(prisma.user.update).not.toHaveBeenCalled();

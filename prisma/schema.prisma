@@ -40,8 +40,26 @@ model User {
   role         Role     @default(UNVERIFIED_USER)
   elo          Int      @default(1000)
 
-  achievements UserAchievement[]
-  registrations EventRegistration[]
+  achievements   UserAchievement[]
+  registrations  EventRegistration[]
+  tokens         VerificationToken[]
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model VerificationToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Event {

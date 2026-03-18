@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Loader2, Save } from "lucide-react";
+import { Trophy, Loader2, Save, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
@@ -23,6 +23,12 @@ const Profile = () => {
     firstName: "",
     lastName: "",
     phone: "",
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const { data: profile, isLoading } = useQuery({
@@ -43,6 +49,29 @@ const Profile = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  const passwordMutation = useMutation({
+    mutationFn: (data: { currentPassword: string; newPassword: string }) =>
+      apiFetch("/.netlify/functions/profile", "PATCH", data),
+    onSuccess: (data) => {
+      toast({ title: "Password changed", description: data.message });
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handlePasswordChange = () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({ title: "Error", description: "New passwords do not match.", variant: "destructive" });
+      return;
+    }
+    passwordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
+  };
 
   if (!user) {
     return (
@@ -75,12 +104,14 @@ const Profile = () => {
   };
 
   const myEvents = profile.registrations?.map((r: any) => r.event) || [];
+  const upcomingEvents = myEvents.filter((e: any) => e.status !== "ARCHIVED");
+  const archivedEvents = myEvents.filter((e: any) => e.status === "ARCHIVED");
 
   return (
     <div className="container mx-auto px-4 py-12 min-h-screen flex flex-col lg:flex-row gap-8">
       {/* Left Sidebar - Profile Form */}
       <div className="w-full lg:w-1/3">
-        <Card className="sticky top-24">
+        <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>My Profile</CardTitle>
@@ -143,6 +174,52 @@ const Profile = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Change Password */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <KeyRound className="w-4 h-4" /> Change Password
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <Label>Current Password</Label>
+              <Input
+                type="password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                placeholder="••••••••"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                placeholder="Min. 8 characters"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm New Password</Label>
+              <Input
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                placeholder="••••••••"
+              />
+            </div>
+            <Button
+              className="w-full mt-2"
+              onClick={handlePasswordChange}
+              disabled={passwordMutation.isPending || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+            >
+              {passwordMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Update Password
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Right Content - Tabs */}
@@ -154,14 +231,31 @@ const Profile = () => {
           </TabsList>
           
           <TabsContent value="events" className="mt-6">
-            <h3 className="text-xl font-bold mb-4">My Events</h3>
             {myEvents.length > 0 ? (
-              <div className="grid sm:grid-cols-2 gap-4">
-                {myEvents.map((event: any) => (
-                  <div key={event.id} className={event.status === "ARCHIVED" ? "opacity-75" : ""}>
-                    <EventCard event={event} />
+              <div className="space-y-8">
+                {upcomingEvents.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-bold mb-4">Upcoming Events</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {upcomingEvents.map((event: any) => (
+                        <EventCard key={event.id} event={event} />
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
+
+                {archivedEvents.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-bold mb-4 text-muted-foreground">Past Events</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {archivedEvents.map((event: any) => (
+                        <div key={event.id} className="opacity-75">
+                          <EventCard event={event} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-12 bg-muted/50 rounded-xl">

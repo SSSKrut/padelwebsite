@@ -5,6 +5,8 @@ import { signAccessToken, signRefreshToken } from "./lib/jwt";
 import { makeAccessCookie, makeRefreshCookie } from "./lib/cookies";
 import { sanitizeUser } from "./lib/auth";
 import { defineHandler } from "./lib/apiHandler";
+import { createToken, buildActionUrl } from "./lib/tokens";
+import { sendEmail } from "./lib/email";
 
 const RequestSchema = z.object({
   email: z.string().email(),
@@ -30,6 +32,18 @@ export const handler = defineHandler({
       data: { email, passwordHash, firstName: body.firstName, lastName: body.lastName, phone: body.phone },
       include: { achievements: { include: { achievement: true } } },
     });
+
+    // Send verification email (fire-and-forget — don't block registration)
+    // createToken(user.id, "EMAIL_VERIFICATION")
+    //   .then(({ token }) => {
+    //     const actionUrl = buildActionUrl("/verify-email", token);
+    //     return sendEmail({
+    //       to: user.email,
+    //       template: "email-verification",
+    //       data: { firstName: user.firstName, actionUrl },
+    //     });
+    //   })
+    //   .catch((err) => console.error("[Register] Verification email failed:", err));
 
     const tokenPayload = { sub: user.id };
     const [accessToken, refreshToken] = await Promise.all([

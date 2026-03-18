@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { defineHandler } from './apiHandler';
+import { defineHandler } from '../functions/lib/apiHandler';
 
 // Mock the auth module so we can control what verifyUser returns.
-vi.mock('./auth', () => ({
+vi.mock('../functions/lib/auth', () => ({
   verifyUser: vi.fn(),
 }));
 
-import { verifyUser } from './auth';
+import { verifyUser } from '../functions/lib/auth';
 
 // Helper to create a fake Netlify Event
 const createEvent = (options: any = {}) => ({

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handler } from './event-register';
-import { prisma } from './lib/prisma';
-import { verifyUser } from './lib/auth';
+import { handler } from '../functions/event-register';
+import { prisma } from '../functions/lib/prisma';
+import { verifyUser } from '../functions/lib/auth';
 
 // Mock dependencies
-vi.mock('./lib/prisma', () => ({
+vi.mock('../functions/lib/prisma', () => ({
   prisma: {
     event: {
       findUnique: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('./lib/prisma', () => ({
   },
 }));
 
-vi.mock('./lib/auth', () => ({
+vi.mock('../functions/lib/auth', () => ({
   verifyUser: vi.fn(),
 }));
 
@@ -40,7 +40,7 @@ describe('event-register function', () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(null);
 
     const response = await handler(createEvent({ eventId: mockEventId }), {} as any);
-    
+
     expect(response.statusCode).toBe(404);
     expect(JSON.parse(response.body!)).toEqual({ error: 'Event not found' });
   });
@@ -51,7 +51,7 @@ describe('event-register function', () => {
       maxParticipants: 16,
       _count: { participants: 10 }
     } as any);
-    
+
     vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue({
       id: 'reg-123',
       eventId: mockEventId,
@@ -59,7 +59,7 @@ describe('event-register function', () => {
     } as any);
 
     const response = await handler(createEvent({ eventId: mockEventId }), {} as any);
-    
+
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(response.body!)).toEqual({ message: 'Successfully unregistered', registered: false });
     expect(prisma.eventRegistration.delete).toHaveBeenCalledWith({ where: { id: 'reg-123' }});
@@ -71,11 +71,11 @@ describe('event-register function', () => {
       maxParticipants: 16,
       _count: { participants: 16 }
     } as any);
-    
+
     vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
 
     const response = await handler(createEvent({ eventId: mockEventId }), {} as any);
-    
+
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body!)).toEqual({ error: 'Event is already full' });
   });
@@ -86,11 +86,11 @@ describe('event-register function', () => {
       maxParticipants: 16,
       _count: { participants: 15 } // One spot left
     } as any);
-    
+
     vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
 
     const response = await handler(createEvent({ eventId: mockEventId }), {} as any);
-    
+
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(response.body!)).toEqual({ message: 'Successfully registered', registered: true });
     expect(prisma.eventRegistration.create).toHaveBeenCalledWith({

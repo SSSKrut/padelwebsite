@@ -27,6 +27,16 @@ export const handler = defineHandler({
       };
     }
 
+    const MS_IN_DAY = 24 * 60 * 60 * 1000;
+    const isLocked = targetEvent.date.getTime() - new Date().getTime() < MS_IN_DAY;
+
+    if (isLocked) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: "Registration/unregistration is locked within 24 hours of the event start" }),
+      };
+    }
+
     const existingRegistration = await prisma.eventRegistration.findFirst({
       where: {
         eventId,

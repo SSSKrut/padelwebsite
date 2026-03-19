@@ -10,10 +10,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { formatEventDate } from "@/lib/utils";
 
 interface EventsTabProps {
   confirmAction: (title: string, desc: string, action: () => void) => void;
 }
+
+// Helper для конвертации Date/ISO-строки в формат для поля datetime-local (в локальном времени пользователя)
+const formatForDatetimeLocal = (dateString?: string) => {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 export function EventsTab({ confirmAction }: EventsTabProps) {
   const queryClient = useQueryClient();
@@ -57,6 +67,7 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
               setEventForm({
                 title: "",
                 date: "",
+                endDate: "",
                 location: "",
                 description: "",
                 status: "PUBLISHED",
@@ -84,17 +95,19 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                 />
               </div>
               <div>
-                <Label>Date/Time</Label>
+                <Label>Start Date/Time (Your Local Time)</Label>
                 <Input
                   type="datetime-local"
-                  value={
-                    eventForm.date
-                      ? new Date(eventForm.date).toISOString().slice(0, 16)
-                      : ""
-                  }
-                  onChange={(e) =>
-                    setEventForm({ ...eventForm, date: e.target.value })
-                  }
+                  value={formatForDatetimeLocal(eventForm.date)}
+                  onChange={(e) => {
+                    const dateObj = new Date(e.target.value);
+                    if (!isNaN(dateObj.getTime())) {
+                      setEventForm({
+                        ...eventForm,
+                        date: dateObj.toISOString(),
+                      });
+                    }
+                  }}
                   required
                 />
               </div>
@@ -105,6 +118,27 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                   onChange={(e) =>
                     setEventForm({ ...eventForm, location: e.target.value })
                   }
+                />
+              </div>
+              <div>
+                <Label>End Date/Time (Your Local Time)</Label>
+                <Input
+                  type="datetime-local"
+                  value={formatForDatetimeLocal(eventForm.endDate)}
+                  onChange={(e) => {
+                    const dateObj = new Date(e.target.value);
+                    if (!isNaN(dateObj.getTime())) {
+                      setEventForm({
+                        ...eventForm,
+                        endDate: dateObj.toISOString(),
+                      });
+                    } else if (e.target.value === "") {
+                      setEventForm({
+                        ...eventForm,
+                        endDate: null,
+                      });
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -196,15 +230,11 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                         {e.title}
                       </a>
                     </TableCell>
-                    <TableCell>{new Date(e.date).toLocaleString()}</TableCell>
+                    <TableCell className="whitespace-pre-wrap">
+                      {formatEventDate(e.date, true, e.endDate)}
+                    </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          e.status === "PUBLISHED" ? "default" : "secondary"
-                        }
-                      >
-                        {e.status}
-                      </Badge>
+                      <Badge>{e.status}</Badge>
                     </TableCell>
                     <TableCell>{e.location}</TableCell>
                     <TableCell className="text-right space-x-2">
@@ -293,7 +323,9 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                         {e.title}
                       </a>
                     </TableCell>
-                    <TableCell>{new Date(e.date).toLocaleString()}</TableCell>
+                    <TableCell className="whitespace-pre-wrap">
+                      {formatEventDate(e.date, true, e.endDate)}
+                    </TableCell>
                     <TableCell>{e.location}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button

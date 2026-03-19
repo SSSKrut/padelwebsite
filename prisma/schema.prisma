@@ -67,6 +67,7 @@ model Event {
   title           String
   description     String?
   date            DateTime
+  endDate         DateTime?
   location        String?
   status          EventStatus @default(DRAFT)
   maxParticipants Int         @default(16)

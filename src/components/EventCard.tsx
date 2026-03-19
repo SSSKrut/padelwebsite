@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { formatEventDate } from "@/lib/utils";
 
 export interface EventCardProps {
   event: {
     id: string;
     title: string;
     date: string | Date;
+    endDate?: string | Date | null;
     location?: string;
     description?: string;
     maxParticipants?: number;
@@ -28,14 +30,8 @@ export function EventCard({ event }: EventCardProps) {
           <CardTitle className="text-xl">{event.title}</CardTitle>
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          {new Date(event.date).toLocaleDateString("en-GB", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            hour: "2-digit",
-            minute: "2-digit"
-          })}
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+          {formatEventDate(event.date, false, event.endDate)}
         </p>
       </CardHeader>
 

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, MapPin, Loader2, Users, ArrowLeft, Trophy, CheckCircle } from "lucide-react";
 import { UserRole } from "@/context/AuthContext";
+import { formatEventDate, isEventLocked } from "@/lib/utils";
 
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -91,13 +92,7 @@ const EventDetails = () => {
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-4 h-4" />
                         <span>
-                          {new Date(event.date).toLocaleDateString("en-GB", {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
+                          {formatEventDate(event.date, false, event.endDate)}
                         </span>
                       </div>
                     </div>
@@ -187,6 +182,8 @@ const EventDetails = () => {
                   const isRegistered = user && event.participants?.some((p: any) => p.user.id === user.id);
                   const userIsUnverified = user && user.role === UserRole.UNVERIFIED_USER;
                   const isFull = (event.participants?.length || 0) >= (event.maxParticipants || 16);
+                  
+                  const isLocked = isEventLocked(event.date);
 
                   if (!user) {
                     return (
@@ -198,16 +195,19 @@ const EventDetails = () => {
 
                   if (isRegistered) {
                     return (
-                      <Button 
-                        variant="secondary"
-                        className="w-full mt-4 flex gap-2" 
-                        size="lg"
-                        onClick={() => registerMutation.mutate()}
-                        disabled={registerMutation.isPending}
-                      >
-                        {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
-                        Cancel Registration
-                      </Button>
+                      <div className="mt-4 space-y-2">
+                        <Button 
+                          variant="secondary"
+                          className="w-full flex gap-2" 
+                          size="lg"
+                          onClick={() => registerMutation.mutate()}
+                          disabled={registerMutation.isPending || isLocked}
+                        >
+                          {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
+                          Cancel Registration
+                        </Button>
+                        {isLocked && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                      </div>
                     );
                   }
 
@@ -238,17 +238,26 @@ const EventDetails = () => {
                   }
 
                   return (
-                    <Button 
-                      className="w-full mt-4" 
-                      size="lg"
-                      onClick={() => registerMutation.mutate()}
-                      disabled={registerMutation.isPending}
-                    >
-                      {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                      Register Now
-                    </Button>
+                    <div className="mt-4 space-y-2">
+                      <Button 
+                        className="w-full" 
+                        size="lg"
+                        onClick={() => registerMutation.mutate()}
+                        disabled={registerMutation.isPending || isLocked}
+                      >
+                        {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                        Register Now
+                      </Button>
+                      {isLocked && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                    </div>
                   );
                 })()}
+
+                {!isCompleted && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Registration and cancellation close 24 hours before the event start.
+                  </p>
+                )}
 
                 {isCompleted && (
                   <div className="p-4 bg-primary/10 rounded-xl flex items-start gap-3 mt-4">

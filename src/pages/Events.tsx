@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import padelHero from "@/assets/padel-hero.png";
+import { formatEventDate } from "@/lib/utils";
 
 const Events = () => {
   const { data: events, isLoading } = useQuery({
@@ -67,12 +68,8 @@ const Events = () => {
                     <p className="font-medium">{event.title}</p>
                     <p className="text-xs text-muted-foreground">{event.location}</p>
                   </td>
-                  <td className="px-6 py-4">
-                    {new Date(event.date).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric"
-                    })}
+                  <td className="px-6 py-4 whitespace-pre-wrap">
+                    {formatEventDate(event.date, false, event.endDate)}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <Button variant="ghost" size="sm" asChild>

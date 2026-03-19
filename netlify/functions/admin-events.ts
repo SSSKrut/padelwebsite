@@ -13,7 +13,7 @@ export const handler: Handler = async (event) => {
   try {
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
-      const { title, description, date, location, status, maxParticipants } = body;
+      const { title, description, date, endDate, location, status, maxParticipants } = body;
 
       if (!title || !date) {
         return { statusCode: 400, body: JSON.stringify({ error: "Title and Date are required" }) };
@@ -24,6 +24,7 @@ export const handler: Handler = async (event) => {
           title,
           description,
           date: new Date(date),
+          endDate: endDate ? new Date(endDate) : null,
           location,
           status: status || "DRAFT",
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : 16,
@@ -42,7 +43,7 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === "PATCH") {
       const body = JSON.parse(event.body || "{}");
-      const { id, title, description, date, location, status, maxParticipants } = body;
+      const { id, title, description, date, endDate, location, status, maxParticipants } = body;
       if (!id) return { statusCode: 400, body: JSON.stringify({ error: "Event ID required" }) };
       
       const updatedEvent = await prisma.event.update({
@@ -51,6 +52,7 @@ export const handler: Handler = async (event) => {
           ...(title !== undefined && { title }),
           ...(description !== undefined && { description }),
           ...(date !== undefined && { date: new Date(date) }),
+          ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
           ...(location !== undefined && { location }),
           ...(status !== undefined && { status }),
           ...(maxParticipants !== undefined && { maxParticipants: parseInt(maxParticipants) }),

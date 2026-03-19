@@ -11,11 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Loader2, Save, KeyRound } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -41,12 +40,12 @@ const Profile = () => {
     mutationFn: (data: typeof formData) =>
       apiFetch("/.netlify/functions/profile", "PATCH", data),
     onSuccess: (data) => {
-      toast({ title: "Success", description: data.message });
+      toast.success(data.message);
       queryClient.setQueryData(["profile"], (old: any) => ({ ...old, ...data.user }));
       setIsEditing(false);
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     },
   });
 
@@ -54,17 +53,17 @@ const Profile = () => {
     mutationFn: (data: { currentPassword: string; newPassword: string }) =>
       apiFetch("/.netlify/functions/profile", "PATCH", data),
     onSuccess: (data) => {
-      toast({ title: "Password changed", description: data.message });
+      toast.success(data.message);
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     },
   });
 
   const handlePasswordChange = () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({ title: "Error", description: "New passwords do not match.", variant: "destructive" });
+      toast.error("New passwords do not match.");
       return;
     }
     passwordMutation.mutate({

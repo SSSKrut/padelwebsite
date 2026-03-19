@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Hero } from "@/components/Hero";
 import padelHero from "@/assets/padel-hero.png";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,7 +16,6 @@ import { formatEventDate, isEventLocked } from "@/lib/utils";
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: event, isLoading, error } = useQuery({
@@ -29,18 +28,11 @@ const EventDetails = () => {
     mutationFn: () =>
       apiFetch(`/.netlify/functions/event-register`, "POST", { eventId: id }),
     onSuccess: (data: any) => {
-      toast({
-        title: "Success",
-        description: data.message,
-      });
+      toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["event", id] });
     },
     onError: (err: any) => {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to register.",
-        variant: "destructive",
-      });
+      toast.error(err.message || "Failed to register.");
     },
   });
 

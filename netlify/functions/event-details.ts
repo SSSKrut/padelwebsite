@@ -1,5 +1,6 @@
 import { prisma } from "./lib/prisma";
 import { defineHandler } from "./lib/apiHandler";
+import { publicName } from "./lib/sanitize";
 
 export const handler = defineHandler({
   method: "GET",
@@ -40,7 +41,7 @@ export const handler = defineHandler({
         ...p,
         user: {
           ...p.user,
-          name: `${p.user.firstName} ${p.user.lastName}`.trim(),
+          name: publicName(p.user.firstName, p.user.lastName),
         }
       }))
     };

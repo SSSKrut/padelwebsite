@@ -1,7 +1,8 @@
 import type { Config } from "@netlify/functions";
 import { prisma } from "./lib/prisma";
+import { publicName } from "./lib/sanitize";
 
-export default async function handler(req: Request) {
+export default async function handler() {
   try {
     const users = await prisma.user.findMany({
       orderBy: { elo: "desc" },
@@ -31,11 +32,11 @@ export default async function handler(req: Request) {
 
       return {
         rank: index + 1,
-        name: `${u.firstName} ${u.lastName}`.trim(),
+        name: publicName(u.firstName, u.lastName),
         achievements: formattedAchievements,
         ratingPoints: u.elo,
         ratingDelta: 0,
-        role: u.role, // "ADMIN", "USER", or "UNVERIFIED_USER"
+        role: u.role,
       };
     });
 
@@ -43,6 +44,7 @@ export default async function handler(req: Request) {
       status: 200,
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300",
       },
     });
   } catch (error) {

@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { HandlerEvent, HandlerContext, HandlerResponse } from "@netlify/functions";
 
-vi.mock("../functions/lib/prisma", () => ({
-  prisma: {
+vi.mock("../functions/lib/prisma", () => {
+  const eventRegistration = {
+    findFirst: vi.fn(),
+    delete: vi.fn(),
+    create: vi.fn(),
+    count: vi.fn().mockResolvedValue(0),
+  };
+  const prisma = {
     event: { findUnique: vi.fn() },
-    eventRegistration: { findFirst: vi.fn(), delete: vi.fn(), create: vi.fn() },
-  },
-}));
+    eventRegistration,
+    $transaction: vi.fn().mockImplementation(async (fn: any) => fn({ eventRegistration })),
+  };
+  return { prisma };
+});
 
 vi.mock("../functions/lib/auth", () => ({
   verifyUser: vi.fn(),
@@ -115,6 +123,7 @@ describe("event-register handler", () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 0, 16, "SCHEDULED"));
     vi.mocked(isUserPremium).mockResolvedValue(true);
     vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.count).mockResolvedValue(0);
     vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
 
     const { statusCode, json } = await callHandler();
@@ -156,6 +165,7 @@ describe("event-register handler", () => {
   it("registers successfully when event has space", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 5));
     vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.count).mockResolvedValue(5);
     vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
 
     const { statusCode, json } = await callHandler();
@@ -169,6 +179,7 @@ describe("event-register handler", () => {
   it("returns 400 when event is full", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 16, 16));
     vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.count).mockResolvedValue(16);
 
     const { statusCode, json } = await callHandler();
     expect(statusCode).toBe(400);

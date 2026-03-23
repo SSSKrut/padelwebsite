@@ -6,9 +6,12 @@ export function parseCookies(cookieHeader: string | undefined): Record<string, s
   return Object.fromEntries(
     cookieHeader
       .split(";")
-      .map((c) => c.trim().split("="))
-      .filter((parts) => parts.length === 2)
-      .map(([k, v]) => [k.trim(), decodeURIComponent(v.trim())])
+      .map((c) => {
+        const idx = c.indexOf("=");
+        if (idx === -1) return null;
+        return [c.slice(0, idx).trim(), decodeURIComponent(c.slice(idx + 1).trim())];
+      })
+      .filter(Boolean) as [string, string][]
   );
 }
 

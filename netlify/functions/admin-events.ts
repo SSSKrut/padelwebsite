@@ -19,6 +19,13 @@ export const handler: Handler = async (event) => {
         return { statusCode: 400, body: JSON.stringify({ error: "Title and Date are required" }) };
       }
 
+      if (maxParticipants !== undefined) {
+        const parsed = parseInt(maxParticipants);
+        if (isNaN(parsed) || parsed < 1) {
+          return { statusCode: 400, body: JSON.stringify({ error: "maxParticipants must be a positive number" }) };
+        }
+      }
+
       if (status === "SCHEDULED" && !publishAt) {
         return { statusCode: 400, body: JSON.stringify({ error: "publishAt is required for SCHEDULED status" }) };
       }
@@ -50,6 +57,13 @@ export const handler: Handler = async (event) => {
       const body = JSON.parse(event.body || "{}");
       const { id, title, description, date, endDate, location, status, publishAt, maxParticipants } = body;
       if (!id) return { statusCode: 400, body: JSON.stringify({ error: "Event ID required" }) };
+
+      if (maxParticipants !== undefined) {
+        const parsed = parseInt(maxParticipants);
+        if (isNaN(parsed) || parsed < 1) {
+          return { statusCode: 400, body: JSON.stringify({ error: "maxParticipants must be a positive number" }) };
+        }
+      }
 
       if (status === "SCHEDULED" && publishAt === undefined) {
         // If switching to SCHEDULED, check existing event for publishAt

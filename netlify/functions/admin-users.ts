@@ -27,9 +27,10 @@ export const handler: Handler = async (event) => {
         },
       });
 
+      const safeUsers = users.map(({ passwordHash, ...rest }) => rest);
       return {
         statusCode: 200,
-        body: JSON.stringify(users),
+        body: JSON.stringify(safeUsers),
       };
     }
 
@@ -39,7 +40,12 @@ export const handler: Handler = async (event) => {
          return { statusCode: 400, body: JSON.stringify({ error: "Missing userId" }) };
       }
 
+      const VALID_ROLES = ["USER", "ADMIN", "SUPER_ADMIN", "UNVERIFIED_USER"];
+
       if (body.role) {
+         if (!VALID_ROLES.includes(body.role)) {
+           return { statusCode: 400, body: JSON.stringify({ error: "Invalid role value" }) };
+         }
          const targetUser = await prisma.user.findUnique({ where: { id: body.userId } });
          if (!targetUser) {
              return { statusCode: 404, body: JSON.stringify({ error: "User not found" }) };

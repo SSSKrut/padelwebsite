@@ -5,6 +5,7 @@ import { publicName } from "./lib/sanitize";
 export const handler: Handler = async () => {
   try {
     const users = await prisma.user.findMany({
+      where: { role: { in: ["USER", "ADMIN", "SUPER_ADMIN"] } },
       orderBy: { elo: "desc" },
       include: {
         achievements: {

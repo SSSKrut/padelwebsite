@@ -57,35 +57,39 @@ export const handler = defineHandler({
       };
     }
 
-    const existingRegistration = await prisma.eventRegistration.findFirst({
-      where: {
-        eventId,
-        userId: user!.id,
-      },
-    });
-
-    if (existingRegistration) {
-      await prisma.eventRegistration.delete({
-        where: { id: existingRegistration.id },
+    // Use a transaction to prevent race conditions on participant count
+    return await prisma.$transaction(async (tx) => {
+      const existingRegistration = await tx.eventRegistration.findFirst({
+        where: {
+          eventId,
+          userId: user!.id,
+        },
       });
-      return { message: "Successfully unregistered", registered: false };
-    }
 
-    // Checking if the event is full before registering
-    if (targetEvent._count.participants >= targetEvent.maxParticipants) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Event is already full" }),
-      };
-    }
-
-    await prisma.eventRegistration.create({
-      data: {
-        eventId,
-        userId: user!.id,
+      if (existingRegistration) {
+        await tx.eventRegistration.delete({
+          where: { id: existingRegistration.id },
+        });
+        return { message: "Successfully unregistered", registered: false };
       }
-    });
 
-    return { message: "Successfully registered", registered: true };
+      // Re-check participant count inside the transaction
+      const count = await tx.eventRegistration.count({ where: { eventId } });
+      if (count >= targetEvent.maxParticipants) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "Event is already full" }),
+        };
+      }
+
+      await tx.eventRegistration.create({
+        data: {
+          eventId,
+          userId: user!.id,
+        }
+      });
+
+      return { message: "Successfully registered", registered: true };
+    });
   }
 });

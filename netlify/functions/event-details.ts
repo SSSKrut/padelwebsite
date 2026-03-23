@@ -40,8 +40,15 @@ export const handler = defineHandler({
       return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
     }
 
-    // SCHEDULED events are only visible to premium users (early access)
+    // SCHEDULED events are only visible to premium users within 24h of publishAt (early access)
     if (padelEvent.status === "SCHEDULED") {
+      const now = new Date();
+      const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+      if (!padelEvent.publishAt || padelEvent.publishAt > in24h) {
+        return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
+      }
+
       try {
         const currentUser = await verifyUser(event);
         const isPremium = (currentUser.premiumSubscriptions?.length ?? 0) > 0;

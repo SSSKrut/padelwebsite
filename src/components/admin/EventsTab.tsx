@@ -40,6 +40,7 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
     onSuccess: () => {
       toast.success("Event saved successfully");
       queryClient.invalidateQueries({ queryKey: ["admin_events"] });
+      setEventForm(null);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -254,10 +255,7 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                   confirmAction(
                     eventForm.id ? "Update Event" : "Create Event",
                     "Are you sure?",
-                    () => {
-                      mutateEvent.mutate(eventForm);
-                      setEventForm(null);
-                    },
+                    () => mutateEvent.mutate(eventForm),
                   )
                 }
               >

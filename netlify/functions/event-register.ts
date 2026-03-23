@@ -28,19 +28,33 @@ export const handler = defineHandler({
       };
     }
 
+    // Status check: PUBLISHED is open to all; SCHEDULED is premium-only early access
+    if (targetEvent.status !== "PUBLISHED") {
+      if (targetEvent.status === "SCHEDULED") {
+        const premium = await isUserPremium(user!.id);
+        if (!premium) {
+          return {
+            statusCode: 403,
+            body: JSON.stringify({ error: "Event is not yet open for registration" }),
+          };
+        }
+      } else {
+        return {
+          statusCode: 403,
+          body: JSON.stringify({ error: "Event is not open for registration" }),
+        };
+      }
+    }
+
+    // 24h lock before event start — applies to EVERYONE
     const MS_IN_DAY = 24 * 60 * 60 * 1000;
     const isLocked = targetEvent.date.getTime() - new Date().getTime() < MS_IN_DAY;
 
-    let premiumBypass = false;
     if (isLocked) {
-      const premium = await isUserPremium(user!.id);
-      if (!premium) {
-        return {
-          statusCode: 403,
-          body: JSON.stringify({ error: "Registration/unregistration is locked within 24 hours of the event start" }),
-        };
-      }
-      premiumBypass = true;
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: "Registration/unregistration is locked within 24 hours of the event start" }),
+      };
     }
 
     const existingRegistration = await prisma.eventRegistration.findFirst({
@@ -54,7 +68,7 @@ export const handler = defineHandler({
       await prisma.eventRegistration.delete({
         where: { id: existingRegistration.id },
       });
-      return { message: "Successfully unregistered", registered: false, premiumBypass };
+      return { message: "Successfully unregistered", registered: false };
     }
 
     // Checking if the event is full before registering
@@ -72,6 +86,6 @@ export const handler = defineHandler({
       }
     });
 
-    return { message: "Successfully registered", registered: true, premiumBypass };
+    return { message: "Successfully registered", registered: true };
   }
 });

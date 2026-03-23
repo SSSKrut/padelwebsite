@@ -46,10 +46,11 @@ function futureDate(hoursFromNow: number): Date {
   return new Date(Date.now() + hoursFromNow * 60 * 60 * 1000);
 }
 
-function mockDbEvent(date: Date, participants = 0, maxParticipants = 16) {
+function mockDbEvent(date: Date, participants = 0, maxParticipants = 16, status = "PUBLISHED") {
   return {
     id: EVENT_UUID,
     date,
+    status,
     maxParticipants,
     _count: { participants },
   } as never;
@@ -93,7 +94,35 @@ describe("event-register handler", () => {
     expect(json).toEqual({ error: "Event not found" });
   });
 
-  // --- 24-hour lock ---
+  // --- Status check ---
+
+  it("returns 403 for DRAFT events", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 0, 16, "DRAFT"));
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(403);
+    expect(json.error).toMatch(/not open/i);
+  });
+
+  it("returns 403 for SCHEDULED events for non-premium users", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 0, 16, "SCHEDULED"));
+    vi.mocked(isUserPremium).mockResolvedValue(false);
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(403);
+    expect(json.error).toMatch(/not yet open/i);
+  });
+
+  it("allows premium users to register for SCHEDULED events", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 0, 16, "SCHEDULED"));
+    vi.mocked(isUserPremium).mockResolvedValue(true);
+    vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
+
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(200);
+    expect(json.registered).toBe(true);
+  });
+
+  // --- 24-hour lock (applies to EVERYONE) ---
 
   it("returns 403 when event is within 24 hours (locked)", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(12)));
@@ -106,6 +135,14 @@ describe("event-register handler", () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(-1)));
     const { statusCode } = await callHandler();
     expect(statusCode).toBe(403);
+  });
+
+  it("locks premium users too when within 24h of start", async () => {
+    vi.mocked(isUserPremium).mockResolvedValue(true);
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(12)));
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(403);
+    expect(json.error).toMatch(/locked/i);
   });
 
   it("does not check registrations when event is locked", async () => {
@@ -123,7 +160,7 @@ describe("event-register handler", () => {
 
     const { statusCode, json } = await callHandler();
     expect(statusCode).toBe(200);
-    expect(json).toEqual({ message: "Successfully registered", registered: true, premiumBypass: false });
+    expect(json).toEqual({ message: "Successfully registered", registered: true });
     expect(prisma.eventRegistration.create).toHaveBeenCalledWith({
       data: { eventId: EVENT_UUID, userId: USER_UUID },
     });
@@ -151,49 +188,12 @@ describe("event-register handler", () => {
 
     const { statusCode, json } = await callHandler();
     expect(statusCode).toBe(200);
-    expect(json).toEqual({ message: "Successfully unregistered", registered: false, premiumBypass: false });
+    expect(json).toEqual({ message: "Successfully unregistered", registered: false });
     expect(prisma.eventRegistration.delete).toHaveBeenCalledWith({ where: { id: "reg-123" } });
   });
 
   it("blocks unregistration when event is within 24h", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(6), 5));
-    const { statusCode } = await callHandler();
-    expect(statusCode).toBe(403);
-  });
-
-  // --- Premium bypass ---
-
-  it("allows premium user to register in locked window", async () => {
-    vi.mocked(isUserPremium).mockResolvedValue(true);
-    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(12), 5));
-    vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
-    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
-
-    const { statusCode, json } = await callHandler();
-    expect(statusCode).toBe(200);
-    expect(json.registered).toBe(true);
-    expect(json.premiumBypass).toBe(true);
-  });
-
-  it("allows premium user to unregister in locked window", async () => {
-    vi.mocked(isUserPremium).mockResolvedValue(true);
-    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(12), 5));
-    vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue({
-      id: "reg-123",
-      eventId: EVENT_UUID,
-      userId: USER_UUID,
-    } as never);
-    vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
-
-    const { statusCode, json } = await callHandler();
-    expect(statusCode).toBe(200);
-    expect(json.registered).toBe(false);
-    expect(json.premiumBypass).toBe(true);
-  });
-
-  it("still blocks non-premium user in locked window", async () => {
-    vi.mocked(isUserPremium).mockResolvedValue(false);
-    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(12)));
     const { statusCode } = await callHandler();
     expect(statusCode).toBe(403);
   });

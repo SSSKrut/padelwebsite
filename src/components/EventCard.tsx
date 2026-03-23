@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatEventDate } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ export interface EventCardProps {
     endDate?: string | Date | null;
     location?: string;
     description?: string;
+    status?: string;
     maxParticipants?: number;
     _count?: {
       participants: number;
@@ -28,6 +30,11 @@ export function EventCard({ event }: EventCardProps) {
       <CardHeader>
         <div className="flex items-start justify-between mb-2">
           <CardTitle className="text-xl">{event.title}</CardTitle>
+          {event.status === "SCHEDULED" && (
+            <Badge variant="outline" className="border-amber-500 text-amber-600 text-xs shrink-0">
+              Early Access
+            </Badge>
+          )}
         </div>
 
         <p className="text-sm text-muted-foreground whitespace-pre-wrap">

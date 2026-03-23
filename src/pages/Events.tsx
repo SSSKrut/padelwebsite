@@ -1,19 +1,18 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Hero } from "@/components/Hero";
 import { EventCard } from "@/components/EventCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import padelHero from "@/assets/padel-hero.png";
 import { formatEventDate } from "@/lib/utils";
 
 const Events = () => {
+  const { user } = useAuth();
   const { data: events, isLoading, isError } = useQuery({
-    queryKey: ["events"],
+    queryKey: ["events", user?.id ?? null],
     queryFn: () => apiFetch("/.netlify/functions/events"),
   });
 
@@ -41,8 +40,8 @@ const Events = () => {
     );
   }
 
-  const upcomingEvents = events?.filter((e: any) => e.status === "PUBLISHED" && new Date(e.date) >= new Date()) || [];
-  const pastEvents = events?.filter((e: any) => e.status === "ARCHIVED" || (e.status === "PUBLISHED" && new Date(e.date) < new Date())) || [];
+  const upcomingEvents = events?.filter((e: any) => (e.status === "PUBLISHED" || e.status === "SCHEDULED") && new Date(e.date) >= new Date()) || [];
+  const pastEvents = events?.filter((e: any) => e.status === "ARCHIVED" || ((e.status === "PUBLISHED" || e.status === "SCHEDULED") && new Date(e.date) < new Date())) || [];
 
   return (
     <div className="min-h-screen">

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCookies } from "./cookies";
+import { parseCookies } from "../functions/lib/cookies";
 
 describe("parseCookies", () => {
   it("should correctly parse cookie values containing '=' characters", () => {

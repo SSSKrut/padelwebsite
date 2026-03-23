@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   verifyAdmin: vi.fn(),
 }));
 
-vi.mock("./lib/prisma", () => ({
+vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     user: {
       findMany: mocks.userFindMany,
@@ -17,11 +17,11 @@ vi.mock("./lib/prisma", () => ({
   },
 }));
 
-vi.mock("./lib/auth", () => ({
+vi.mock("../functions/lib/auth", () => ({
   verifyAdmin: mocks.verifyAdmin,
 }));
 
-import { handler } from "./admin-users";
+import { handler } from "../functions/admin-users";
 
 function mockEvent(overrides: any = {}) {
   return {

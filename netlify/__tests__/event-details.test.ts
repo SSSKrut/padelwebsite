@@ -6,21 +6,21 @@ const mocks = vi.hoisted(() => ({
   publicName: vi.fn((f: string, l: string) => `${f} ${l.charAt(0)}.`),
 }));
 
-vi.mock("./lib/prisma", () => ({
+vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     event: { findUnique: mocks.eventFindUnique },
   },
 }));
 
-vi.mock("./lib/auth", () => ({
+vi.mock("../functions/lib/auth", () => ({
   verifyUser: mocks.verifyUser,
 }));
 
-vi.mock("./lib/sanitize", () => ({
+vi.mock("../functions/lib/sanitize", () => ({
   publicName: mocks.publicName,
 }));
 
-import { handler } from "./event-details";
+import { handler } from "../functions/event-details";
 
 function mockEvent(overrides: any = {}) {
   return {

@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   verifyAdmin: vi.fn(),
 }));
 
-vi.mock("./lib/prisma", () => ({
+vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     event: {
       create: mocks.eventCreate,
@@ -17,11 +17,11 @@ vi.mock("./lib/prisma", () => ({
   },
 }));
 
-vi.mock("./lib/auth", () => ({
+vi.mock("../functions/lib/auth", () => ({
   verifyAdmin: mocks.verifyAdmin,
 }));
 
-import { handler } from "./admin-events";
+import { handler } from "../functions/admin-events";
 
 function mockEvent(overrides: any = {}) {
   return {
@@ -39,7 +39,7 @@ function mockEvent(overrides: any = {}) {
   };
 }
 
-describe("admin-events", () => {
+describe("admin-events validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.verifyAdmin.mockResolvedValue({ id: "admin-1", role: "SUPER_ADMIN" });

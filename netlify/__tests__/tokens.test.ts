@@ -7,18 +7,18 @@ const mocks = vi.hoisted(() => {
   return { updateMany, create, $transaction };
 });
 
-vi.mock("./prisma", () => ({
+vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     verificationToken: { updateMany: mocks.updateMany, create: mocks.create },
     $transaction: mocks.$transaction,
   },
 }));
 
-vi.mock("../../../generated/prisma", () => ({
+vi.mock("../../generated/prisma", () => ({
   TokenType: { EMAIL_VERIFICATION: "EMAIL_VERIFICATION", PASSWORD_RESET: "PASSWORD_RESET" },
 }));
 
-import { createToken } from "./tokens";
+import { createToken } from "../functions/lib/tokens";
 
 describe("createToken", () => {
   beforeEach(() => {

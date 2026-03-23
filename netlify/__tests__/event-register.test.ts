@@ -208,4 +208,16 @@ describe("event-register handler", () => {
     const { statusCode } = await callHandler();
     expect(statusCode).toBe(403);
   });
+
+  // --- Transaction safety ---
+
+  it("uses a database transaction for registration to prevent race conditions", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 5));
+    vi.mocked(prisma.eventRegistration.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.count).mockResolvedValue(5);
+    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
+
+    await callHandler();
+    expect(prisma.$transaction).toHaveBeenCalled();
+  });
 });

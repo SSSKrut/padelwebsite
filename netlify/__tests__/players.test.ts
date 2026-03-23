@@ -5,17 +5,17 @@ const mocks = vi.hoisted(() => ({
   publicName: vi.fn((f: string, l: string) => `${f} ${l.charAt(0)}.`),
 }));
 
-vi.mock("./lib/prisma", () => ({
+vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     user: { findMany: mocks.userFindMany },
   },
 }));
 
-vi.mock("./lib/sanitize", () => ({
+vi.mock("../functions/lib/sanitize", () => ({
   publicName: mocks.publicName,
 }));
 
-import { handler } from "./players";
+import { handler } from "../functions/players";
 
 describe("players", () => {
   beforeEach(() => {

@@ -1,8 +1,8 @@
-import type { Config } from "@netlify/functions";
+import type { Handler } from "@netlify/functions";
 import { prisma } from "./lib/prisma";
 import { publicName } from "./lib/sanitize";
 
-export default async function handler() {
+export const handler: Handler = async () => {
   try {
     const users = await prisma.user.findMany({
       orderBy: { elo: "desc" },
@@ -40,13 +40,14 @@ export default async function handler() {
       };
     });
 
-    return new Response(JSON.stringify(players), {
-      status: 200,
+    return {
+      statusCode: 200,
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "public, max-age=300",
       },
-    });
+      body: JSON.stringify(players),
+    };
   } catch (error: any) {
     console.error("[players]", error);
 
@@ -58,12 +59,9 @@ export default async function handler() {
       message = "Database table not found. Run prisma migrate deploy.";
     }
 
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-    });
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: message }),
+    };
   }
-}
-
-export const config: Config = {
-  path: "/api/players",
 };

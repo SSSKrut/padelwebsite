@@ -40,7 +40,8 @@ export const handler = defineHandler({
                 date: "desc"
               }
             }
-          }
+          },
+          premiumSubscriptions: { where: { revokedAt: null }, take: 1 },
         },
       });
 
@@ -48,9 +49,9 @@ export const handler = defineHandler({
         return { statusCode: 404, body: JSON.stringify({ error: "User not found" }) };
       }
 
-      // Hide password
-      const { passwordHash, ...safeUser } = fullUser;
-      return safeUser;
+      // Hide password, add computed isPremium
+      const { passwordHash, premiumSubscriptions, ...safeUser } = fullUser;
+      return { ...safeUser, isPremium: (premiumSubscriptions?.length ?? 0) > 0 };
     }
 
     if (event.httpMethod === "PATCH") {

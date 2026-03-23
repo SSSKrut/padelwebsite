@@ -19,7 +19,10 @@ export const handler = defineHandler({
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { achievements: { include: { achievement: true } } },
+      include: {
+        achievements: { include: { achievement: true } },
+        premiumSubscriptions: { where: { revokedAt: null }, take: 1 },
+      },
     });
     
     if (!user) {

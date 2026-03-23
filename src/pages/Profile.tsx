@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Loader2, Save, KeyRound } from "lucide-react";
+import { Trophy, Crown, Loader2, Save, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 const Profile = () => {
@@ -114,9 +114,16 @@ const Profile = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>My Profile</CardTitle>
-              {profile.role === "UNVERIFIED_USER" && (
-                <Badge variant="destructive">Unverified</Badge>
-              )}
+              <div className="flex gap-2">
+                {profile.isPremium && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-600 gap-1">
+                    <Crown className="w-3 h-3" /> Premium
+                  </Badge>
+                )}
+                {profile.role === "UNVERIFIED_USER" && (
+                  <Badge variant="destructive">Unverified</Badge>
+                )}
+              </div>
             </div>
             <CardDescription>{profile.email}</CardDescription>
           </CardHeader>

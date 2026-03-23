@@ -12,7 +12,7 @@ import padelHero from "@/assets/padel-hero.png";
 import { formatEventDate } from "@/lib/utils";
 
 const Events = () => {
-  const { data: events, isLoading } = useQuery({
+  const { data: events, isLoading, isError } = useQuery({
     queryKey: ["events"],
     queryFn: () => apiFetch("/.netlify/functions/events"),
   });
@@ -21,6 +21,22 @@ const Events = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen">
+        <Hero
+          title="Padel Events"
+          subtitle="Join our weekly padel sessions"
+          backgroundImage={padelHero}
+          compact
+        />
+        <div className="container mx-auto px-4 py-12 text-center">
+          <p className="text-red-500 font-medium">Failed to load events. Please try again later.</p>
+        </div>
       </div>
     );
   }

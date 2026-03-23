@@ -47,9 +47,18 @@ export default async function handler() {
         "Cache-Control": "public, max-age=300",
       },
     });
-  } catch (error) {
-    console.error(error);
-    return new Response(JSON.stringify({ error: "Failed to fetch players" }), {
+  } catch (error: any) {
+    console.error("[players]", error);
+
+    let message = "Failed to fetch players";
+    const code = error?.code;
+    if (code === "P1001" || code === "P1002") {
+      message = "Database connection failed. Check DATABASE_URL.";
+    } else if (code === "P2021") {
+      message = "Database table not found. Run prisma migrate deploy.";
+    }
+
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
     });
   }

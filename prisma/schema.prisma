@@ -24,6 +24,7 @@ enum Role {
 // Перечисление для статусов ивентов
 enum EventStatus {
   DRAFT
+  SCHEDULED
   PUBLISHED
   ARCHIVED
 }
@@ -40,9 +41,11 @@ model User {
   role         Role     @default(UNVERIFIED_USER)
   elo          Int      @default(1000)
 
-  achievements   UserAchievement[]
-  registrations  EventRegistration[]
-  tokens         VerificationToken[]
+  achievements          UserAchievement[]
+  registrations         EventRegistration[]
+  tokens                VerificationToken[]
+  premiumSubscriptions  PremiumSubscription[] @relation("PremiumUser")
+  premiumGrantedBy      PremiumSubscription[] @relation("PremiumGranter")
 }
 
 enum TokenType {
@@ -70,10 +73,24 @@ model Event {
   endDate         DateTime?
   location        String?
   status          EventStatus @default(DRAFT)
+  publishAt       DateTime?
+  reminderSentAt  DateTime?
   maxParticipants Int         @default(16)
   createdAt       DateTime    @default(now())
 
   participants EventRegistration[]
+}
+
+model PremiumSubscription {
+  id          String    @id @default(uuid())
+  grantedAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  userId      String
+  user        User      @relation("PremiumUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  grantedById String
+  grantedBy   User      @relation("PremiumGranter", fields: [grantedById], references: [id], onDelete: Cascade)
 }
 
 model EventRegistration {

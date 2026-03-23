@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { Edit, Trophy, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit, Trophy, Crown, ChevronDown, ChevronUp } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -49,6 +49,16 @@ export function PlayersTab({ confirmAction }: PlayersTabProps) {
     mutationFn: (data: any) => apiFetch("/.netlify/functions/admin-user-achievement", "DELETE", data),
     onSuccess: () => {
       toast.success("Achievement removed");
+      queryClient.invalidateQueries({ queryKey: ["admin_users"] });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const togglePremium = useMutation({
+    mutationFn: ({ userId, revoke }: { userId: string; revoke: boolean }) =>
+      apiFetch("/.netlify/functions/admin-premium", revoke ? "DELETE" : "POST", { userId }),
+    onSuccess: (_data, variables) => {
+      toast.success(variables.revoke ? "Premium revoked" : "Premium granted");
       queryClient.invalidateQueries({ queryKey: ["admin_users"] });
     },
     onError: (e) => toast.error(e.message),
@@ -118,7 +128,14 @@ export function PlayersTab({ confirmAction }: PlayersTabProps) {
                   <TableCell className="font-medium">{p.firstName}</TableCell>
                   <TableCell className="font-medium">{p.lastName}</TableCell>
                   <TableCell>{p.email}</TableCell>
-                  <TableCell>{p.role}</TableCell>
+                  <TableCell>
+                    <span>{p.role}</span>
+                    {(p.premiumSubscriptions?.length > 0) && (
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-xs text-amber-600 font-medium">
+                        <Crown className="w-3 h-3" /> Premium
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
                       {p.achievements?.map((ua: any) => (
@@ -174,6 +191,26 @@ export function PlayersTab({ confirmAction }: PlayersTabProps) {
                         <Button size="sm" variant="secondary" onClick={() => setGrantAchForm({ userId: p.id, achId: "" })} title="Grant Achievement">
                           <Trophy className="w-4 h-4" />
                         </Button>
+                        {p.premiumSubscriptions?.length > 0 ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-amber-600"
+                            onClick={() => confirmAction("Revoke Premium", "Remove premium status?", () => togglePremium.mutate({ userId: p.id, revoke: true }))}
+                            title="Revoke Premium"
+                          >
+                            <Crown className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => confirmAction("Grant Premium", "Grant premium status?", () => togglePremium.mutate({ userId: p.id, revoke: false }))}
+                            title="Grant Premium"
+                          >
+                            <Crown className="w-4 h-4" />
+                          </Button>
+                        )}
 
                         {p.role !== "UNVERIFIED_USER" && p.role !== "SUPER_ADMIN" && (
                           <Button

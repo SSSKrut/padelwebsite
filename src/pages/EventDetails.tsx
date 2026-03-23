@@ -176,6 +176,7 @@ const EventDetails = () => {
                   const isFull = (event.participants?.length || 0) >= (event.maxParticipants || 16);
                   
                   const isLocked = isEventLocked(event.date);
+                  const canBypassLock = user?.isPremium && isLocked;
 
                   if (!user) {
                     return (
@@ -188,17 +189,18 @@ const EventDetails = () => {
                   if (isRegistered) {
                     return (
                       <div className="mt-4 space-y-2">
-                        <Button 
+                        <Button
                           variant="secondary"
-                          className="w-full flex gap-2" 
+                          className="w-full flex gap-2"
                           size="lg"
                           onClick={() => registerMutation.mutate()}
-                          disabled={registerMutation.isPending || isLocked}
+                          disabled={registerMutation.isPending || (isLocked && !canBypassLock)}
                         >
                           {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
                           Cancel Registration
                         </Button>
-                        {isLocked && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                        {isLocked && !canBypassLock && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                        {canBypassLock && <p className="text-xs text-center text-amber-600">Premium early access</p>}
                       </div>
                     );
                   }
@@ -231,16 +233,17 @@ const EventDetails = () => {
 
                   return (
                     <div className="mt-4 space-y-2">
-                      <Button 
-                        className="w-full" 
+                      <Button
+                        className="w-full"
                         size="lg"
                         onClick={() => registerMutation.mutate()}
-                        disabled={registerMutation.isPending || isLocked}
+                        disabled={registerMutation.isPending || (isLocked && !canBypassLock)}
                       >
                         {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                         Register Now
                       </Button>
-                      {isLocked && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                      {isLocked && !canBypassLock && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                      {canBypassLock && <p className="text-xs text-center text-amber-600">Premium early access</p>}
                     </div>
                   );
                 })()}
@@ -248,6 +251,7 @@ const EventDetails = () => {
                 {!isCompleted && (
                   <p className="text-xs text-muted-foreground text-center">
                     Registration and cancellation close 24 hours before the event start.
+                    Premium members can register up to the event start.
                   </p>
                 )}
 

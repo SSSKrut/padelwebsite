@@ -25,6 +25,14 @@ export interface TemplateDataMap {
     eventVenue?: string;
     actionUrl?: string;
   };
+  "event-reminder": {
+    firstName: string;
+    eventTitle: string;
+    eventDate: string;
+    eventTime?: string;
+    eventVenue?: string;
+    actionUrl?: string;
+  };
   contact: {
     name: string;
     email: string;
@@ -155,6 +163,27 @@ const templates: {
       </table>
       ${data.actionUrl ? ctaButton(data.actionUrl, "View Event") : ""}
       <p style="color:#52525b;line-height:1.6;">See you on the court!</p>
+    `),
+  }),
+
+  "event-reminder": (data) => ({
+    subject: `Reminder: ${data.eventTitle} is tomorrow!`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;">Hey ${escapeHtml(data.firstName)}, see you tomorrow!</h2>
+      <p style="color:#52525b;line-height:1.6;">
+        Just a friendly reminder that <strong>${escapeHtml(data.eventTitle)}</strong> is happening tomorrow.
+      </p>
+      <table cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;">
+        <tr>
+          <td style="padding:12px 16px;background:#fafafa;border-radius:8px;">
+            <p style="margin:0 0 4px;"><strong>Date:</strong> ${escapeHtml(data.eventDate)}</p>
+            ${data.eventTime ? `<p style="margin:0 0 4px;"><strong>Time:</strong> ${escapeHtml(data.eventTime)}</p>` : ""}
+            ${data.eventVenue ? `<p style="margin:0;"><strong>Venue:</strong> ${escapeHtml(data.eventVenue)}</p>` : ""}
+          </td>
+        </tr>
+      </table>
+      ${data.actionUrl ? ctaButton(data.actionUrl, "View Event") : ""}
+      <p style="color:#52525b;line-height:1.6;">Don't forget your gear — see you on the court!</p>
     `),
   }),
 

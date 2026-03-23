@@ -22,7 +22,8 @@ export const handler: Handler = async (event) => {
             include: {
               achievement: true
             }
-          }
+          },
+          premiumSubscriptions: { where: { revokedAt: null }, take: 1 },
         },
       });
 

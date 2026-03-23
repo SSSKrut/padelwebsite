@@ -11,7 +11,13 @@ export const verifyUser = async (event: HandlerEvent) => {
   const payload = await verifyToken(token);
   const userId = payload.sub as string;
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, include: { achievements: { include: { achievement: true } } } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      achievements: { include: { achievement: true } },
+      premiumSubscriptions: { where: { revokedAt: null }, take: 1 },
+    },
+  });
   if (!user) {
     throw new Error("Unauthorized");
   }
@@ -36,4 +42,5 @@ export const sanitizeUser = (user: any) => ({
   role: user.role,
   elo: user.elo,
   achievements: user.achievements || [],
+  isPremium: (user.premiumSubscriptions?.length ?? 0) > 0,
 });

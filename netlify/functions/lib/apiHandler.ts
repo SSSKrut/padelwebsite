@@ -102,9 +102,20 @@ export function defineHandler<T extends z.ZodTypeAny = z.ZodTypeAny>(
 
     } catch (error: any) {
       console.error(`[API Error] ${event.httpMethod} ${event.path}:`, error);
+
+      let message = "Internal Server Error";
+      const code = error?.code;
+      if (code === "P1001" || code === "P1002") {
+        message = "Database connection failed. Check DATABASE_URL.";
+      } else if (code === "P2021") {
+        message = "Database table not found. Run prisma migrate deploy.";
+      } else if (error?.statusCode) {
+        message = error.message || message;
+      }
+
       return {
         statusCode: error?.statusCode || 500,
-        body: JSON.stringify({ error: error.message || "Internal Server Error" }),
+        body: JSON.stringify({ error: message }),
       };
     }
   };

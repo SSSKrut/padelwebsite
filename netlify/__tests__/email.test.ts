@@ -130,12 +130,47 @@ describe('renderTemplate', () => {
     expect(result.html).toContain('&lt;script&gt;');
   });
 
+  it('renders event-reminder template with all fields', () => {
+    const result = renderTemplate('event-reminder', {
+      firstName: 'Alex',
+      eventTitle: 'Sunday Padel',
+      eventDate: '2026-03-29',
+      eventTime: '18:00',
+      eventVenue: 'Padel Vienna Arena',
+      actionUrl: 'https://sunsetpadel.at/events/1',
+    });
+
+    expect(result.subject).toBe('Reminder: Sunday Padel is tomorrow!');
+    expect(result.html).toContain('Alex');
+    expect(result.html).toContain('Sunday Padel');
+    expect(result.html).toContain('2026-03-29');
+    expect(result.html).toContain('18:00');
+    expect(result.html).toContain('Padel Vienna Arena');
+    expect(result.html).toContain('View Event');
+    expect(result.html).toContain('see you tomorrow');
+  });
+
+  it('renders event-reminder template with only required fields', () => {
+    const result = renderTemplate('event-reminder', {
+      firstName: 'Alex',
+      eventTitle: 'Quick Match',
+      eventDate: '2026-04-01',
+    });
+
+    expect(result.html).toContain('Quick Match');
+    expect(result.html).toContain('2026-04-01');
+    expect(result.html).not.toContain('Time:');
+    expect(result.html).not.toContain('Venue:');
+    expect(result.html).not.toContain('View Event');
+  });
+
   it('all templates include base layout elements', () => {
     const templates = [
       { name: 'welcome' as const, data: { firstName: 'X' } },
       { name: 'email-verification' as const, data: { firstName: 'X', actionUrl: 'http://a.com' } },
       { name: 'password-reset' as const, data: { firstName: 'X', actionUrl: 'http://a.com' } },
       { name: 'event-registration' as const, data: { firstName: 'X', eventTitle: 'E', eventDate: 'D' } },
+      { name: 'event-reminder' as const, data: { firstName: 'X', eventTitle: 'E', eventDate: 'D' } },
       { name: 'contact' as const, data: { name: 'X', email: 'x@x.com', message: 'M' } },
     ];
 

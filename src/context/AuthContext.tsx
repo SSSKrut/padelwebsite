@@ -16,6 +16,7 @@ export interface User {
   createdAt: string;
   role: UserRole;
   elo: number;
+  isPremium: boolean;
 }
 
 export interface RegisterData {

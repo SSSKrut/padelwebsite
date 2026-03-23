@@ -13,10 +13,14 @@ export const handler: Handler = async (event) => {
   try {
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
-      const { title, description, date, endDate, location, status, maxParticipants } = body;
+      const { title, description, date, endDate, location, status, publishAt, maxParticipants } = body;
 
       if (!title || !date) {
         return { statusCode: 400, body: JSON.stringify({ error: "Title and Date are required" }) };
+      }
+
+      if (status === "SCHEDULED" && !publishAt) {
+        return { statusCode: 400, body: JSON.stringify({ error: "publishAt is required for SCHEDULED status" }) };
       }
 
       const eventItem = await prisma.event.create({
@@ -27,6 +31,7 @@ export const handler: Handler = async (event) => {
           endDate: endDate ? new Date(endDate) : null,
           location,
           status: status || "DRAFT",
+          publishAt: status === "SCHEDULED" && publishAt ? new Date(publishAt) : null,
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : 16,
         },
       });
@@ -43,9 +48,17 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === "PATCH") {
       const body = JSON.parse(event.body || "{}");
-      const { id, title, description, date, endDate, location, status, maxParticipants } = body;
+      const { id, title, description, date, endDate, location, status, publishAt, maxParticipants } = body;
       if (!id) return { statusCode: 400, body: JSON.stringify({ error: "Event ID required" }) };
-      
+
+      if (status === "SCHEDULED" && publishAt === undefined) {
+        // If switching to SCHEDULED, check existing event for publishAt
+        const existing = await prisma.event.findUnique({ where: { id } });
+        if (!existing?.publishAt && !publishAt) {
+          return { statusCode: 400, body: JSON.stringify({ error: "publishAt is required for SCHEDULED status" }) };
+        }
+      }
+
       const updatedEvent = await prisma.event.update({
         where: { id },
         data: {
@@ -55,6 +68,9 @@ export const handler: Handler = async (event) => {
           ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
           ...(location !== undefined && { location }),
           ...(status !== undefined && { status }),
+          ...(publishAt !== undefined && { publishAt: publishAt ? new Date(publishAt) : null }),
+          // Clear publishAt when moving away from SCHEDULED
+          ...(status !== undefined && status !== "SCHEDULED" && { publishAt: null }),
           ...(maxParticipants !== undefined && { maxParticipants: parseInt(maxParticipants) }),
         }
       });

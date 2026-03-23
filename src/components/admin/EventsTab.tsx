@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { Toast } from "@/components/ui/toast";
 import { toast } from "sonner";
-import { Edit, Plus, Trash2, CheckCircle } from "lucide-react";
+import { Edit, Plus, Trash2, CheckCircle, Clock, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,16 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
     onError: (e) => toast.error(e.message),
   });
 
+  const triggerPublish = useMutation({
+    mutationFn: () => apiFetch("/.netlify/functions/trigger-publish", "POST"),
+    onSuccess: (data: any) => {
+      toast.success(`Published ${data.published} scheduled event(s)`);
+      queryClient.invalidateQueries({ queryKey: ["admin_events"] });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const hasScheduledEvents = events?.some((e: any) => e.status === "SCHEDULED") || false;
   const activeEvents = events?.filter((e: any) => e.status !== "ARCHIVED") || [];
   const pastEvents = events?.filter((e: any) => e.status === "ARCHIVED") || [];
 
@@ -62,20 +72,39 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
       <div className="rounded-2xl border bg-background/80 shadow-sm overflow-hidden p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">Upcoming / Active Events</h3>
-          <Button
-            onClick={() =>
-              setEventForm({
-                title: "",
-                date: "",
-                endDate: "",
-                location: "",
-                description: "",
-                status: "PUBLISHED",
-              })
-            }
-          >
-            <Plus className="w-4 h-4 mr-1" /> New Event
-          </Button>
+          <div className="flex gap-2">
+            {hasScheduledEvents && (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  confirmAction(
+                    "Publish Scheduled Events",
+                    "Publish all scheduled events whose publish time has passed?",
+                    () => triggerPublish.mutate(),
+                  )
+                }
+                disabled={triggerPublish.isPending}
+              >
+                <RefreshCw className={`w-4 h-4 mr-1 ${triggerPublish.isPending ? "animate-spin" : ""}`} />
+                Publish Now
+              </Button>
+            )}
+            <Button
+              onClick={() =>
+                setEventForm({
+                  title: "",
+                  date: "",
+                  endDate: "",
+                  location: "",
+                  description: "",
+                  status: "DRAFT",
+                  publishAt: null,
+                })
+              }
+            >
+              <Plus className="w-4 h-4 mr-1" /> New Event
+            </Button>
+          </div>
         </div>
 
         {eventForm && (
@@ -146,7 +175,12 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                 <Select
                   value={eventForm.status || "DRAFT"}
                   onValueChange={(val) =>
-                    setEventForm({ ...eventForm, status: val })
+                    setEventForm({
+                      ...eventForm,
+                      status: val,
+                      // Clear publishAt when switching away from SCHEDULED
+                      ...(val !== "SCHEDULED" && { publishAt: null }),
+                    })
                   }
                 >
                   <SelectTrigger>
@@ -154,6 +188,7 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="DRAFT">DRAFT</SelectItem>
+                    <SelectItem value="SCHEDULED">SCHEDULED</SelectItem>
                     <SelectItem value="PUBLISHED">PUBLISHED</SelectItem>
                     <SelectItem value="ARCHIVED">ARCHIVED</SelectItem>
                   </SelectContent>
@@ -183,6 +218,36 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                 />
               </div>
             </div>
+            {eventForm.status === "SCHEDULED" && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4 rounded-xl mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  <h5 className="font-semibold text-amber-800 dark:text-amber-200">
+                    Scheduled Publishing
+                  </h5>
+                </div>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                  This event will automatically become visible and open for registration at the specified time.
+                </p>
+                <div className="max-w-sm">
+                  <Label>Publish At (Your Local Time)</Label>
+                  <Input
+                    type="datetime-local"
+                    value={formatForDatetimeLocal(eventForm.publishAt)}
+                    onChange={(e) => {
+                      const dateObj = new Date(e.target.value);
+                      if (!isNaN(dateObj.getTime())) {
+                        setEventForm({
+                          ...eventForm,
+                          publishAt: dateObj.toISOString(),
+                        });
+                      }
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex gap-2">
               <Button
                 onClick={() =>
@@ -234,7 +299,18 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                       {formatEventDate(e.date, true, e.endDate)}
                     </TableCell>
                     <TableCell>
-                      <Badge>{e.status}</Badge>
+                      <Badge
+                        variant={e.status === "SCHEDULED" ? "outline" : "default"}
+                        className={e.status === "SCHEDULED" ? "border-amber-500 text-amber-700 dark:text-amber-300" : ""}
+                      >
+                        {e.status}
+                      </Badge>
+                      {e.status === "SCHEDULED" && e.publishAt && (
+                        <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatEventDate(e.publishAt, true)}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>{e.location}</TableCell>
                     <TableCell className="text-right space-x-2">

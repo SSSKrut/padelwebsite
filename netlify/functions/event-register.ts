@@ -1,6 +1,7 @@
 import { defineHandler } from "./lib/apiHandler";
 import { z } from "zod";
 import { prisma } from "./lib/prisma";
+import { isUserPremium } from "./lib/premium";
 
 export const handler = defineHandler({
   method: "POST",
@@ -30,11 +31,16 @@ export const handler = defineHandler({
     const MS_IN_DAY = 24 * 60 * 60 * 1000;
     const isLocked = targetEvent.date.getTime() - new Date().getTime() < MS_IN_DAY;
 
+    let premiumBypass = false;
     if (isLocked) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ error: "Registration/unregistration is locked within 24 hours of the event start" }),
-      };
+      const premium = await isUserPremium(user!.id);
+      if (!premium) {
+        return {
+          statusCode: 403,
+          body: JSON.stringify({ error: "Registration/unregistration is locked within 24 hours of the event start" }),
+        };
+      }
+      premiumBypass = true;
     }
 
     const existingRegistration = await prisma.eventRegistration.findFirst({
@@ -45,11 +51,10 @@ export const handler = defineHandler({
     });
 
     if (existingRegistration) {
-      // Unregister is always allowed
       await prisma.eventRegistration.delete({
         where: { id: existingRegistration.id },
       });
-      return { message: "Successfully unregistered", registered: false };
+      return { message: "Successfully unregistered", registered: false, premiumBypass };
     }
 
     // Checking if the event is full before registering
@@ -67,6 +72,6 @@ export const handler = defineHandler({
       }
     });
 
-    return { message: "Successfully registered", registered: true };
+    return { message: "Successfully registered", registered: true, premiumBypass };
   }
 });

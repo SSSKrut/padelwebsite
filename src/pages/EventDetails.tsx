@@ -1,7 +1,9 @@
 import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useConfirm } from "@/hooks/useConfirm";
 import { toast } from "sonner";
 import { Hero } from "@/components/Hero";
 import padelHero from "@/assets/padel-hero.png";
@@ -9,16 +11,48 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin, Loader2, Users, ArrowLeft, Trophy, CheckCircle } from "lucide-react";
+import { Calendar, MapPin, Loader2, Users, ArrowLeft, Trophy, CheckCircle, X } from "lucide-react";
 import { UserRole } from "@/context/AuthContext";
 import { formatEventDate, isEventLocked } from "@/lib/utils";
+
+interface EventParticipant {
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    elo: number;
+  };
+}
+
+interface EventDetailsResponse {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  endDate: string | null;
+  location: string;
+  status: string;
+  maxParticipants: number;
+  participants: EventParticipant[];
+}
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return fallback;
+}
 
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { confirmAction, ConfirmDialogComponent } = useConfirm();
   const queryClient = useQueryClient();
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
-  const { data: event, isLoading, error } = useQuery({
+  const canManageParticipants = !!user && (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN);
+
+  const { data: event, isLoading, error } = useQuery<EventDetailsResponse>({
     queryKey: ["event", id],
     queryFn: () => apiFetch(`/.netlify/functions/event-details?id=${id}`),
     enabled: !!id,
@@ -27,12 +61,33 @@ const EventDetails = () => {
   const registerMutation = useMutation({
     mutationFn: () =>
       apiFetch(`/.netlify/functions/event-register`, "POST", { eventId: id }),
-    onSuccess: (data: any) => {
+    onSuccess: (data: { message?: string }) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["event", id] });
     },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to register.");
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to register."));
+    },
+  });
+
+  const removeParticipantMutation = useMutation({
+    mutationFn: (userId: string) =>
+      apiFetch("/.netlify/functions/admin-event-registration", "DELETE", {
+        eventId: id,
+        userId,
+      }),
+    onMutate: (userId: string) => {
+      setRemovingUserId(userId);
+    },
+    onSuccess: (data: { message?: string }) => {
+      toast.success(data.message || "Participant removed.");
+      queryClient.invalidateQueries({ queryKey: ["event", id] });
+    },
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err, "Failed to remove participant."));
+    },
+    onSettled: () => {
+      setRemovingUserId(null);
     },
   });
 
@@ -124,7 +179,7 @@ const EventDetails = () => {
               <CardContent>
                 {event.participants && event.participants.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {event.participants.map((registration: any) => (
+                    {event.participants.map((registration) => (
                       <div 
                         key={registration.id} 
                         className="flex items-center gap-4 p-3 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
@@ -141,6 +196,29 @@ const EventDetails = () => {
                           <Trophy className="w-4 h-4 text-amber-500 mb-1" />
                           <span className="text-xs font-bold">{registration.user.elo}</span>
                         </div>
+                        {canManageParticipants && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            disabled={removeParticipantMutation.isPending}
+                            onClick={() =>
+                              confirmAction(
+                                "Remove Participant",
+                                `Remove ${registration.user.name} from this event?`,
+                                () => removeParticipantMutation.mutate(registration.user.id),
+                              )
+                            }
+                            aria-label={`Remove ${registration.user.name}`}
+                          >
+                            {removeParticipantMutation.isPending && removingUserId === registration.user.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <X className="w-4 h-4" />
+                            )}
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -178,7 +256,7 @@ const EventDetails = () => {
                 </div>
 
                 {!isCompleted && (() => {
-                  const isRegistered = user && event.participants?.some((p: any) => p.user.id === user.id);
+                  const isRegistered = user && event.participants?.some((p) => p.user.id === user.id);
                   const userIsUnverified = user && user.role === UserRole.UNVERIFIED_USER;
                   const isFull = (event.participants?.length || 0) >= (event.maxParticipants || 16);
                   
@@ -205,7 +283,7 @@ const EventDetails = () => {
                           {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
                           Cancel Registration
                         </Button>
-                        {isLocked && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                        {isLocked && <p className="text-xs text-center text-destructive">Locked (less than 24h to start)</p>}
                       </div>
                     );
                   }
@@ -247,7 +325,7 @@ const EventDetails = () => {
                         {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                         Register Now
                       </Button>
-                      {isLocked && <p className="text-xs text-center text-muted-foreground text-destructive">Locked (less than 24h to start)</p>}
+                      {isLocked && <p className="text-xs text-center text-destructive">Locked (less than 24h to start)</p>}
                     </div>
                   );
                 })()}
@@ -274,6 +352,7 @@ const EventDetails = () => {
           </div>
         </div>
       </div>
+      <ConfirmDialogComponent />
     </div>
   );
 };

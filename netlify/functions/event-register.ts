@@ -59,6 +59,31 @@ export const handler = defineHandler({
 
     // Use a transaction to prevent race conditions on participant count
     return await prisma.$transaction(async (tx) => {
+      const getPriorityWaitlistOrder = async () => {
+        const waitlistEntries = await tx.eventWaitlist.findMany({
+          where: { eventId },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                premiumSubscriptions: {
+                  where: { revokedAt: null },
+                  select: { id: true },
+                  take: 1,
+                },
+              },
+            },
+          },
+        });
+
+        const premiumEntries = waitlistEntries.filter((entry) => entry.user.premiumSubscriptions.length > 0);
+        const regularEntries = waitlistEntries.filter((entry) => entry.user.premiumSubscriptions.length === 0);
+
+        return [...premiumEntries, ...regularEntries];
+      };
+
       const existingRegistration = await tx.eventRegistration.findUnique({
         where: {
           eventId_userId: {
@@ -79,10 +104,8 @@ export const handler = defineHandler({
 
       const promoteNextWaitlistedUser = async () => {
         while (true) {
-          const nextWaitlistEntry = await tx.eventWaitlist.findFirst({
-            where: { eventId },
-            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-          });
+          const waitlistOrder = await getPriorityWaitlistOrder();
+          const nextWaitlistEntry = waitlistOrder[0] ?? null;
 
           if (!nextWaitlistEntry) {
             return null;
@@ -133,22 +156,6 @@ export const handler = defineHandler({
       }
 
       if (existingWaitlistEntry) {
-        if (isPremiumUser) {
-          await tx.eventWaitlist.delete({ where: { id: existingWaitlistEntry.id } });
-          await tx.eventRegistration.create({
-            data: {
-              eventId,
-              userId: user!.id,
-            },
-          });
-
-          return {
-            message: "Successfully registered with premium priority",
-            registered: true,
-            waitlisted: false,
-          };
-        }
-
         await tx.eventWaitlist.delete({ where: { id: existingWaitlistEntry.id } });
         return {
           message: "Removed from waitlist",
@@ -164,7 +171,7 @@ export const handler = defineHandler({
         select: { id: true },
       });
 
-      if (!isPremiumUser && (count >= targetEvent.maxParticipants || waitlistHasEntries)) {
+      if (count >= targetEvent.maxParticipants || waitlistHasEntries) {
         const createdWaitlistEntry = await tx.eventWaitlist.create({
           data: {
             eventId,
@@ -173,17 +180,15 @@ export const handler = defineHandler({
           select: { id: true },
         });
 
-        const waitlistOrder = await tx.eventWaitlist.findMany({
-          where: { eventId },
-          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-          select: { id: true },
-        });
+        const waitlistOrder = await getPriorityWaitlistOrder();
 
         const waitlistPosition = waitlistOrder.findIndex((entry) => entry.id === createdWaitlistEntry.id) + 1;
         const waitlistAhead = waitlistPosition > 0 ? waitlistPosition - 1 : 0;
 
         return {
-          message: "Event is full. You were added to the waitlist",
+          message: isPremiumUser
+            ? "Event is full. You were added to the premium waitlist"
+            : "Event is full. You were added to the waitlist",
           registered: false,
           waitlisted: true,
           waitlistPosition,
@@ -199,9 +204,7 @@ export const handler = defineHandler({
       });
 
       return {
-        message: count >= targetEvent.maxParticipants && isPremiumUser
-          ? "Successfully registered with premium priority"
-          : "Successfully registered",
+        message: "Successfully registered",
         registered: true,
         waitlisted: false,
       };

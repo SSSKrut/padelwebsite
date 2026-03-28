@@ -47,6 +47,11 @@ export const handler = defineHandler({
                 firstName: true,
                 lastName: true,
                 elo: true,
+                premiumSubscriptions: {
+                  where: { revokedAt: null },
+                  select: { id: true },
+                  take: 1,
+                },
               },
             },
           },
@@ -79,14 +84,21 @@ export const handler = defineHandler({
     }
 
     const waitlist = padelEvent.waitlist ?? [];
+    const premiumWaitlistEntries = waitlist.filter((entry) => (entry.user.premiumSubscriptions?.length ?? 0) > 0);
+    const regularWaitlistEntries = waitlist.filter((entry) => (entry.user.premiumSubscriptions?.length ?? 0) === 0);
+    const orderedWaitlist = [...premiumWaitlistEntries, ...regularWaitlistEntries];
 
-    const formattedWaitlist = waitlist.map((entry) => ({
-      ...entry,
-      user: {
-        ...entry.user,
-        name: publicName(entry.user.firstName, entry.user.lastName),
-      },
-    }));
+    const formattedWaitlist = orderedWaitlist.map((entry) => {
+      const { premiumSubscriptions: _premiumSubscriptions, ...safeUser } = entry.user;
+
+      return {
+        ...entry,
+        user: {
+          ...safeUser,
+          name: publicName(entry.user.firstName, entry.user.lastName),
+        },
+      };
+    });
 
     const currentUserWaitlistIndex = currentUser
       ? formattedWaitlist.findIndex((entry) => entry.user.id === currentUser!.id)

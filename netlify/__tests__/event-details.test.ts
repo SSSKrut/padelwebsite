@@ -38,6 +38,14 @@ function mockEvent(overrides: any = {}) {
   };
 }
 
+async function callHandler(overrides: any = {}) {
+  const res = await handler(mockEvent(overrides), {} as any);
+  return {
+    statusCode: res?.statusCode,
+    json: JSON.parse(res?.body ?? "{}"),
+  };
+}
+
 describe("event-details", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +68,59 @@ describe("event-details", () => {
       premiumSubscriptions: [{ id: "sub-1", revokedAt: null }],
     });
 
-    const res = await handler(mockEvent(), {} as any);
-    expect(res!.statusCode).toBe(404);
+    const { statusCode } = await callHandler();
+    expect(statusCode).toBe(404);
+  });
+
+  it("orders admin waitlist with premium users first and preserves queue order in each group", async () => {
+    const now = new Date();
+
+    mocks.eventFindUnique.mockResolvedValue({
+      id: "event-1",
+      status: "PUBLISHED",
+      publishAt: null,
+      date: new Date(now.getTime() + 72 * 60 * 60 * 1000),
+      participants: [],
+      waitlist: [
+        {
+          id: "wl-regular",
+          createdAt: new Date(now.getTime() - 20_000),
+          user: {
+            id: "regular-user",
+            firstName: "Regular",
+            lastName: "Player",
+            elo: 800,
+            premiumSubscriptions: [],
+          },
+        },
+        {
+          id: "wl-premium",
+          createdAt: new Date(now.getTime() - 10_000),
+          user: {
+            id: "premium-user",
+            firstName: "Premium",
+            lastName: "Player",
+            elo: 900,
+            premiumSubscriptions: [{ id: "sub-1" }],
+          },
+        },
+      ],
+    });
+
+    mocks.verifyUser.mockResolvedValue({
+      id: "premium-user",
+      role: "ADMIN",
+      premiumSubscriptions: [{ id: "sub-admin", revokedAt: null }],
+    });
+
+    const { statusCode, json } = await callHandler();
+
+    expect(statusCode).toBe(200);
+    expect(json.waitlistCount).toBe(2);
+    expect(json.waitlist[0].user.id).toBe("premium-user");
+    expect(json.waitlist[1].user.id).toBe("regular-user");
+    expect(json.currentUserWaitlistPosition).toBe(1);
+    expect(json.currentUserWaitlistAhead).toBe(0);
+    expect(json.waitlist[0].user.premiumSubscriptions).toBeUndefined();
   });
 });

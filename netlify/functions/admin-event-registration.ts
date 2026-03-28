@@ -26,6 +26,31 @@ export const handler = defineHandler({
     const { eventId, userId } = parsedBody.data;
 
     return await prisma.$transaction(async (tx) => {
+      const getPriorityWaitlistOrder = async () => {
+        const waitlistEntries = await tx.eventWaitlist.findMany({
+          where: { eventId },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                premiumSubscriptions: {
+                  where: { revokedAt: null },
+                  select: { id: true },
+                  take: 1,
+                },
+              },
+            },
+          },
+        });
+
+        const premiumEntries = waitlistEntries.filter((entry) => entry.user.premiumSubscriptions.length > 0);
+        const regularEntries = waitlistEntries.filter((entry) => entry.user.premiumSubscriptions.length === 0);
+
+        return [...premiumEntries, ...regularEntries];
+      };
+
       const existingRegistration = await tx.eventRegistration.findUnique({
         where: {
           eventId_userId: {
@@ -51,10 +76,8 @@ export const handler = defineHandler({
 
       let promotedUserId: string | null = null;
       while (true) {
-        const nextWaitlistEntry = await tx.eventWaitlist.findFirst({
-          where: { eventId },
-          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-        });
+        const waitlistOrder = await getPriorityWaitlistOrder();
+        const nextWaitlistEntry = waitlistOrder[0] ?? null;
 
         if (!nextWaitlistEntry) {
           break;

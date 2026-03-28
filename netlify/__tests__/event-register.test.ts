@@ -201,8 +201,8 @@ describe("event-register handler", () => {
     vi.mocked(prisma.eventRegistration.count).mockResolvedValue(16);
     vi.mocked(prisma.eventWaitlist.create).mockResolvedValue({ id: "wl-2" } as never);
     vi.mocked(prisma.eventWaitlist.findMany).mockResolvedValue([
-      { id: "wl-1" },
-      { id: "wl-2" },
+      { id: "wl-1", userId: "other-user", user: { premiumSubscriptions: [] } },
+      { id: "wl-2", userId: USER_UUID, user: { premiumSubscriptions: [] } },
     ] as never);
 
     const { statusCode, json } = await callHandler();
@@ -216,21 +216,25 @@ describe("event-register handler", () => {
     });
   });
 
-  it("registers premium users immediately when event is full", async () => {
+  it("adds premium users to waitlist when event is full", async () => {
     vi.mocked(isUserPremium).mockResolvedValue(true);
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 16, 16));
     vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.eventRegistration.count).mockResolvedValue(16);
-    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
+    vi.mocked(prisma.eventWaitlist.create).mockResolvedValue({ id: "wl-2" } as never);
+    vi.mocked(prisma.eventWaitlist.findMany).mockResolvedValue([
+      { id: "wl-1", userId: "regular-user", user: { premiumSubscriptions: [] } },
+      { id: "wl-2", userId: USER_UUID, user: { premiumSubscriptions: [{ id: "sub-1" }] } },
+    ] as never);
 
     const { statusCode, json } = await callHandler();
     expect(statusCode).toBe(200);
-    expect(json).toEqual({
-      message: "Successfully registered with premium priority",
-      registered: true,
-      waitlisted: false,
-    });
+    expect(json.waitlisted).toBe(true);
+    expect(json.waitlistPosition).toBe(1);
+    expect(json.waitlistAhead).toBe(0);
+    expect(json.message).toMatch(/premium waitlist/i);
+    expect(prisma.eventRegistration.create).not.toHaveBeenCalled();
   });
 
   it("removes non-premium users from waitlist on second click", async () => {
@@ -245,20 +249,17 @@ describe("event-register handler", () => {
     expect(prisma.eventWaitlist.delete).toHaveBeenCalledWith({ where: { id: "wl-1" } });
   });
 
-  it("promotes premium users from waitlist to registration", async () => {
+  it("removes premium users from waitlist on second click", async () => {
     vi.mocked(isUserPremium).mockResolvedValue(true);
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 16, 16));
     vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue({ id: "wl-1" } as never);
     vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
-    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
 
     const { statusCode, json } = await callHandler();
     expect(statusCode).toBe(200);
-    expect(json).toEqual({ message: "Successfully registered with premium priority", registered: true, waitlisted: false });
-    expect(prisma.eventRegistration.create).toHaveBeenCalledWith({
-      data: { eventId: EVENT_UUID, userId: USER_UUID },
-    });
+    expect(json).toEqual({ message: "Removed from waitlist", registered: false, waitlisted: false });
+    expect(prisma.eventRegistration.create).not.toHaveBeenCalled();
   });
 
   // --- Unregistration ---
@@ -292,10 +293,13 @@ describe("event-register handler", () => {
       .mockResolvedValueOnce(null);
     vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
-    vi.mocked(prisma.eventWaitlist.findFirst).mockResolvedValue({
-      id: "wl-1",
-      userId: "next-user",
-    } as never);
+    vi.mocked(prisma.eventWaitlist.findMany).mockResolvedValue([
+      {
+        id: "wl-1",
+        userId: "next-user",
+        user: { premiumSubscriptions: [] },
+      },
+    ] as never);
     vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
     vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
 
@@ -317,6 +321,45 @@ describe("event-register handler", () => {
     expect(prisma.eventWaitlist.delete).toHaveBeenCalledWith({ where: { id: "wl-1" } });
   });
 
+  it("prioritizes premium waitlist users when promoting after unregister", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 16, 16));
+    vi.mocked(prisma.eventRegistration.findUnique)
+      .mockResolvedValueOnce({
+        id: "reg-123",
+        eventId: EVENT_UUID,
+        userId: USER_UUID,
+      } as never)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
+    vi.mocked(prisma.eventWaitlist.findMany).mockResolvedValue([
+      {
+        id: "wl-regular",
+        userId: "regular-user",
+        user: { premiumSubscriptions: [] },
+      },
+      {
+        id: "wl-premium",
+        userId: "premium-user",
+        user: { premiumSubscriptions: [{ id: "sub-1" }] },
+      },
+    ] as never);
+    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
+    vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
+
+    const { statusCode, json } = await callHandler();
+
+    expect(statusCode).toBe(200);
+    expect(json.promotedUserId).toBe("premium-user");
+    expect(prisma.eventRegistration.create).toHaveBeenCalledWith({
+      data: {
+        eventId: EVENT_UUID,
+        userId: "premium-user",
+      },
+    });
+    expect(prisma.eventWaitlist.delete).toHaveBeenCalledWith({ where: { id: "wl-premium" } });
+  });
+
   it("skips stale waitlist entries that are already registered", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 16, 16));
     vi.mocked(prisma.eventRegistration.findUnique)
@@ -329,9 +372,14 @@ describe("event-register handler", () => {
       .mockResolvedValueOnce(null);
     vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
-    vi.mocked(prisma.eventWaitlist.findFirst)
-      .mockResolvedValueOnce({ id: "wl-1", userId: "already-registered" } as never)
-      .mockResolvedValueOnce({ id: "wl-2", userId: "next-user" } as never);
+    vi.mocked(prisma.eventWaitlist.findMany)
+      .mockResolvedValueOnce([
+        { id: "wl-1", userId: "already-registered", user: { premiumSubscriptions: [{ id: "sub-1" }] } },
+        { id: "wl-2", userId: "next-user", user: { premiumSubscriptions: [] } },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: "wl-2", userId: "next-user", user: { premiumSubscriptions: [] } },
+      ] as never);
     vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
     vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
 
@@ -350,8 +398,8 @@ describe("event-register handler", () => {
     vi.mocked(prisma.eventWaitlist.findFirst).mockResolvedValue({ id: "wl-existing" } as never);
     vi.mocked(prisma.eventWaitlist.create).mockResolvedValue({ id: "wl-2" } as never);
     vi.mocked(prisma.eventWaitlist.findMany).mockResolvedValue([
-      { id: "wl-existing" },
-      { id: "wl-2" },
+      { id: "wl-existing", userId: "existing-user", user: { premiumSubscriptions: [] } },
+      { id: "wl-2", userId: USER_UUID, user: { premiumSubscriptions: [] } },
     ] as never);
 
     const { statusCode, json } = await callHandler();

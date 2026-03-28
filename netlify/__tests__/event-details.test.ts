@@ -51,7 +51,7 @@ describe("event-details", () => {
     vi.clearAllMocks();
   });
 
-  it("should NOT show SCHEDULED events to premium users if publishAt is more than 24h away", async () => {
+  it("shows SCHEDULED events to premium users immediately, even if publishAt is far away", async () => {
     const farFuturePublishAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     mocks.eventFindUnique.mockResolvedValue({
@@ -60,6 +60,7 @@ describe("event-details", () => {
       publishAt: farFuturePublishAt,
       date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       participants: [],
+      waitlist: [],
     });
 
     mocks.verifyUser.mockResolvedValue({
@@ -68,8 +69,54 @@ describe("event-details", () => {
       premiumSubscriptions: [{ id: "sub-1", revokedAt: null }],
     });
 
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(200);
+    expect(json.status).toBe("SCHEDULED");
+  });
+
+  it("hides SCHEDULED events from regular users before publishAt", async () => {
+    const futurePublishAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+
+    mocks.eventFindUnique.mockResolvedValue({
+      id: "event-1",
+      status: "SCHEDULED",
+      publishAt: futurePublishAt,
+      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      participants: [],
+      waitlist: [],
+    });
+
+    mocks.verifyUser.mockResolvedValue({
+      id: "user-2",
+      role: "USER",
+      premiumSubscriptions: [],
+    });
+
     const { statusCode } = await callHandler();
     expect(statusCode).toBe(404);
+  });
+
+  it("shows SCHEDULED events to regular users after publishAt", async () => {
+    const pastPublishAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+    mocks.eventFindUnique.mockResolvedValue({
+      id: "event-1",
+      status: "SCHEDULED",
+      publishAt: pastPublishAt,
+      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      participants: [],
+      waitlist: [],
+    });
+
+    mocks.verifyUser.mockResolvedValue({
+      id: "user-2",
+      role: "USER",
+      premiumSubscriptions: [],
+    });
+
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(200);
+    expect(json.status).toBe("SCHEDULED");
   });
 
   it("orders admin waitlist with premium users first and preserves queue order in each group", async () => {

@@ -62,11 +62,18 @@ function futureDate(hoursFromNow: number): Date {
   return new Date(Date.now() + hoursFromNow * 60 * 60 * 1000);
 }
 
-function mockDbEvent(date: Date, participants = 0, maxParticipants = 16, status = "PUBLISHED") {
+function mockDbEvent(
+  date: Date,
+  participants = 0,
+  maxParticipants = 16,
+  status = "PUBLISHED",
+  publishAt: Date | null = null,
+) {
   return {
     id: EVENT_UUID,
     date,
     status,
+    publishAt,
     maxParticipants,
     _count: { participants },
   } as never;
@@ -127,16 +134,36 @@ describe("event-register handler", () => {
     expect(json.error).toMatch(/not open/i);
   });
 
-  it("returns 403 for SCHEDULED events for non-premium users", async () => {
-    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 0, 16, "SCHEDULED"));
+  it("returns 403 for SCHEDULED events for non-premium users before publishAt", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(
+      mockDbEvent(futureDate(48), 0, 16, "SCHEDULED", futureDate(12)),
+    );
     vi.mocked(isUserPremium).mockResolvedValue(false);
     const { statusCode, json } = await callHandler();
     expect(statusCode).toBe(403);
     expect(json.error).toMatch(/not yet open/i);
   });
 
+  it("allows non-premium users to register for SCHEDULED events after publishAt", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(
+      mockDbEvent(futureDate(48), 0, 16, "SCHEDULED", new Date(Date.now() - 60 * 60 * 1000)),
+    );
+    vi.mocked(isUserPremium).mockResolvedValue(false);
+    vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.count).mockResolvedValue(0);
+    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
+
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(200);
+    expect(json.registered).toBe(true);
+    expect(json.waitlisted).toBe(false);
+  });
+
   it("allows premium users to register for SCHEDULED events", async () => {
-    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(48), 0, 16, "SCHEDULED"));
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(
+      mockDbEvent(futureDate(48), 0, 16, "SCHEDULED", futureDate(72)),
+    );
     vi.mocked(isUserPremium).mockResolvedValue(true);
     vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue(null);

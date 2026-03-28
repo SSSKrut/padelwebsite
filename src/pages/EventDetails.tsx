@@ -124,7 +124,7 @@ const EventDetails = () => {
   }
 
   const isCompleted = event.status === "ARCHIVED";
-  const isEarlyAccess = event.status === "SCHEDULED";
+  const isScheduled = event.status === "SCHEDULED";
 
   return (
     <div className="min-h-screen bg-muted/20 pb-16">
@@ -158,9 +158,9 @@ const EventDetails = () => {
                       </div>
                     </div>
                   </div>
-                  {isEarlyAccess ? (
+                  {isScheduled ? (
                     <Badge variant="outline" className="text-sm px-3 py-1 border-amber-500 text-amber-600">
-                      Premium Early Access
+                      Scheduled
                     </Badge>
                   ) : (
                     <Badge variant={isCompleted ? "secondary" : "default"} className="text-sm px-3 py-1">
@@ -371,7 +371,7 @@ const EventDetails = () => {
                     );
                   }
 
-                  const shouldJoinWaitlist = isFull && !userIsPremium;
+                  const shouldJoinWaitlist = isFull;
 
                   return (
                     <div className="mt-4 space-y-2">
@@ -383,11 +383,13 @@ const EventDetails = () => {
                         disabled={registerMutation.isPending || isLocked}
                       >
                         {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                        {shouldJoinWaitlist ? "Join Waitlist" : (isFull && userIsPremium ? "Register with Premium Priority" : "Register Now")}
+                        {shouldJoinWaitlist ? (userIsPremium ? "Join Premium Waitlist" : "Join Waitlist") : "Register Now"}
                       </Button>
                       {shouldJoinWaitlist && (
                         <p className="text-xs text-center text-muted-foreground">
-                          Event is full. You will be added to the waitlist.
+                          {userIsPremium
+                            ? "Event is full. You will be added to the premium-priority waitlist."
+                            : "Event is full. You will be added to the waitlist."}
                         </p>
                       )}
                       {isLocked && <p className="text-xs text-center text-destructive">Locked (less than 24h to start)</p>}

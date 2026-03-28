@@ -32,7 +32,7 @@ export function EventCard({ event }: EventCardProps) {
           <CardTitle className="text-xl">{event.title}</CardTitle>
           {event.status === "SCHEDULED" && (
             <Badge variant="outline" className="border-amber-500 text-amber-600 text-xs shrink-0">
-              Early Access
+              Scheduled
             </Badge>
           )}
         </div>

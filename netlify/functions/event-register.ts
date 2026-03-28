@@ -29,10 +29,14 @@ export const handler = defineHandler({
       };
     }
 
-    // Status check: PUBLISHED is open to all; SCHEDULED is premium-only early access
+    // Status check: PUBLISHED is open to all.
+    // SCHEDULED is open immediately for premium users, and for regular users after publishAt.
     if (targetEvent.status !== "PUBLISHED") {
       if (targetEvent.status === "SCHEDULED") {
-        if (!isPremiumUser) {
+        const now = new Date();
+        const isPublishedForRegulars = Boolean(targetEvent.publishAt && targetEvent.publishAt <= now);
+
+        if (!isPremiumUser && !isPublishedForRegulars) {
           return {
             statusCode: 403,
             body: JSON.stringify({ error: "Event is not yet open for registration" }),

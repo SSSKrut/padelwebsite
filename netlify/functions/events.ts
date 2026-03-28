@@ -15,17 +15,16 @@ export const handler = defineHandler({
     }
 
     const now = new Date();
-    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
     const events = await prisma.event.findMany({
       where: isPremium
-        ? {
+        ? { status: { in: ["PUBLISHED", "ARCHIVED", "SCHEDULED"] } }
+        : {
             OR: [
               { status: { in: ["PUBLISHED", "ARCHIVED"] } },
-              { status: "SCHEDULED", publishAt: { lte: in24h } },
+              { status: "SCHEDULED", publishAt: { lte: now } },
             ],
-          }
-        : { status: { in: ["PUBLISHED", "ARCHIVED"] } },
+          },
       orderBy: { date: "asc" },
       include: {
         _count: {

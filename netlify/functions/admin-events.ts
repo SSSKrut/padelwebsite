@@ -79,6 +79,7 @@ export const handler: Handler = async (event) => {
           ...(title !== undefined && { title }),
           ...(description !== undefined && { description }),
           ...(date !== undefined && { date: new Date(date) }),
+          ...(date !== undefined && { reminderSentAt: null }),
           ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
           ...(location !== undefined && { location }),
           ...(status !== undefined && { status }),

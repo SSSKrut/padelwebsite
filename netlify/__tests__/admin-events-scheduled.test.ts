@@ -196,5 +196,33 @@ describe("admin-events — SCHEDULED status", () => {
         }),
       );
     });
+
+    it("resets reminderSentAt when event date is updated", async () => {
+      const updatedDate = "2026-04-07T20:30:00.000Z";
+
+      vi.mocked(prisma.event.update).mockResolvedValue({
+        id: "evt-1",
+        date: new Date(updatedDate),
+        reminderSentAt: null,
+      } as never);
+
+      const { statusCode } = await callHandler({
+        httpMethod: "PATCH",
+        body: JSON.stringify({
+          id: "evt-1",
+          date: updatedDate,
+        }),
+      });
+
+      expect(statusCode).toBe(200);
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            date: new Date(updatedDate),
+            reminderSentAt: null,
+          }),
+        }),
+      );
+    });
   });
 });

@@ -43,6 +43,7 @@ model User {
 
   achievements          UserAchievement[]
   registrations         EventRegistration[]
+  waitlistEntries       EventWaitlist[]
   tokens                VerificationToken[]
   premiumSubscriptions  PremiumSubscription[] @relation("PremiumUser")
   premiumGrantedBy      PremiumSubscription[] @relation("PremiumGranter")
@@ -79,6 +80,7 @@ model Event {
   createdAt       DateTime    @default(now())
 
   participants EventRegistration[]
+  waitlist     EventWaitlist[]
 }
 
 model PremiumSubscription {
@@ -94,6 +96,19 @@ model PremiumSubscription {
 }
 
 model EventRegistration {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  eventId   String
+  userId    String
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model EventWaitlist {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 

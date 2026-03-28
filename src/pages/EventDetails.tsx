@@ -24,6 +24,15 @@ interface EventParticipant {
   };
 }
 
+interface EventWaitlistEntry {
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    elo: number;
+  };
+}
+
 interface EventDetailsResponse {
   id: string;
   title: string;
@@ -34,6 +43,10 @@ interface EventDetailsResponse {
   status: string;
   maxParticipants: number;
   participants: EventParticipant[];
+  waitlist: EventWaitlistEntry[];
+  waitlistCount: number;
+  currentUserWaitlistPosition: number | null;
+  currentUserWaitlistAhead: number | null;
 }
 
 function getErrorMessage(err: unknown, fallback: string): string {
@@ -173,11 +186,14 @@ const EventDetails = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Users className="w-5 h-5 text-primary" />
-                  Participants ({event.participants?.length || 0} / {event.maxParticipants || 16})
+                  Participants ({event.participants.length} / {event.maxParticipants || 16})
                 </CardTitle>
+                <CardDescription>
+                  Waitlist: {event.waitlistCount}
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {event.participants && event.participants.length > 0 ? (
+                {event.participants.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {event.participants.map((registration) => (
                       <div 
@@ -227,6 +243,32 @@ const EventDetails = () => {
                     <p className="text-muted-foreground">No participants yet.</p>
                   </div>
                 )}
+
+                {canManageParticipants && (
+                  <div className="mt-8">
+                    <h4 className="font-semibold mb-3">Waitlist Queue ({event.waitlistCount})</h4>
+                    {event.waitlist.length > 0 ? (
+                      <div className="space-y-2">
+                        {event.waitlist.map((entry, index) => (
+                          <div
+                            key={entry.id}
+                            className="flex items-center justify-between rounded-lg border bg-muted/20 p-3"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-semibold rounded-md border px-2 py-1 bg-background">
+                                #{index + 1}
+                              </span>
+                              <span className="text-sm font-medium">{entry.user.name}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">ELO {entry.user.elo}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Waitlist is empty.</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -251,14 +293,21 @@ const EventDetails = () => {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Total Participants</p>
                   <p className="font-medium text-2xl">
-                    {event.participants?.length || 0} <span className="text-lg text-muted-foreground">/ {event.maxParticipants || 16}</span>
+                    {event.participants.length} <span className="text-lg text-muted-foreground">/ {event.maxParticipants || 16}</span>
                   </p>
                 </div>
 
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Waitlist</p>
+                  <p className="font-medium text-2xl">{event.waitlistCount}</p>
+                </div>
+
                 {!isCompleted && (() => {
-                  const isRegistered = user && event.participants?.some((p) => p.user.id === user.id);
+                  const isRegistered = user && event.participants.some((p) => p.user.id === user.id);
+                  const isWaitlisted = user && event.currentUserWaitlistPosition !== null;
                   const userIsUnverified = user && user.role === UserRole.UNVERIFIED_USER;
-                  const isFull = (event.participants?.length || 0) >= (event.maxParticipants || 16);
+                  const isFull = event.participants.length >= (event.maxParticipants || 16);
+                  const userIsPremium = !!user?.isPremium;
                   
                   const isLocked = isEventLocked(event.date);
 
@@ -288,6 +337,27 @@ const EventDetails = () => {
                     );
                   }
 
+                  if (isWaitlisted) {
+                    return (
+                      <div className="mt-4 space-y-2">
+                        <Button
+                          variant="secondary"
+                          className="w-full flex gap-2"
+                          size="lg"
+                          onClick={() => registerMutation.mutate()}
+                          disabled={registerMutation.isPending || isLocked}
+                        >
+                          {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
+                          Leave Waitlist
+                        </Button>
+                        <p className="text-xs text-center text-muted-foreground">
+                          You are #{event.currentUserWaitlistPosition} in queue. People ahead of you: {event.currentUserWaitlistAhead}
+                        </p>
+                        {isLocked && <p className="text-xs text-center text-destructive">Locked (less than 24h to start)</p>}
+                      </div>
+                    );
+                  }
+
                   if (userIsUnverified) {
                     return (
                       <Button 
@@ -301,30 +371,25 @@ const EventDetails = () => {
                     );
                   }
 
-                  if (isFull) {
-                    return (
-                      <Button 
-                        variant="outline"
-                        className="w-full mt-4" 
-                        size="lg"
-                        disabled
-                      >
-                        Event is Full
-                      </Button>
-                    );
-                  }
+                  const shouldJoinWaitlist = isFull && !userIsPremium;
 
                   return (
                     <div className="mt-4 space-y-2">
                       <Button
                         className="w-full"
+                        variant={shouldJoinWaitlist ? "outline" : "default"}
                         size="lg"
                         onClick={() => registerMutation.mutate()}
                         disabled={registerMutation.isPending || isLocked}
                       >
                         {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                        Register Now
+                        {shouldJoinWaitlist ? "Join Waitlist" : (isFull && userIsPremium ? "Register with Premium Priority" : "Register Now")}
                       </Button>
+                      {shouldJoinWaitlist && (
+                        <p className="text-xs text-center text-muted-foreground">
+                          Event is full. You will be added to the waitlist.
+                        </p>
+                      )}
                       {isLocked && <p className="text-xs text-center text-destructive">Locked (less than 24h to start)</p>}
                     </div>
                   );

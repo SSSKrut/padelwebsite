@@ -49,9 +49,50 @@ export const handler = defineHandler({
         where: { id: existingRegistration.id },
       });
 
+      let promotedUserId: string | null = null;
+      while (true) {
+        const nextWaitlistEntry = await tx.eventWaitlist.findFirst({
+          where: { eventId },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        });
+
+        if (!nextWaitlistEntry) {
+          break;
+        }
+
+        const alreadyRegistered = await tx.eventRegistration.findUnique({
+          where: {
+            eventId_userId: {
+              eventId,
+              userId: nextWaitlistEntry.userId,
+            },
+          },
+          select: { id: true },
+        });
+
+        if (alreadyRegistered) {
+          await tx.eventWaitlist.delete({ where: { id: nextWaitlistEntry.id } });
+          continue;
+        }
+
+        await tx.eventRegistration.create({
+          data: {
+            eventId,
+            userId: nextWaitlistEntry.userId,
+          },
+        });
+
+        await tx.eventWaitlist.delete({ where: { id: nextWaitlistEntry.id } });
+        promotedUserId = nextWaitlistEntry.userId;
+        break;
+      }
+
       return {
-        message: "Player removed from event registration",
+        message: promotedUserId
+          ? "Player removed from event registration and first waitlisted player promoted"
+          : "Player removed from event registration",
         removed: true,
+        promotedUserId,
       };
     });
   },

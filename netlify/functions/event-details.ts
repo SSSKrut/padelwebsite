@@ -8,6 +8,16 @@ export const handler = defineHandler({
   requireAuth: false,
   handler: async ({ event }) => {
     const eventId = event.queryStringParameters?.id;
+    let currentUser: Awaited<ReturnType<typeof verifyUser>> | null = null;
+
+    try {
+      currentUser = await verifyUser(event);
+    } catch {
+      currentUser = null;
+    }
+
+    const isCurrentUserPremium = (currentUser?.premiumSubscriptions?.length ?? 0) > 0;
+    const isCurrentUserAdmin = currentUser?.role === "ADMIN" || currentUser?.role === "SUPER_ADMIN";
 
     if (!eventId) {
       return { statusCode: 400, body: JSON.stringify({ error: "Missing event ID" }) };
@@ -26,7 +36,21 @@ export const handler = defineHandler({
                 elo: true
               }
             }
-          }
+          },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        },
+        waitlist: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                elo: true,
+              },
+            },
+          },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         }
       }
     });
@@ -49,16 +73,24 @@ export const handler = defineHandler({
         return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
       }
 
-      try {
-        const currentUser = await verifyUser(event);
-        const isPremium = (currentUser.premiumSubscriptions?.length ?? 0) > 0;
-        if (!isPremium) {
-          return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
-        }
-      } catch {
+      if (!isCurrentUserPremium) {
         return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
       }
     }
+
+    const waitlist = padelEvent.waitlist ?? [];
+
+    const formattedWaitlist = waitlist.map((entry) => ({
+      ...entry,
+      user: {
+        ...entry.user,
+        name: publicName(entry.user.firstName, entry.user.lastName),
+      },
+    }));
+
+    const currentUserWaitlistIndex = currentUser
+      ? formattedWaitlist.findIndex((entry) => entry.user.id === currentUser!.id)
+      : -1;
 
     // Map user.firstName and user.lastName to user.name
     const formattedEvent = {
@@ -69,7 +101,11 @@ export const handler = defineHandler({
           ...p.user,
           name: publicName(p.user.firstName, p.user.lastName),
         }
-      }))
+      })),
+      waitlistCount: formattedWaitlist.length,
+      currentUserWaitlistPosition: currentUserWaitlistIndex >= 0 ? currentUserWaitlistIndex + 1 : null,
+      currentUserWaitlistAhead: currentUserWaitlistIndex >= 0 ? currentUserWaitlistIndex : null,
+      waitlist: isCurrentUserAdmin ? formattedWaitlist : [],
     };
 
     return formattedEvent;

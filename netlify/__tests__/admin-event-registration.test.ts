@@ -5,10 +5,16 @@ vi.mock("../functions/lib/prisma", () => {
   const eventRegistration = {
     findUnique: vi.fn(),
     delete: vi.fn(),
+    create: vi.fn(),
+  };
+  const eventWaitlist = {
+    findFirst: vi.fn(),
+    delete: vi.fn(),
   };
   const prisma = {
     eventRegistration,
-    $transaction: vi.fn().mockImplementation(async (fn: any) => fn({ eventRegistration })),
+    eventWaitlist,
+    $transaction: vi.fn().mockImplementation(async (fn: any) => fn({ eventRegistration, eventWaitlist })),
   };
   return { prisma };
 });
@@ -51,8 +57,13 @@ async function callHandler(overrides: Partial<HandlerEvent> = {}) {
 
 describe("admin-event-registration handler", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: any) =>
+      fn({ eventRegistration: prisma.eventRegistration, eventWaitlist: prisma.eventWaitlist }),
+    );
     vi.mocked(verifyUser).mockResolvedValue({ id: "admin-1", role: "ADMIN" } as never);
+    vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.eventWaitlist.findFirst).mockResolvedValue(null);
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -90,16 +101,62 @@ describe("admin-event-registration handler", () => {
   });
 
   it("removes player registration in a transaction", async () => {
-    vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue({ id: "reg-1" } as never);
+    vi.mocked(prisma.eventRegistration.findUnique)
+      .mockResolvedValueOnce({ id: "reg-1" } as never)
+      .mockResolvedValueOnce(null);
     vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
 
     const { statusCode, json } = await callHandler();
 
     expect(statusCode).toBe(200);
-    expect(json).toEqual({ message: "Player removed from event registration", removed: true });
+    expect(json).toEqual({ message: "Player removed from event registration", removed: true, promotedUserId: null });
     expect(prisma.$transaction).toHaveBeenCalled();
     expect(prisma.eventRegistration.delete).toHaveBeenCalledWith({
       where: { id: "reg-1" },
     });
+  });
+
+  it("promotes first waitlisted user after admin removes participant", async () => {
+    vi.mocked(prisma.eventRegistration.findUnique)
+      .mockResolvedValueOnce({ id: "reg-1" } as never)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
+    vi.mocked(prisma.eventWaitlist.findFirst).mockResolvedValue({ id: "wl-1", userId: "next-user" } as never);
+    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
+    vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
+
+    const { statusCode, json } = await callHandler();
+
+    expect(statusCode).toBe(200);
+    expect(json).toEqual({
+      message: "Player removed from event registration and first waitlisted player promoted",
+      removed: true,
+      promotedUserId: "next-user",
+    });
+    expect(prisma.eventRegistration.create).toHaveBeenCalledWith({
+      data: {
+        eventId: EVENT_UUID,
+        userId: "next-user",
+      },
+    });
+    expect(prisma.eventWaitlist.delete).toHaveBeenCalledWith({ where: { id: "wl-1" } });
+  });
+
+  it("skips stale waitlist users who are already registered", async () => {
+    vi.mocked(prisma.eventRegistration.findUnique)
+      .mockResolvedValueOnce({ id: "reg-1" } as never)
+      .mockResolvedValueOnce({ id: "already" } as never)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
+    vi.mocked(prisma.eventWaitlist.findFirst)
+      .mockResolvedValueOnce({ id: "wl-1", userId: "already-user" } as never)
+      .mockResolvedValueOnce({ id: "wl-2", userId: "next-user" } as never);
+    vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
+    vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
+
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(200);
+    expect(json.promotedUserId).toBe("next-user");
+    expect(prisma.eventWaitlist.delete).toHaveBeenCalledTimes(2);
   });
 });

@@ -144,6 +144,17 @@ describe("event-register handler", () => {
     expect(json.error).toMatch(/not yet open/i);
   });
 
+  it("returns 403 for SCHEDULED events for non-premium users when publishAt is missing", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(
+      mockDbEvent(futureDate(48), 0, 16, "SCHEDULED", null),
+    );
+    vi.mocked(isUserPremium).mockResolvedValue(false);
+
+    const { statusCode, json } = await callHandler();
+    expect(statusCode).toBe(403);
+    expect(json.error).toMatch(/not yet open/i);
+  });
+
   it("allows non-premium users to register for SCHEDULED events after publishAt", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(
       mockDbEvent(futureDate(48), 0, 16, "SCHEDULED", new Date(Date.now() - 60 * 60 * 1000)),

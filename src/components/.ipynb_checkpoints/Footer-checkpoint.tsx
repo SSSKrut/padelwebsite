@@ -4,41 +4,38 @@
  import partnersData from "../../data/partners.json";
  
  export const Footer = () => {
-+  const goldenSponsors = partnersData.filter((partner) => partner.category === "golden");
-+  const informationalPartners = partnersData.filter(
-+    (partner) => partner.category === "informational",
-+  );
-+
+  const goldenSponsors = partnersData.filter((partner) => partner.category === "golden");
+  const informationalPartners = partnersData.filter(
+    (partner) => partner.category === "informational",
+  );
+
    return (
      <footer className="bg-card border-t mt-16">
        <div className="container mx-auto px-4 py-12">
          {/* Partners Section */}
          <div className="mb-8 pb-8 border-b">
--          <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">
--            OUR PARTNERS
-+          <h3 className="text-sm font-semibold text-muted-foreground mb-3 text-center">
-+            GOLDEN SPONSORS
-+          </h3>
-+          <div className="flex flex-wrap items-center justify-center gap-8 mb-6">
-+            {goldenSponsors.map((partner) => (
-+              <a
-+                key={partner.name}
-+                href={partner.url}
-+                target="_blank"
-+                rel="noopener noreferrer"
-+                className="text-muted-foreground hover:text-foreground transition-colors"
-+              >
-+                {partner.name}
-+              </a>
-+            ))}
-+          </div>
-+
-+          <h3 className="text-sm font-semibold text-muted-foreground mb-3 text-center">
-+            INFORMATIONAL PARTNERS
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3 text-center">
+            GOLDEN SPONSORS
+          </h3>
+          <div className="flex flex-wrap items-center justify-center gap-8 mb-6">
+            {goldenSponsors.map((partner) => (
+              <a
+                key={partner.name}
+                href={partner.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {partner.name}
+              </a>
+            ))}
+          </div>
+
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3 text-center">
+           INFORMATIONAL PARTNERS
            </h3>
            <div className="flex flex-wrap items-center justify-center gap-8">
--            {partnersData.map((partner) => (
-+            {informationalPartners.map((partner) => (
+            {informationalPartners.map((partner) => (
                <a
                  key={partner.name}
                  href={partner.url}

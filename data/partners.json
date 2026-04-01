@@ -1,12 +1,22 @@
 [
-  {
-    "name": "Stealth Padel",
-    "url": "https://stealthpadel.com",
-    "logo": "/images/partners/stealth.png"
-  },
-  {
-    "name": "Vast Sports",
-    "url": "https://vastsports.at",
-    "logo": "/images/partners/vast.png"
-  }
-]
+   {
+     "name": "Stealth Padel",
+     "url": "https://stealthpadel.com",
+-    "logo": "/images/partners/stealth.png"
++    "logo": "/images/partners/stealth.png",
++    "category": "golden"
+   },
+   {
+     "name": "Vast Sports",
+     "url": "https://vastsports.at",
+-    "logo": "/images/partners/vast.png"
++    "logo": "/images/partners/vast.png",
++    "category": "golden"
++  },
++  {
++    "name": "Padel in Wien",
++    "url": "https://www.padel-wien.at/",
++    "logo": "/images/partners/padel-in-wien.png",
++    "category": "informational"
+   }
+ ]

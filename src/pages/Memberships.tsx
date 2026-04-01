@@ -9,6 +9,7 @@ type Product = {
   name: string;
   type: string;
   priceEuro: number | null;
+  oldPriceEuro?: number | null;
   description: string;
   buyLink: string | null;
 };
@@ -50,8 +51,16 @@ const Memberships = () => {
                     )}
                   </div>
 
+                  {membership.oldPriceEuro && (
+                    <p className="text-base text-muted-foreground line-through">€{membership.oldPriceEuro}</p>
+                  )}
                   <p className="text-4xl font-bold text-primary">€{membership.priceEuro}</p>
                   <p className="text-sm text-muted-foreground">per membership period</p>
+                  {membership.oldPriceEuro && (
+                    <Badge variant="destructive" className="w-fit mt-2">
+                      Special discount • this week only
+                    </Badge>
+                  )}
                 </CardHeader>
 
                 <CardContent>
@@ -69,8 +78,8 @@ const Memberships = () => {
           })}
         </div>
 
-        {/* Winter passes */}
-        <h2 className="text-3xl font-bold text-center mb-12">Winter Saturday Passes</h2>
+        {/* Summer passes */}
+        <h2 className="text-3xl font-bold text-center mb-12">Summer Saturday Passes</h2>
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
           {passes.map((pass, index) => {
             const badge = getBadge(pass.name);
@@ -85,7 +94,7 @@ const Memberships = () => {
                   </div>
 
                   <p className="text-4xl font-bold text-primary">€{pass.priceEuro}</p>
-                  <p className="text-sm text-muted-foreground">limited to Saturday winter games</p>
+                  <p className="text-sm text-muted-foreground">Saturday games only</p>
                 </CardHeader>
 
                 <CardContent>

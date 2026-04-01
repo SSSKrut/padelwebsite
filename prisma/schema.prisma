@@ -5,10 +5,138 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// Перечисление для ролей
+enum Role {
+  SUPER_ADMIN
+  UNVERIFIED_USER
+  USER
+  ADMIN
+}
+
+// Перечисление для статусов ивентов
+enum EventStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  createdAt    DateTime @default(now())
+
+  role         Role     @default(UNVERIFIED_USER)
+  elo          Int      @default(1000)
+
+  achievements          UserAchievement[]
+  registrations         EventRegistration[]
+  waitlistEntries       EventWaitlist[]
+  tokens                VerificationToken[]
+  premiumSubscriptions  PremiumSubscription[] @relation("PremiumUser")
+  premiumGrantedBy      PremiumSubscription[] @relation("PremiumGranter")
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model VerificationToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id              String      @id @default(uuid())
+  title           String
+  description     String?
+  date            DateTime
+  endDate         DateTime?
+  location        String?
+  status          EventStatus @default(DRAFT)
+  publishAt       DateTime?
+  reminderSentAt  DateTime?
+  maxParticipants Int         @default(16)
+  createdAt       DateTime    @default(now())
+
+  participants EventRegistration[]
+  waitlist     EventWaitlist[]
+}
+
+model PremiumSubscription {
+  id          String    @id @default(uuid())
+  grantedAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  userId      String
+  user        User      @relation("PremiumUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  grantedById String
+  grantedBy   User      @relation("PremiumGranter", fields: [grantedById], references: [id], onDelete: Cascade)
+}
+
+model EventRegistration {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  eventId   String
+  userId    String
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model EventWaitlist {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  eventId   String
+  userId    String
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  title       String   @unique
+  description String?
+  icon        String?
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  dateAwarded   DateTime @default(now())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 }

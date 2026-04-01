@@ -1,0 +1,121 @@
+import { prisma } from "./lib/prisma";
+import { defineHandler } from "./lib/apiHandler";
+import { publicName } from "./lib/sanitize";
+import { verifyUser } from "./lib/auth";
+
+export const handler = defineHandler({
+  method: "GET",
+  requireAuth: false,
+  handler: async ({ event }) => {
+    const eventId = event.queryStringParameters?.id;
+    let currentUser: Awaited<ReturnType<typeof verifyUser>> | null = null;
+
+    try {
+      currentUser = await verifyUser(event);
+    } catch {
+      currentUser = null;
+    }
+
+    const isCurrentUserPremium = (currentUser?.premiumSubscriptions?.length ?? 0) > 0;
+    const isCurrentUserAdmin = currentUser?.role === "ADMIN" || currentUser?.role === "SUPER_ADMIN";
+
+    if (!eventId) {
+      return { statusCode: 400, body: JSON.stringify({ error: "Missing event ID" }) };
+    }
+
+    const padelEvent = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                elo: true
+              }
+            }
+          },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        },
+        waitlist: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                elo: true,
+                premiumSubscriptions: {
+                  where: { revokedAt: null },
+                  select: { id: true },
+                  take: 1,
+                },
+              },
+            },
+          },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        }
+      }
+    });
+
+    if (!padelEvent) {
+      return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
+    }
+
+    // DRAFT events are not visible to anyone via public API
+    if (padelEvent.status === "DRAFT") {
+      return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
+    }
+
+    // SCHEDULED events are visible to premium users immediately.
+    // Regular users can access them only once publishAt has passed.
+    if (padelEvent.status === "SCHEDULED") {
+      const now = new Date();
+
+      if (!isCurrentUserPremium && (!padelEvent.publishAt || padelEvent.publishAt > now)) {
+        return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
+      }
+    }
+
+    const waitlist = padelEvent.waitlist ?? [];
+    const premiumWaitlistEntries = waitlist.filter((entry) => (entry.user.premiumSubscriptions?.length ?? 0) > 0);
+    const regularWaitlistEntries = waitlist.filter((entry) => (entry.user.premiumSubscriptions?.length ?? 0) === 0);
+    const orderedWaitlist = [...premiumWaitlistEntries, ...regularWaitlistEntries];
+
+    const formattedWaitlist = orderedWaitlist.map((entry) => {
+      const { premiumSubscriptions: _premiumSubscriptions, ...safeUser } = entry.user;
+
+      return {
+        ...entry,
+        user: {
+          ...safeUser,
+          name: publicName(entry.user.firstName, entry.user.lastName),
+        },
+      };
+    });
+
+    const currentUserWaitlistIndex = currentUser
+      ? formattedWaitlist.findIndex((entry) => entry.user.id === currentUser!.id)
+      : -1;
+
+    // Map user.firstName and user.lastName to user.name
+    const formattedEvent = {
+      ...padelEvent,
+      participants: padelEvent.participants.map(p => ({
+        ...p,
+        user: {
+          ...p.user,
+          name: publicName(p.user.firstName, p.user.lastName),
+        }
+      })),
+      waitlistCount: formattedWaitlist.length,
+      currentUserWaitlistPosition: currentUserWaitlistIndex >= 0 ? currentUserWaitlistIndex + 1 : null,
+      currentUserWaitlistAhead: currentUserWaitlistIndex >= 0 ? currentUserWaitlistIndex : null,
+      waitlist: isCurrentUserAdmin ? formattedWaitlist : [],
+    };
+
+    return formattedEvent;
+  }
+});

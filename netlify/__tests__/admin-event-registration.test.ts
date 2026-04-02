@@ -12,6 +12,8 @@ vi.mock("../functions/lib/prisma", () => {
     delete: vi.fn(),
   };
   const prisma = {
+    event: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn() },
     eventRegistration,
     eventWaitlist,
     $transaction: vi.fn().mockImplementation(async (fn: any) => fn({ eventRegistration, eventWaitlist })),
@@ -23,9 +25,14 @@ vi.mock("../functions/lib/auth", () => ({
   verifyUser: vi.fn(),
 }));
 
+vi.mock("../functions/lib/email", () => ({
+  sendEmail: vi.fn(),
+}));
+
 import { handler } from "../functions/admin-event-registration";
 import { prisma } from "../functions/lib/prisma";
 import { verifyUser } from "../functions/lib/auth";
+import { sendEmail } from "../functions/lib/email";
 
 const EVENT_UUID = "123e4567-e89b-12d3-a456-426614174000";
 const PLAYER_UUID = "11111111-2222-3333-4444-555555555555";
@@ -64,6 +71,9 @@ describe("admin-event-registration handler", () => {
     vi.mocked(verifyUser).mockResolvedValue({ id: "admin-1", role: "ADMIN" } as never);
     vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.eventWaitlist.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(null as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null as never);
+    vi.mocked(sendEmail).mockResolvedValue(undefined);
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -126,6 +136,16 @@ describe("admin-event-registration handler", () => {
     ] as never);
     vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
     vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValue({
+      id: EVENT_UUID,
+      title: "Sunday Padel",
+      date: new Date("2026-04-02T10:00:00Z"),
+      location: "Padel Vienna Arena",
+    } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      email: "next@example.com",
+      firstName: "Next",
+    } as never);
 
     const { statusCode, json } = await callHandler();
 
@@ -142,6 +162,12 @@ describe("admin-event-registration handler", () => {
       },
     });
     expect(prisma.eventWaitlist.delete).toHaveBeenCalledWith({ where: { id: "wl-1" } });
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "next@example.com",
+        template: "event-waitlist-promotion",
+      }),
+    );
   });
 
   it("prioritizes premium waitlist users when promoting", async () => {

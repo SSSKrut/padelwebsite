@@ -21,7 +21,12 @@ vi.mock("../functions/lib/auth", () => ({
   verifyAdmin: mocks.verifyAdmin,
 }));
 
+vi.mock("../functions/lib/email", () => ({
+  sendEmail: vi.fn(),
+}));
+
 import { handler } from "../functions/admin-users";
+import { sendEmail } from "../functions/lib/email";
 
 function mockEvent(overrides: any = {}) {
   return {
@@ -83,5 +88,39 @@ describe("admin-users", () => {
     );
 
     expect(res!.statusCode).toBe(400);
+  });
+
+  it("sends approval email when user is verified", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "target-1",
+      role: "UNVERIFIED_USER",
+      firstName: "Test",
+      email: "test@example.com",
+    });
+    mocks.userUpdate.mockResolvedValue({
+      id: "target-1",
+      role: "USER",
+      firstName: "Test",
+      email: "test@example.com",
+      achievements: [],
+    });
+
+    const res = await handler(
+      mockEvent({
+        httpMethod: "PATCH",
+        body: JSON.stringify({ userId: "target-1", role: "USER" }),
+      }),
+      {} as any,
+    );
+
+    expect(res!.statusCode).toBe(200);
+    expect(sendEmail).toHaveBeenCalledWith({
+      to: "test@example.com",
+      template: "account-approved",
+      data: {
+        firstName: "Test",
+        actionUrl: "http://localhost:8080/login",
+      },
+    });
   });
 });

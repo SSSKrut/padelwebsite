@@ -17,8 +17,10 @@ import Contacts from "./pages/Contacts";
 import Players from "./pages/Players";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import ResendVerification from "./pages/ResendVerification";
 import Profile from "./pages/Profile";
 import Impressum from "./pages/legal/Impressum";
 import Privacy from "./pages/legal/Privacy";
@@ -48,7 +50,9 @@ const App = () => (
                 <Route path="/players" element={<Players />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/resend-verification" element={<ResendVerification />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/admin" element={<Admin />} />

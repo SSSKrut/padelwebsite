@@ -17,7 +17,28 @@ export interface TemplateDataMap {
     firstName: string;
     actionUrl: string;
   };
+  "account-approved": {
+    firstName: string;
+    actionUrl?: string;
+  };
   "event-registration": {
+    firstName: string;
+    eventTitle: string;
+    eventDate: string;
+    eventTime?: string;
+    eventVenue?: string;
+    actionUrl?: string;
+  };
+  "event-waitlist": {
+    firstName: string;
+    eventTitle: string;
+    eventDate: string;
+    eventTime?: string;
+    eventVenue?: string;
+    actionUrl?: string;
+    isPremium?: boolean;
+  };
+  "event-waitlist-promotion": {
     firstName: string;
     eventTitle: string;
     eventDate: string;
@@ -120,7 +141,7 @@ const templates: {
     html: baseLayout(`
       <h2 style="margin:0 0 16px;">Hi ${escapeHtml(data.firstName)},</h2>
       <p style="color:#52525b;line-height:1.6;">
-        Please verify your email address by clicking the button below.
+        Please verify your email address by clicking the button below. This link expires in 24 hours.
       </p>
       ${ctaButton(data.actionUrl, "Verify Email")}
       <p style="color:#71717a;font-size:13px;line-height:1.5;">
@@ -145,6 +166,18 @@ const templates: {
     `),
   }),
 
+  "account-approved": (data) => ({
+    subject: "Your account is approved — Sun Set Padel",
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;">Hi ${escapeHtml(data.firstName)},</h2>
+      <p style="color:#52525b;line-height:1.6;">
+        Your account has been approved. You can now sign in and register for events.
+      </p>
+      ${data.actionUrl ? ctaButton(data.actionUrl, "Sign In") : ""}
+      <p style="color:#52525b;line-height:1.6;">See you on the court!</p>
+    `),
+  }),
+
   "event-registration": (data) => ({
     subject: `Registration confirmed: ${data.eventTitle}`,
     html: baseLayout(`
@@ -155,6 +188,50 @@ const templates: {
       <table cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;">
         <tr>
           <td style="padding:12px 16px;background:#fafafa;border-radius:8px;">
+            <p style="margin:0 0 4px;"><strong>Date:</strong> ${escapeHtml(data.eventDate)}</p>
+            ${data.eventTime ? `<p style="margin:0 0 4px;"><strong>Time:</strong> ${escapeHtml(data.eventTime)}</p>` : ""}
+            ${data.eventVenue ? `<p style="margin:0;"><strong>Venue:</strong> ${escapeHtml(data.eventVenue)}</p>` : ""}
+          </td>
+        </tr>
+      </table>
+      ${data.actionUrl ? ctaButton(data.actionUrl, "View Event") : ""}
+      <p style="color:#52525b;line-height:1.6;">See you on the court!</p>
+    `),
+  }),
+
+  "event-waitlist": (data) => ({
+    subject: `Waitlist: ${data.eventTitle}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;">You're on the waitlist, ${escapeHtml(data.firstName)}!</h2>
+      <p style="color:#52525b;line-height:1.6;">
+        ${data.isPremium ? "You have been added to the premium-priority waitlist" : "You have been added to the waitlist"}
+        for <strong>${escapeHtml(data.eventTitle)}</strong>.
+      </p>
+      <table cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;">
+        <tr>
+          <td style="padding:12px 16px;background:#fafafa;border-radius:8px;">
+            <p style="margin:0 0 4px;"><strong>Date:</strong> ${escapeHtml(data.eventDate)}</p>
+            ${data.eventTime ? `<p style="margin:0 0 4px;"><strong>Time:</strong> ${escapeHtml(data.eventTime)}</p>` : ""}
+            ${data.eventVenue ? `<p style="margin:0;"><strong>Venue:</strong> ${escapeHtml(data.eventVenue)}</p>` : ""}
+          </td>
+        </tr>
+      </table>
+      ${data.actionUrl ? ctaButton(data.actionUrl, "View Event") : ""}
+      <p style="color:#52525b;line-height:1.6;">We will notify you if a spot opens up.</p>
+    `),
+  }),
+
+  "event-waitlist-promotion": (data) => ({
+    subject: `You're in: ${data.eventTitle}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;">Good news, ${escapeHtml(data.firstName)}!</h2>
+      <p style="color:#52525b;line-height:1.6;">
+        A spot opened up and you have been moved from the waitlist into the main list.
+      </p>
+      <table cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;">
+        <tr>
+          <td style="padding:12px 16px;background:#fafafa;border-radius:8px;">
+            <p style="margin:0 0 4px;"><strong>Event:</strong> ${escapeHtml(data.eventTitle)}</p>
             <p style="margin:0 0 4px;"><strong>Date:</strong> ${escapeHtml(data.eventDate)}</p>
             ${data.eventTime ? `<p style="margin:0 0 4px;"><strong>Time:</strong> ${escapeHtml(data.eventTime)}</p>` : ""}
             ${data.eventVenue ? `<p style="margin:0;"><strong>Venue:</strong> ${escapeHtml(data.eventVenue)}</p>` : ""}

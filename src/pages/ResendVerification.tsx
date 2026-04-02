@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { Link } from "react-router-dom";
+import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -11,28 +11,31 @@ import { Input } from "@/components/ui/input";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const Login = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+const ResendVerification = () => {
+  const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "" },
   });
 
   const onSubmit = async (values: FormValues) => {
+    setServerMessage(null);
     setServerError(null);
     try {
-      await login(values.email, values.password);
-      navigate("/");
-    } catch (e) {
-      setServerError(e instanceof Error ? e.message : "Login failed.");
+      const response = await apiFetch("/.netlify/functions/auth-resend-verification", "POST", {
+        email: values.email,
+      });
+      setServerMessage(
+        response?.message || "If your email is registered and unverified, a new link has been sent.",
+      );
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "Request failed.");
     }
   };
 
@@ -40,8 +43,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Sign in</CardTitle>
-          <CardDescription>Enter your email and password to access your account</CardDescription>
+          <CardTitle className="text-2xl">Resend verification email</CardTitle>
+          <CardDescription>Enter your email to receive a new verification link</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -59,37 +62,17 @@ const Login = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {serverMessage && <p className="text-sm text-green-600">{serverMessage}</p>}
               {serverError && <p className="text-sm text-red-600">{serverError}</p>}
-              <div className="flex items-center justify-between text-sm">
-                <Link to="/forgot-password" className="font-medium text-primary hover:underline">
-                  Forgot password?
-                </Link>
-                <Link to="/resend-verification" className="font-medium text-primary hover:underline">
-                  Resend verification email
-                </Link>
-              </div>
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
+                {form.formState.isSubmitting ? "Sending link…" : "Send verification link"}
               </Button>
             </form>
           </Form>
           <p className="mt-4 text-center text-sm text-gray-600">
-            Don&apos;t have an account?{" "}
-            <Link to="/register" className="font-medium text-primary hover:underline">
-              Register
+            Already verified?{" "}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Back to sign in
             </Link>
           </p>
         </CardContent>
@@ -98,4 +81,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ResendVerification;

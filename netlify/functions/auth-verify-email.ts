@@ -1,24 +1,25 @@
-// import { z } from "zod";
-// import { prisma } from "./lib/prisma";
-// import { consumeToken } from "./lib/tokens";
-// import { defineHandler } from "./lib/apiHandler";
+import { z } from "zod";
+import { prisma } from "./lib/prisma";
+import { consumeToken } from "./lib/tokens";
+import { defineHandler } from "./lib/apiHandler";
 
-// export const handler = defineHandler({
-//   method: "POST",
-//   bodySchema: z.object({
-//     token: z.string().min(1, "Token is required"),
-//   }),
-//   handler: async ({ body }) => {
-//     const record = await consumeToken(body.token, "EMAIL_VERIFICATION");
+const RequestSchema = z.object({
+	token: z.string().min(1, "Token is required"),
+});
 
-//     // Upgrade role only if still unverified
-//     if (record.user.role === "UNVERIFIED_USER") {
-//       await prisma.user.update({
-//         where: { id: record.userId },
-//         data: { role: "USER" },
-//       });
-//     }
+export const handler = defineHandler({
+	method: "POST",
+	bodySchema: RequestSchema,
+	handler: async ({ body }) => {
+		const record = await consumeToken(body.token, "EMAIL_VERIFICATION");
 
-//     return { message: "Email verified successfully." };
-//   },
-// });
+		if (record.user.role === "UNVERIFIED_USER") {
+			await prisma.user.update({
+				where: { id: record.userId },
+				data: { role: "USER" },
+			});
+		}
+
+		return { message: "Email verified successfully." };
+	},
+});

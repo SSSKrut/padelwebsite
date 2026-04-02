@@ -1,6 +1,8 @@
 import type { Handler, HandlerEvent } from "@netlify/functions";
 import { prisma } from "./lib/prisma";
 import { verifyAdmin } from "./lib/auth";
+import { sendEmail } from "./lib/email";
+import { buildSiteUrl } from "./lib/siteUrl";
 
 export const handler: Handler = async (event) => {
   let currentUser;
@@ -42,6 +44,8 @@ export const handler: Handler = async (event) => {
 
       const VALID_ROLES = ["USER", "ADMIN", "SUPER_ADMIN", "UNVERIFIED_USER"];
 
+      let shouldNotifyApproval = false;
+
       if (body.role) {
          if (!VALID_ROLES.includes(body.role)) {
            return { statusCode: 400, body: JSON.stringify({ error: "Invalid role value" }) };
@@ -50,6 +54,8 @@ export const handler: Handler = async (event) => {
          if (!targetUser) {
              return { statusCode: 404, body: JSON.stringify({ error: "User not found" }) };
          }
+
+        shouldNotifyApproval = targetUser.role === "UNVERIFIED_USER" && body.role === "USER";
          
          const involvesAdmin = targetUser.role === 'ADMIN' || body.role === 'ADMIN' || targetUser.role === 'SUPER_ADMIN' || body.role === 'SUPER_ADMIN';
          if (involvesAdmin && currentUser.role !== 'SUPER_ADMIN') {
@@ -72,6 +78,21 @@ export const handler: Handler = async (event) => {
           }
         }
       });
+
+      if (shouldNotifyApproval) {
+        try {
+          await sendEmail({
+            to: updatedUser.email,
+            template: "account-approved",
+            data: {
+              firstName: updatedUser.firstName,
+              actionUrl: buildSiteUrl("/login"),
+            },
+          });
+        } catch (error) {
+          console.error("[admin-users] Failed to send approval email:", error);
+        }
+      }
 
       return {
         statusCode: 200,

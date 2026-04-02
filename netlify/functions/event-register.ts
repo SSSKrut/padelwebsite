@@ -2,6 +2,8 @@ import { defineHandler } from "./lib/apiHandler";
 import { z } from "zod";
 import { prisma } from "./lib/prisma";
 import { isUserPremium } from "./lib/premium";
+import { sendEmail } from "./lib/email";
+import { buildEventEmailData } from "./lib/eventEmail";
 
 export const handler = defineHandler({
   method: "POST",
@@ -28,6 +30,8 @@ export const handler = defineHandler({
         body: JSON.stringify({ error: "Event not found" }),
       };
     }
+
+    const eventEmailData = buildEventEmailData(targetEvent);
 
     // Status check: PUBLISHED is open to all.
     // SCHEDULED is restricted to premium users and admins.
@@ -61,7 +65,7 @@ export const handler = defineHandler({
     }
 
     // Use a transaction to prevent race conditions on participant count
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const getPriorityWaitlistOrder = async () => {
         const waitlistEntries = await tx.eventWaitlist.findMany({
           where: { eventId },
@@ -212,5 +216,65 @@ export const handler = defineHandler({
         waitlisted: false,
       };
     });
+
+    const safeSendEmail = async (options: Parameters<typeof sendEmail>[0], context: string) => {
+      try {
+        await sendEmail(options);
+      } catch (err) {
+        console.error(`[event-register] Failed to send ${context} email:`, err);
+      }
+    };
+
+    if (result.registered) {
+      await safeSendEmail(
+        {
+          to: user!.email,
+          template: "event-registration",
+          data: {
+            firstName: user!.firstName,
+            ...eventEmailData,
+          },
+        },
+        "registration",
+      );
+    }
+
+    if (result.waitlisted) {
+      await safeSendEmail(
+        {
+          to: user!.email,
+          template: "event-waitlist",
+          data: {
+            firstName: user!.firstName,
+            isPremium: isPremiumUser,
+            ...eventEmailData,
+          },
+        },
+        "waitlist",
+      );
+    }
+
+    if (result.promotedUserId) {
+      const promotedUser = await prisma.user.findUnique({
+        where: { id: result.promotedUserId },
+        select: { email: true, firstName: true },
+      });
+
+      if (promotedUser) {
+        await safeSendEmail(
+          {
+            to: promotedUser.email,
+            template: "event-waitlist-promotion",
+            data: {
+              firstName: promotedUser.firstName,
+              ...eventEmailData,
+            },
+          },
+          "waitlist promotion",
+        );
+      }
+    }
+
+    return result;
   }
 });

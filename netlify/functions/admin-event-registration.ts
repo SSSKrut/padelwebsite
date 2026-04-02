@@ -1,6 +1,8 @@
 import { defineHandler } from "./lib/apiHandler";
 import { prisma } from "./lib/prisma";
 import { z } from "zod";
+import { sendEmail } from "./lib/email";
+import { buildEventEmailData } from "./lib/eventEmail";
 
 export const handler = defineHandler({
   method: "DELETE",
@@ -25,7 +27,7 @@ export const handler = defineHandler({
 
     const { eventId, userId } = parsedBody.data;
 
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const getPriorityWaitlistOrder = async () => {
         const waitlistEntries = await tx.eventWaitlist.findMany({
           where: { eventId },
@@ -118,5 +120,46 @@ export const handler = defineHandler({
         promotedUserId,
       };
     });
+
+    if (result && typeof result === "object" && "statusCode" in result) {
+      return result;
+    }
+
+    const safeSendEmail = async (options: Parameters<typeof sendEmail>[0], context: string) => {
+      try {
+        await sendEmail(options);
+      } catch (err) {
+        console.error(`[admin-event-registration] Failed to send ${context} email:`, err);
+      }
+    };
+
+    if (result.promotedUserId) {
+      const [eventDetails, promotedUser] = await Promise.all([
+        prisma.event.findUnique({
+          where: { id: eventId },
+          select: { id: true, title: true, date: true, location: true },
+        }),
+        prisma.user.findUnique({
+          where: { id: result.promotedUserId },
+          select: { email: true, firstName: true },
+        }),
+      ]);
+
+      if (eventDetails && promotedUser) {
+        await safeSendEmail(
+          {
+            to: promotedUser.email,
+            template: "event-waitlist-promotion",
+            data: {
+              firstName: promotedUser.firstName,
+              ...buildEventEmailData(eventDetails),
+            },
+          },
+          "waitlist promotion",
+        );
+      }
+    }
+
+    return result;
   },
 });

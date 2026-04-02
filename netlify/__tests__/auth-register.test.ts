@@ -3,6 +3,8 @@ import { handler } from '../functions/auth-register';
 import { prisma } from '../functions/lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { signAccessToken, signRefreshToken } from '../functions/lib/jwt';
+import { createToken, buildActionUrl } from '../functions/lib/tokens';
+import { sendEmail } from '../functions/lib/email';
 
 // Mock dependencies
 vi.mock('../functions/lib/prisma', () => ({
@@ -95,6 +97,13 @@ describe('auth-register function', () => {
 
     expect(signAccessToken).toHaveBeenCalledWith({ sub: 'user-2' });
     expect(signRefreshToken).toHaveBeenCalledWith({ sub: 'user-2' });
+    expect(createToken).toHaveBeenCalledWith('user-2', 'EMAIL_VERIFICATION');
+    expect(buildActionUrl).toHaveBeenCalledWith('/verify-email', 'mock-token');
+    expect(sendEmail).toHaveBeenCalledWith({
+      to: 'newuser@example.com',
+      template: 'email-verification',
+      data: { firstName: 'John', actionUrl: 'http://localhost:8080/verify-email?token=mock-token' }
+    });
   });
 
   it('validates minimum password length', async () => {
@@ -109,5 +118,29 @@ describe('auth-register function', () => {
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.body!);
     expect(body.error).toBe('Validation Error');
+  });
+
+  it('still registers when verification email fails', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.user.create).mockResolvedValue({
+      id: 'user-3',
+      email: 'failmail@example.com',
+      firstName: 'Fail',
+      lastName: 'Mail',
+      passwordHash: 'hashed-password',
+      role: 'USER'
+    } as any);
+    vi.mocked(sendEmail).mockRejectedValue(new Error('SMTP error'));
+
+    const response = await handler(createEvent({
+      email: 'failmail@example.com',
+      password: 'password123',
+      firstName: 'Fail',
+      lastName: 'Mail'
+    }), {} as any);
+
+    expect(response.statusCode).toBe(201);
+    const body = JSON.parse(response.body!);
+    expect(body.user.email).toBe('failmail@example.com');
   });
 });

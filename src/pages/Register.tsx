@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const schema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -39,6 +40,7 @@ const Register = () => {
         password: values.password,
         phone: values.phone || undefined,
       });
+      toast.success("Please check your email to verify your account.");
       navigate("/");
     } catch (e) {
       setServerError(e instanceof Error ? e.message : "Registration failed.");

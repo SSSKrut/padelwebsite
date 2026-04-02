@@ -128,19 +128,36 @@ export const Navbar = () => {
               </Link>
             ))}
             {user ? (
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm font-medium text-primary">
-                  {user.firstName} {user.lastName}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 gap-1"
-                  onClick={() => { logout(); setIsOpen(false); }}
-                >
-                  <LogOut size={14} />
-                  Log out
+              <div className="space-y-2 py-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-primary">
+                    {user.firstName} {user.lastName}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 gap-1"
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                  >
+                    <LogOut size={14} />
+                    Log out
+                  </Button>
+                </div>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link to="/profile" onClick={() => setIsOpen(false)}>
+                    My Profile
+                  </Link>
                 </Button>
+                {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link to="/admin" onClick={() => setIsOpen(false)}>
+                      Admin Dashboard
+                    </Link>
+                  </Button>
+                )}
               </div>
             ) : (
               <Button variant="outline" className="w-full" asChild>

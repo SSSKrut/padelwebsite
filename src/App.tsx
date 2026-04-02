@@ -17,6 +17,8 @@ import Contacts from "./pages/Contacts";
 import Players from "./pages/Players";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Impressum from "./pages/legal/Impressum";
 import Privacy from "./pages/legal/Privacy";
@@ -46,6 +48,8 @@ const App = () => (
                 <Route path="/players" element={<Players />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/legal/impressum" element={<Impressum />} />

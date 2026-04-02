@@ -1,35 +1,41 @@
-// import { z } from "zod";
-// import { prisma } from "./lib/prisma";
-// import { createToken, buildActionUrl } from "./lib/tokens";
-// import { sendEmail } from "./lib/email";
-// import { defineHandler } from "./lib/apiHandler";
+import { z } from "zod";
+import { prisma } from "./lib/prisma";
+import { createToken, buildActionUrl } from "./lib/tokens";
+import { sendEmail } from "./lib/email";
+import { defineHandler } from "./lib/apiHandler";
 
-// export const handler = defineHandler({
-//   method: "POST",
-//   bodySchema: z.object({
-//     email: z.string().email(),
-//   }),
-//   handler: async ({ body }) => {
-//     // Always return success to avoid email enumeration
-//     const successResponse = {
-//       message: "If an account with that email exists, a reset link has been sent.",
-//     };
+const RequestSchema = z.object({
+	email: z.string().email(),
+});
 
-//     const user = await prisma.user.findUnique({
-//       where: { email: body.email.toLowerCase() },
-//     });
+export const handler = defineHandler({
+	method: "POST",
+	bodySchema: RequestSchema,
+	handler: async ({ body }) => {
+		const successResponse = {
+			message: "If an account with that email exists, a reset link has been sent.",
+		};
 
-//     if (!user) return successResponse;
+		const email = body.email.toLowerCase().trim();
+		const user = await prisma.user.findUnique({
+			where: { email },
+		});
 
-//     const { token } = await createToken(user.id, "PASSWORD_RESET");
-//     const actionUrl = buildActionUrl("/reset-password", token);
+		if (!user) return successResponse;
 
-//     await sendEmail({
-//       to: user.email,
-//       template: "password-reset",
-//       data: { firstName: user.firstName, actionUrl },
-//     });
+		try {
+			const { token } = await createToken(user.id, "PASSWORD_RESET");
+			const actionUrl = buildActionUrl("/reset-password", token);
 
-//     return successResponse;
-//   },
-// });
+			await sendEmail({
+				to: user.email,
+				template: "password-reset",
+				data: { firstName: user.firstName, actionUrl },
+			});
+		} catch (error) {
+			console.error("[ForgotPassword] Failed to send reset email:", error);
+		}
+
+		return successResponse;
+	},
+});

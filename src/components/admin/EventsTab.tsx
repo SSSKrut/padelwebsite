@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { Toast } from "@/components/ui/toast";
 import { toast } from "sonner";
-import { Edit, Plus, Trash2, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { Edit, Plus, Trash2, CheckCircle, Clock, RefreshCw, Download, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { formatEventDate } from "@/lib/utils";
+import { parseFileNameFromContentDisposition, triggerBlobDownload } from "@/lib/downloadFile";
 
 interface EventsTabProps {
   confirmAction: (title: string, desc: string, action: () => void) => void;
@@ -28,6 +28,42 @@ const formatForDatetimeLocal = (dateString?: string) => {
 export function EventsTab({ confirmAction }: EventsTabProps) {
   const queryClient = useQueryClient();
   const [eventForm, setEventForm] = useState<any>(null);
+  const [exportingEventId, setExportingEventId] = useState<string | null>(null);
+
+  const exportEventUsers = async (eventId: string) => {
+    setExportingEventId(eventId);
+    try {
+      const response = await fetch(
+        `/.netlify/functions/admin-db-export-csv?eventId=${encodeURIComponent(eventId)}`,
+        { method: "GET" },
+      );
+
+      if (!response.ok) {
+        let message = "Failed to export event users CSV";
+        try {
+          const body = await response.json();
+          if (typeof body?.error === "string") {
+            message = body.error;
+          }
+        } catch {
+          // Keep fallback message for non-JSON error responses.
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const fileName = parseFileNameFromContentDisposition(
+        response.headers.get("Content-Disposition"),
+        "event_users.csv",
+      );
+      triggerBlobDownload(blob, fileName);
+      toast.success("Event users export started");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to export event users CSV");
+    } finally {
+      setExportingEventId(null);
+    }
+  };
 
   const { data: events, isLoading } = useQuery({
     queryKey: ["admin_events"],
@@ -339,6 +375,19 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                       </Button>
                       <Button
                         size="sm"
+                        variant="outline"
+                        title="Export Event Users CSV"
+                        onClick={() => exportEventUsers(e.id)}
+                        disabled={exportingEventId === e.id}
+                      >
+                        {exportingEventId === e.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
                         onClick={() =>
                           confirmAction(
@@ -408,6 +457,19 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                         onClick={() => setEventForm(e)}
                       >
                         <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        title="Export Event Users CSV"
+                        onClick={() => exportEventUsers(e.id)}
+                        disabled={exportingEventId === e.id}
+                      >
+                        {exportingEventId === e.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
                       </Button>
                       <Button
                         size="sm"

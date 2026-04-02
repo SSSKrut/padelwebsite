@@ -1,18 +1,51 @@
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Hero } from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { EventCard } from "@/components/EventCard";
+import { Loader2 } from "lucide-react";
 import { Users, Trophy, Heart, Briefcase } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 import siteData from "../../data/site.json";
-import eventsData from "../../data/events.json";
 import productsData from "../../data/products.json";
 // import padelHero from "@/assets/padel-hero.jpg";
 import padelHero from "@/assets/Title_page.png";
 
+type HomeEvent = {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;
+  endDate?: string | null;
+  location?: string;
+  status: "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
+  maxParticipants?: number;
+  _count?: {
+    participants: number;
+  };
+  participants?: any[];
+};
+
 const Home = () => {
   const memberships = productsData.filter((p) => p.type === "membership");
-  const upcomingEvents = eventsData.slice(0, 3);
+  const { data: events, isLoading: eventsLoading, isError: eventsError } = useQuery<HomeEvent[]>({
+    queryKey: ["events", "home"],
+    queryFn: () => apiFetch("/.netlify/functions/events"),
+  });
+
+  const upcomingEvents = useMemo(() => {
+    if (!events) return [];
+    const now = new Date();
+    return events
+      .filter((event) =>
+        event.status === "PUBLISHED" &&
+        new Date(event.date) >= now,
+      )
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 3);
+  }, [events]);
 
   const features = [
     { icon: Users, title: "Community", description: "Join 300+ Active Players" },
@@ -73,42 +106,24 @@ const Home = () => {
           Upcoming Events
         </h2>
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {upcomingEvents.map((event, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between mb-2">
-                  <CardTitle className="text-xl">{event.title}</CardTitle>
-                  <Badge>{event.level}</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(event.date).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                  })}{" "}
-                  • {event.time}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm mb-2">{event.venue}</p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {event.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-lg">€{event.priceEuro}</span>
-                    {event.regLinkVisible ? (
-                    <Button asChild size="sm">
-                      <a href={event.regLink} target="_blank" rel="noopener noreferrer">
-                    Register
-                      </a>
-                    </Button>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Registration soon</span>
-                      )}
-                </div>
-
-              </CardContent>
-            </Card>
+          {eventsLoading && (
+            <div className="col-span-full flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+          {!eventsLoading && !eventsError && upcomingEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
           ))}
+          {!eventsLoading && eventsError && (
+            <div className="col-span-full rounded-xl border border-destructive/40 bg-background p-6 text-center text-sm text-destructive">
+              Failed to load current events.
+            </div>
+          )}
+          {!eventsLoading && !eventsError && upcomingEvents.length === 0 && (
+            <div className="col-span-full rounded-xl border bg-background p-6 text-center text-sm text-muted-foreground">
+              No upcoming events right now.
+            </div>
+          )}
         </div>
         <div className="text-center">
           <Button asChild variant="outline" size="lg">

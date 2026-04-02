@@ -11,9 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin, Loader2, Users, ArrowLeft, Trophy, CheckCircle, X } from "lucide-react";
+import { Calendar, MapPin, Loader2, Users, ArrowLeft, Trophy, CheckCircle, X, Download } from "lucide-react";
 import { UserRole } from "@/context/AuthContext";
 import { formatEventDate, isEventLocked } from "@/lib/utils";
+import { parseFileNameFromContentDisposition, triggerBlobDownload } from "@/lib/downloadFile";
 
 interface EventParticipant {
   id: string;
@@ -62,6 +63,7 @@ const EventDetails = () => {
   const { confirmAction, ConfirmDialogComponent } = useConfirm();
   const queryClient = useQueryClient();
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [isExportingEventUsers, setIsExportingEventUsers] = useState(false);
 
   const canManageParticipants = !!user && (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN);
 
@@ -103,6 +105,43 @@ const EventDetails = () => {
       setRemovingUserId(null);
     },
   });
+
+  const handleExportEventUsers = async () => {
+    if (!id) return;
+
+    setIsExportingEventUsers(true);
+    try {
+      const response = await fetch(
+        `/.netlify/functions/admin-db-export-csv?eventId=${encodeURIComponent(id)}`,
+        { method: "GET" },
+      );
+
+      if (!response.ok) {
+        let errorMessage = "Failed to export event users CSV";
+        try {
+          const errorBody = await response.json();
+          if (typeof errorBody?.error === "string") {
+            errorMessage = errorBody.error;
+          }
+        } catch {
+          // Keep fallback for non-JSON errors.
+        }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const fileName = parseFileNameFromContentDisposition(
+        response.headers.get("Content-Disposition"),
+        "event_users.csv",
+      );
+      triggerBlobDownload(blob, fileName);
+      toast.success("Event users export started");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to export event users CSV");
+    } finally {
+      setIsExportingEventUsers(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -184,10 +223,27 @@ const EventDetails = () => {
 
             <Card className="shadow-lg border-0">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Users className="w-5 h-5 text-primary" />
-                  Participants ({event.participants.length} / {event.maxParticipants || 16})
-                </CardTitle>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Users className="w-5 h-5 text-primary" />
+                    Participants ({event.participants.length} / {event.maxParticipants || 16})
+                  </CardTitle>
+                  {canManageParticipants && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportEventUsers}
+                      disabled={isExportingEventUsers}
+                    >
+                      {isExportingEventUsers ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="mr-2 h-4 w-4" />
+                      )}
+                      Export Event Users
+                    </Button>
+                  )}
+                </div>
                 <CardDescription>
                   Waitlist: {event.waitlistCount}
                 </CardDescription>

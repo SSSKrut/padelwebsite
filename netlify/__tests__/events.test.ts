@@ -17,10 +17,7 @@ import { verifyUser } from "../functions/lib/auth";
 
 type EventsFindManyArg = {
   where: {
-    OR: [
-      { status: { in: string[] } },
-      { status: "SCHEDULED"; publishAt: { lte: Date } },
-    ];
+    status: { in: string[] };
   };
 };
 
@@ -72,7 +69,7 @@ describe("events", () => {
     );
   });
 
-  it("shows SCHEDULED events to regular/anonymous users only after publishAt", async () => {
+  it("hides SCHEDULED events from regular/anonymous users", async () => {
     vi.mocked(verifyUser).mockRejectedValue(new Error("Unauthorized"));
 
     const { statusCode } = await callHandler();
@@ -80,9 +77,6 @@ describe("events", () => {
     expect(statusCode).toBe(200);
     const callArgs = vi.mocked(prisma.event.findMany).mock.calls[0][0] as unknown as EventsFindManyArg;
 
-    expect(callArgs.where.OR).toHaveLength(2);
-    expect(callArgs.where.OR[0]).toEqual({ status: { in: ["PUBLISHED", "ARCHIVED"] } });
-    expect(callArgs.where.OR[1].status).toBe("SCHEDULED");
-    expect(callArgs.where.OR[1].publishAt.lte).toBeInstanceOf(Date);
+    expect(callArgs.where.status).toEqual({ in: ["PUBLISHED", "ARCHIVED"] });
   });
 });

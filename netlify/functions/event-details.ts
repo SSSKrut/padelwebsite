@@ -69,12 +69,9 @@ export const handler = defineHandler({
       return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
     }
 
-    // SCHEDULED events are visible to premium users immediately.
-    // Regular users can access them only once publishAt has passed.
+    // SCHEDULED events are visible only to premium/admin users.
     if (padelEvent.status === "SCHEDULED") {
-      const now = new Date();
-
-      if (!isCurrentUserPremium && (!padelEvent.publishAt || padelEvent.publishAt > now)) {
+      if (!isCurrentUserPremium && !isCurrentUserAdmin) {
         return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
       }
     }

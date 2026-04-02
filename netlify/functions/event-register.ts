@@ -30,16 +30,15 @@ export const handler = defineHandler({
     }
 
     // Status check: PUBLISHED is open to all.
-    // SCHEDULED is open immediately for premium users, and for regular users after publishAt.
+    // SCHEDULED is restricted to premium users and admins.
     if (targetEvent.status !== "PUBLISHED") {
       if (targetEvent.status === "SCHEDULED") {
-        const now = new Date();
-        const isPublishedForRegulars = Boolean(targetEvent.publishAt && targetEvent.publishAt <= now);
+        const isCurrentUserAdmin = user!.role === "ADMIN" || user!.role === "SUPER_ADMIN";
 
-        if (!isPremiumUser && !isPublishedForRegulars) {
+        if (!isPremiumUser && !isCurrentUserAdmin) {
           return {
             statusCode: 403,
-            body: JSON.stringify({ error: "Event is not yet open for registration" }),
+            body: JSON.stringify({ error: "Event is not open for registration" }),
           };
         }
       } else {

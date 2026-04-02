@@ -96,7 +96,7 @@ describe("event-details", () => {
     expect(statusCode).toBe(404);
   });
 
-  it("shows SCHEDULED events to regular users after publishAt", async () => {
+  it("hides SCHEDULED events from regular users even after publishAt", async () => {
     const pastPublishAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
     mocks.eventFindUnique.mockResolvedValue({
@@ -114,9 +114,8 @@ describe("event-details", () => {
       premiumSubscriptions: [],
     });
 
-    const { statusCode, json } = await callHandler();
-    expect(statusCode).toBe(200);
-    expect(json.status).toBe("SCHEDULED");
+    const { statusCode } = await callHandler();
+    expect(statusCode).toBe(404);
   });
 
   it("hides SCHEDULED events from regular users when publishAt is null", async () => {
@@ -139,7 +138,7 @@ describe("event-details", () => {
     expect(statusCode).toBe(404);
   });
 
-  it("shows SCHEDULED events to anonymous users after publishAt", async () => {
+  it("hides SCHEDULED events from anonymous users", async () => {
     const pastPublishAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
     mocks.eventFindUnique.mockResolvedValue({
@@ -153,9 +152,8 @@ describe("event-details", () => {
 
     mocks.verifyUser.mockRejectedValue(new Error("Unauthorized"));
 
-    const { statusCode, json } = await callHandler();
-    expect(statusCode).toBe(200);
-    expect(json.status).toBe("SCHEDULED");
+    const { statusCode } = await callHandler();
+    expect(statusCode).toBe(404);
   });
 
   it("orders admin waitlist with premium users first and preserves queue order in each group", async () => {

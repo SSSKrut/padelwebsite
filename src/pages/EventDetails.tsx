@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ import padelHero from "@/assets/padel-hero.png";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, MapPin, Loader2, Users, ArrowLeft, Trophy, CheckCircle, X, Download } from "lucide-react";
 import { UserRole } from "@/context/AuthContext";
@@ -50,6 +51,45 @@ interface EventDetailsResponse {
   currentUserWaitlistAhead: number | null;
 }
 
+interface MatchTablePlayer {
+  id: string;
+  name: string;
+  elo: number;
+  manualElo?: number;
+}
+
+interface MatchTableCourt {
+  courtNumber: number;
+  players: MatchTablePlayer[];
+  isManual: boolean;
+}
+
+interface MatchTableMatch {
+  id: string;
+  courtNumber: number;
+  round: number;
+  pair1: [MatchTablePlayer, MatchTablePlayer];
+  pair2: [MatchTablePlayer, MatchTablePlayer];
+  score1: number | null;
+  score2: number | null;
+}
+
+interface MatchTableResponse {
+  eventId: string;
+  status: string;
+  generatedAt: string | null;
+  confirmedAt: string | null;
+  courts: MatchTableCourt[];
+  matches: MatchTableMatch[];
+}
+
+interface CourtWinner {
+  courtNumber: number;
+  winners: Array<{ id: string; name: string }>;
+  points: number;
+  diff: number;
+}
+
 function getErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error) {
     return err.message;
@@ -71,6 +111,15 @@ const EventDetails = () => {
     queryKey: ["event", id],
     queryFn: () => apiFetch(`/.netlify/functions/event-details?id=${id}`),
     enabled: !!id,
+  });
+
+  const isRegistered = !!user && !!event?.participants.some((p) => p.user.id === user.id);
+  const canViewMatchTable = !!user && (canManageParticipants || isRegistered);
+
+  const { data: matchTable, isLoading: matchTableLoading } = useQuery<MatchTableResponse>({
+    queryKey: ["matchTable", id],
+    queryFn: () => apiFetch(`/.netlify/functions/event-match-table?eventId=${id}`),
+    enabled: !!id && canViewMatchTable,
   });
 
   const registerMutation = useMutation({
@@ -142,6 +191,80 @@ const EventDetails = () => {
       setIsExportingEventUsers(false);
     }
   };
+
+  const formatStandingPoints = (value: number) =>
+    Number.isInteger(value) ? String(value) : value.toFixed(1);
+
+  const formatStandingDiff = (value: number) =>
+    value > 0 ? `+${value}` : String(value);
+
+  const courtWinners = useMemo<CourtWinner[]>(() => {
+    if (!matchTable?.courts?.length) return [];
+
+    const matchesByCourt = new Map<number, MatchTableMatch[]>();
+    matchTable.matches.forEach((match) => {
+      const list = matchesByCourt.get(match.courtNumber) ?? [];
+      list.push(match);
+      matchesByCourt.set(match.courtNumber, list);
+    });
+
+    return matchTable.courts
+      .filter((court) => !court.isManual)
+      .map((court) => {
+        const entries = new Map<string, { id: string; name: string; points: number; diff: number }>();
+        court.players.forEach((player) => {
+          entries.set(player.id, { id: player.id, name: player.name, points: 0, diff: 0 });
+        });
+
+        const matches = matchesByCourt.get(court.courtNumber) ?? [];
+        matches.forEach((match) => {
+          if (match.score1 === null || match.score2 === null) return;
+          const score1 = match.score1;
+          const score2 = match.score2;
+          const pair1Points = score1 === score2 ? 0.5 : score1 > score2 ? 1 : 0;
+          const pair2Points = score1 === score2 ? 0.5 : score1 > score2 ? 0 : 1;
+          const diff1 = score1 - score2;
+          const diff2 = score2 - score1;
+
+          match.pair1.forEach((player) => {
+            const entry = entries.get(player.id);
+            if (!entry) return;
+            entry.points += pair1Points;
+            entry.diff += diff1;
+          });
+
+          match.pair2.forEach((player) => {
+            const entry = entries.get(player.id);
+            if (!entry) return;
+            entry.points += pair2Points;
+            entry.diff += diff2;
+          });
+        });
+
+        const standings = Array.from(entries.values()).sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          if (b.diff !== a.diff) return b.diff - a.diff;
+          return a.name.localeCompare(b.name);
+        });
+
+        const top = standings[0];
+        if (!top) {
+          return null;
+        }
+
+        const winners = standings
+          .filter((entry) => entry.points === top.points && entry.diff === top.diff)
+          .map((entry) => ({ id: entry.id, name: entry.name }));
+
+        return {
+          courtNumber: court.courtNumber,
+          winners,
+          points: top.points,
+          diff: top.diff,
+        };
+      })
+      .filter((winner): winner is CourtWinner => winner !== null);
+  }, [matchTable]);
 
   if (isLoading) {
     return (
@@ -228,20 +351,31 @@ const EventDetails = () => {
                     <Users className="w-5 h-5 text-primary" />
                     Participants ({event.participants.length} / {event.maxParticipants || 16})
                   </CardTitle>
-                  {canManageParticipants && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportEventUsers}
-                      disabled={isExportingEventUsers}
-                    >
-                      {isExportingEventUsers ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Download className="mr-2 h-4 w-4" />
+                  {(canViewMatchTable || canManageParticipants) && (
+                    <div className="flex flex-wrap gap-2">
+                      {canViewMatchTable && (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/events/${event.id}/matches`}>Match Table</Link>
+                        </Button>
                       )}
-                      Export Event Users
-                    </Button>
+                      {canManageParticipants && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleExportEventUsers}
+                            disabled={isExportingEventUsers}
+                          >
+                            {isExportingEventUsers ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Download className="mr-2 h-4 w-4" />
+                            )}
+                            Export Event Users
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
                 <CardDescription>
@@ -327,6 +461,63 @@ const EventDetails = () => {
                 )}
               </CardContent>
             </Card>
+
+            {canViewMatchTable && (
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Trophy className="w-5 h-5 text-primary" /> Court Winners
+                  </CardTitle>
+                  <CardDescription>Top players per court based on points and difference.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {matchTableLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading match results...
+                    </div>
+                  ) : courtWinners.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Court</TableHead>
+                            <TableHead>Winner</TableHead>
+                            <TableHead className="text-right">Points</TableHead>
+                            <TableHead className="text-right">Difference</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {courtWinners.map((court) => (
+                            <TableRow key={`court-winner-${court.courtNumber}`}>
+                              <TableCell className="font-medium">Court {court.courtNumber}</TableCell>
+                              <TableCell>{court.winners.map((winner) => winner.name).join(" / ")}</TableCell>
+                              <TableCell className="text-right">
+                                {formatStandingPoints(court.points)}
+                              </TableCell>
+                              <TableCell
+                                className={`text-right ${
+                                  court.diff > 0
+                                    ? "text-emerald-600"
+                                    : court.diff < 0
+                                      ? "text-rose-600"
+                                      : "text-muted-foreground"
+                                }`}
+                              >
+                                {formatStandingDiff(court.diff)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Winners will appear once scores are entered.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="space-y-6">

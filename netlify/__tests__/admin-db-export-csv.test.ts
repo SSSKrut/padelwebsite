@@ -4,6 +4,8 @@ import type { HandlerContext, HandlerEvent, HandlerResponse } from "@netlify/fun
 const mocks = vi.hoisted(() => ({
   eventFindUnique: vi.fn(),
   userFindMany: vi.fn(),
+  eventScoreFindMany: vi.fn(),
+  loadMatchTable: vi.fn(),
   verifyUser: vi.fn(),
 }));
 
@@ -11,7 +13,12 @@ vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     event: { findUnique: mocks.eventFindUnique },
     user: { findMany: mocks.userFindMany },
+    eventScore: { findMany: mocks.eventScoreFindMany },
   },
+}));
+
+vi.mock("../functions/lib/matchTable", () => ({
+  loadMatchTable: mocks.loadMatchTable,
 }));
 
 vi.mock("../functions/lib/auth", () => ({
@@ -48,6 +55,14 @@ describe("admin-db-export-csv", () => {
   });
 
   it("returns event CSV with expected header and rows", async () => {
+    const players = [
+      { id: "u1", name: "Ada Lovelace", elo: 1200 },
+      { id: "u2", name: "Al Ice", elo: 900 },
+      { id: "u3", name: "Bob B.", elo: 1000 },
+      { id: "u4", name: "Cara C.", elo: 1100 },
+      { id: "u5", name: "Dan D.", elo: 1050 },
+    ];
+
     mocks.eventFindUnique.mockResolvedValue({
       id: "abcd1234-efgh-5678",
       title: "Spring Open 2026!",
@@ -72,8 +87,75 @@ describe("admin-db-export-csv", () => {
             premiumSubscriptions: [],
           },
         },
+        {
+          user: {
+            id: "u3",
+            firstName: "Bob",
+            lastName: "B.",
+            email: "bob@example.com",
+            elo: 1000,
+            premiumSubscriptions: [],
+          },
+        },
+        {
+          user: {
+            id: "u4",
+            firstName: "Cara",
+            lastName: "C.",
+            email: "cara@example.com",
+            elo: 1100,
+            premiumSubscriptions: [],
+          },
+        },
+        {
+          user: {
+            id: "u5",
+            firstName: "Dan",
+            lastName: "D.",
+            email: "dan@example.com",
+            elo: 1050,
+            premiumSubscriptions: [],
+          },
+        },
       ],
     });
+
+    mocks.loadMatchTable.mockResolvedValue({
+      eventId: "abcd1234-efgh-5678",
+      status: "OPEN",
+      generatedAt: null,
+      confirmedAt: null,
+      courts: [
+        {
+          courtNumber: 1,
+          isManual: false,
+          players,
+        },
+      ],
+      matches: [
+        {
+          id: "m1",
+          courtNumber: 1,
+          round: 1,
+          pair1: [players[0], players[1]],
+          pair2: [players[2], players[3]],
+          score1: 6,
+          score2: 4,
+          updatedAt: "2026-04-06T10:00:00.000Z",
+          updatedBy: players[0],
+        },
+      ],
+    } as never);
+
+    mocks.eventScoreFindMany.mockResolvedValue([
+      {
+        userId: "u1",
+        previousElo: 1180,
+        newElo: 1200,
+        createdAt: new Date("2026-04-06T10:05:00.000Z"),
+        updatedAt: new Date("2026-04-06T10:05:00.000Z"),
+      },
+    ] as never);
 
     const res = await callHandler({
       queryStringParameters: { eventId: "abcd1234-efgh-5678" },
@@ -86,9 +168,20 @@ describe("admin-db-export-csv", () => {
     );
 
     const lines = (res.body ?? "").split("\n");
-    expect(lines[0]).toBe("user id,usr name,user surname,mail,is a premium user,elo");
-    expect(lines[1]).toBe("\"u1\",\"Ada\",\"Lovelace\",\"ada@example.com\",\"true\",\"1200\"");
-    expect(lines[2]).toBe("\"u2\",\"Al \"\"Ice\"\"\",\"O,Connor\",\"al@example.com\",\"false\",\"900\"");
+    expect(lines).toContain("# Participants");
+    expect(lines).toContain("user id,usr name,user surname,mail,is a premium user,elo");
+    expect(lines).toContain("\"u1\",\"Ada\",\"Lovelace\",\"ada@example.com\",\"true\",\"1200\"");
+    expect(lines).toContain("# Court assignments");
+    expect(lines).toContain("court number,user id,player name,mail,elo,manual elo");
+    expect(lines).toContain("\"1\",\"u1\",\"Ada Lovelace\",\"ada@example.com\",\"1200\",\"\"");
+    expect(lines).toContain("# Match results");
+    expect(lines).toContain("court number,round,pair 1,pair 2,score 1,score 2,updated at,updated by");
+    expect(lines).toContain("\"1\",\"1\",\"Ada Lovelace / Al Ice\",\"Bob B. / Cara C.\",\"6\",\"4\",\"2026-04-06T10:00:00.000Z\",\"Ada Lovelace\"");
+    expect(lines).toContain("# Court standings");
+    expect(lines).toContain("court number,player,points,difference");
+    expect(lines).toContain("\"1\",\"Ada Lovelace\",\"1\",\"2\"");
+    expect(lines).toContain("# Event scores");
+    expect(lines).toContain("user id,player,previous elo,new elo,created at,updated at");
   });
 
   it("returns users CSV with expected header and rows", async () => {

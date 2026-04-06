@@ -9,6 +9,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import EventDetails from "./pages/EventDetails";
+import EventScore from "./pages/EventScore";
+import EventMatches from "./pages/EventMatches";
 import Corporate from "./pages/Corporate";
 import Memberships from "./pages/Memberships";
 import Merch from "./pages/Merch";
@@ -41,6 +43,8 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/events" element={<Events />} />
+                <Route path="/events/:id/score" element={<EventScore />} />
+                <Route path="/events/:id/matches" element={<EventMatches />} />
                 <Route path="/events/:id" element={<EventDetails />} />
                 <Route path="/corporate" element={<Corporate />} />
                 <Route path="/memberships" element={<Memberships />} />

@@ -67,32 +67,25 @@ export const handler = defineHandler({
       return { statusCode: 403, body: JSON.stringify({ error: "Forbidden" }) };
     }
 
-    const statusRows = await prisma.$queryRaw<{ matchTableStatus: string }[]>`
-      SELECT "matchTableStatus"
-      FROM "Event"
-      WHERE "id" = ${eventId}
-      LIMIT 1
-    `;
+    const eventRecord = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { matchTableStatus: true },
+    });
 
-    if (!statusRows.length) {
+    if (!eventRecord) {
       return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
     }
 
-    if (statusRows[0].matchTableStatus !== "OPEN") {
+    if (eventRecord.matchTableStatus !== "OPEN") {
       return { statusCode: 400, body: JSON.stringify({ error: "Match table is not open for edits" }) };
     }
 
-    const updated = await prisma.$executeRaw`
-      UPDATE "EventMatch"
-      SET "score1" = ${score1},
-          "score2" = ${score2},
-          "updatedById" = ${user.id},
-          "updatedAt" = NOW()
-      WHERE "id" = ${matchId}
-        AND "eventId" = ${eventId}
-    `;
+    const updated = await prisma.eventMatch.updateMany({
+      where: { id: matchId, eventId },
+      data: { score1, score2, updatedById: user.id },
+    });
 
-    if (!updated) {
+    if (updated.count === 0) {
       return { statusCode: 404, body: JSON.stringify({ error: "Match not found" }) };
     }
 

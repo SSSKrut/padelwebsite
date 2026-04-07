@@ -1,7 +1,6 @@
 import { defineHandler } from "./lib/apiHandler";
 import { prisma } from "./lib/prisma";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 
 const scorePayloadSchema = z.object({
   eventId: z.string().uuid(),
@@ -36,14 +35,11 @@ export const handler = defineHandler({
 
       const eventId = queryParse.data.eventId;
 
-      const scores = await prisma.$queryRaw<
-        Array<{ userId: string; previousElo: number; newElo: number; createdAt: Date; updatedAt: Date }>
-      >`
-        SELECT "userId", "previousElo", "newElo", "createdAt", "updatedAt"
-        FROM "EventScore"
-        WHERE "eventId" = ${eventId}
-        ORDER BY "createdAt" ASC, "userId" ASC
-      `;
+      const scores = await prisma.eventScore.findMany({
+        where: { eventId },
+        select: { userId: true, previousElo: true, newElo: true, createdAt: true, updatedAt: true },
+        orderBy: [{ createdAt: "asc" }, { userId: "asc" }],
+      });
 
       return {
         eventId,
@@ -91,14 +87,11 @@ export const handler = defineHandler({
         const previousElo = user.elo;
         const newElo = entry.newElo;
 
-        await tx.$executeRaw`
-          INSERT INTO "EventScore" ("id", "eventId", "userId", "previousElo", "newElo", "createdAt", "updatedAt")
-          VALUES (${randomUUID()}, ${eventId}, ${entry.userId}, ${previousElo}, ${newElo}, NOW(), NOW())
-          ON CONFLICT ("eventId", "userId") DO UPDATE SET
-            "previousElo" = EXCLUDED."previousElo",
-            "newElo" = EXCLUDED."newElo",
-            "updatedAt" = NOW()
-        `;
+        await tx.eventScore.upsert({
+          where: { eventId_userId: { eventId, userId: entry.userId } },
+          update: { previousElo, newElo },
+          create: { eventId, userId: entry.userId, previousElo, newElo },
+        });
 
         await tx.user.update({
           where: { id: entry.userId },

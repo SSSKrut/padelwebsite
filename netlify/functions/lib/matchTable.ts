@@ -14,10 +14,13 @@ export const ELO_K_FACTOR = 40;
 export type MatchTableStatus = "DRAFT" | "OPEN" | "CONFIRMED";
 
 export interface MatchTablePlayer {
+  previousElo?: number;
+  newElo?: number;
   id: string;
   name: string;
   elo: number;
   manualElo?: number;
+  isWinner?: boolean;
 }
 
 export interface MatchTableCourt {
@@ -39,6 +42,7 @@ export interface MatchTableMatch {
 }
 
 export interface MatchTableResponse {
+  mode: "AUTO_COURTS" | "MANUAL_ELO";
   eventId: string;
   status: MatchTableStatus;
   generatedAt: string | null;
@@ -51,6 +55,7 @@ interface EventRow {
   matchTableStatus: MatchTableStatus;
   matchTableGeneratedAt: Date | null;
   matchTableConfirmedAt: Date | null;
+  matchTableMode: "AUTO_COURTS" | "MANUAL_ELO";
 }
 
 interface AssignmentRow {
@@ -74,7 +79,9 @@ interface MatchRow {
 
 interface ManualEloRow {
   userId: string;
+  previousElo: number | null;
   newElo: number;
+  isWinner: boolean;
 }
 
 export function calculateEloRating(rating1: number, rating2: number, score: number) {
@@ -96,49 +103,48 @@ export function resultFromScores(score1: number, score2: number) {
 }
 
 export async function loadMatchTable(eventId: string): Promise<MatchTableResponse | null> {
-  const eventRows = await prisma.$queryRaw<EventRow[]>`
-    SELECT "matchTableStatus", "matchTableGeneratedAt", "matchTableConfirmedAt"
-    FROM "Event"
-    WHERE "id" = ${eventId}
-    LIMIT 1
-  `;
+  const eventRow: EventRow | null = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: {
+      matchTableStatus: true,
+      matchTableGeneratedAt: true,
+      matchTableConfirmedAt: true,
+      matchTableMode: true,
+    },
+  });
 
-  if (!eventRows.length) return null;
+  if (!eventRow) return null;
 
-  const eventRow = eventRows[0];
+  const assignments: AssignmentRow[] = await prisma.eventCourtAssignment.findMany({
+    where: { eventId },
+    select: { userId: true, courtNumber: true },
+    orderBy: [{ courtNumber: "asc" }, { createdAt: "asc" }],
+  });
 
-  const assignments = await prisma.$queryRaw<AssignmentRow[]>`
-    SELECT "userId", "courtNumber"
-    FROM "EventCourtAssignment"
-    WHERE "eventId" = ${eventId}
-    ORDER BY "courtNumber" ASC, "createdAt" ASC
-  `;
+  const matches: MatchRow[] = await prisma.eventMatch.findMany({
+    where: { eventId },
+    select: {
+      id: true,
+      courtNumber: true,
+      round: true,
+      pair1Player1Id: true,
+      pair1Player2Id: true,
+      pair2Player1Id: true,
+      pair2Player2Id: true,
+      score1: true,
+      score2: true,
+      updatedAt: true,
+      updatedById: true,
+    },
+    orderBy: [{ courtNumber: "asc" }, { round: "asc" }],
+  });
 
-  const matches = await prisma.$queryRaw<MatchRow[]>`
-    SELECT
-      "id",
-      "courtNumber",
-      "round",
-      "pair1Player1Id",
-      "pair1Player2Id",
-      "pair2Player1Id",
-      "pair2Player2Id",
-      "score1",
-      "score2",
-      "updatedAt",
-      "updatedById"
-    FROM "EventMatch"
-    WHERE "eventId" = ${eventId}
-    ORDER BY "courtNumber" ASC, "round" ASC
-  `;
+  const manualEloRows: ManualEloRow[] = await prisma.eventManualElo.findMany({
+    where: { eventId },
+    select: { userId: true, previousElo: true, newElo: true, isWinner: true },
+  });
 
-  const manualEloRows = await prisma.$queryRaw<ManualEloRow[]>`
-    SELECT "userId", "newElo"
-    FROM "EventManualElo"
-    WHERE "eventId" = ${eventId}
-  `;
-
-  const manualEloMap = new Map(manualEloRows.map((row) => [row.userId, row.newElo]));
+  const manualEloMap = new Map(manualEloRows.map((row) => [row.userId, row]));
 
   const userIds = new Set<string>();
   assignments.forEach((assignment) => userIds.add(assignment.userId));
@@ -155,16 +161,32 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
     select: { id: true, firstName: true, lastName: true, elo: true },
   });
 
+  const eventScores = await prisma.eventScore.findMany({
+    where: { eventId, userId: { in: Array.from(userIds) } },
+    select: { userId: true, previousElo: true, newElo: true },
+  });
+  
+  const scoreMap = new Map(eventScores.map((s) => [s.userId, s]));
+
   const userMap = new Map<string, MatchTablePlayer>(
-    users.map((user) => [
-      user.id,
-      {
-        id: user.id,
-        name: publicName(user.firstName, user.lastName),
-        elo: user.elo,
-        manualElo: manualEloMap.get(user.id),
-      },
-    ]),
+    users.map((user) => {
+      const score = scoreMap.get(user.id);
+      const manualData = manualEloMap.get(user.id);
+      const manualPrevious = manualData?.previousElo ?? undefined;
+      const baseElo = score ? score.previousElo : manualPrevious ?? user.elo;
+      return [
+        user.id,
+        {
+          id: user.id,
+          name: publicName(user.firstName, user.lastName),
+          elo: baseElo,
+          manualElo: manualData?.newElo,
+          isWinner: manualData?.isWinner,
+          previousElo: score?.previousElo ?? manualPrevious,
+          newElo: score?.newElo,
+        },
+      ];
+    }),
   );
 
   const courtsMap = new Map<number, MatchTableCourt>();
@@ -213,6 +235,7 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
 
   return {
     eventId,
+    mode: eventRow.matchTableMode,
     status: eventRow.matchTableStatus,
     generatedAt: eventRow.matchTableGeneratedAt ? eventRow.matchTableGeneratedAt.toISOString() : null,
     confirmedAt: eventRow.matchTableConfirmedAt ? eventRow.matchTableConfirmedAt.toISOString() : null,

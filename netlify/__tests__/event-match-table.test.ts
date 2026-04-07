@@ -4,8 +4,8 @@ import type { HandlerEvent, HandlerContext, HandlerResponse } from "@netlify/fun
 const mocks = vi.hoisted(() => ({
   verifyUser: vi.fn(),
   eventRegistrationFindUnique: vi.fn(),
-  queryRaw: vi.fn(),
-  executeRaw: vi.fn(),
+  eventFindUnique: vi.fn(),
+  eventMatchUpdateMany: vi.fn(),
   loadMatchTable: vi.fn(),
 }));
 
@@ -15,9 +15,9 @@ vi.mock("../functions/lib/auth", () => ({
 
 vi.mock("../functions/lib/prisma", () => ({
   prisma: {
+    event: { findUnique: mocks.eventFindUnique },
     eventRegistration: { findUnique: mocks.eventRegistrationFindUnique },
-    $queryRaw: mocks.queryRaw,
-    $executeRaw: mocks.executeRaw,
+    eventMatch: { updateMany: mocks.eventMatchUpdateMany },
   },
 }));
 
@@ -125,7 +125,7 @@ describe("event-match-table", () => {
 
   it("rejects score updates when match table is not open", async () => {
     vi.mocked(verifyUser).mockResolvedValue({ id: "admin-1", role: "ADMIN" } as never);
-    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ matchTableStatus: "CONFIRMED" }] as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "CONFIRMED" } as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "PATCH",
@@ -139,8 +139,8 @@ describe("event-match-table", () => {
 
   it("returns 404 when match update targets unknown match", async () => {
     vi.mocked(verifyUser).mockResolvedValue({ id: "admin-1", role: "ADMIN" } as never);
-    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ matchTableStatus: "OPEN" }] as never);
-    vi.mocked(prisma.$executeRaw).mockResolvedValueOnce(0 as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventMatch.updateMany).mockResolvedValueOnce({ count: 0 } as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "PATCH",
@@ -154,8 +154,8 @@ describe("event-match-table", () => {
 
   it("updates match scores when table is open", async () => {
     vi.mocked(verifyUser).mockResolvedValue({ id: "admin-1", role: "ADMIN" } as never);
-    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ matchTableStatus: "OPEN" }] as never);
-    vi.mocked(prisma.$executeRaw).mockResolvedValueOnce(1 as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventMatch.updateMany).mockResolvedValueOnce({ count: 1 } as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "PATCH",

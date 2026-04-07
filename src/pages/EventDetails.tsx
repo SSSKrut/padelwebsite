@@ -56,6 +56,9 @@ interface MatchTablePlayer {
   name: string;
   elo: number;
   manualElo?: number;
+  previousElo?: number;
+  newElo?: number;
+  isWinner?: boolean;
 }
 
 interface MatchTableCourt {
@@ -75,6 +78,7 @@ interface MatchTableMatch {
 }
 
 interface MatchTableResponse {
+  mode: "AUTO_COURTS" | "MANUAL_ELO";
   eventId: string;
   status: string;
   generatedAt: string | null;
@@ -88,6 +92,8 @@ interface CourtWinner {
   winners: Array<{ id: string; name: string }>;
   points: number;
   diff: number;
+  isManual?: boolean;
+  manualElo?: Array<{ id: string; name: string; previousElo: number; newElo: number; diff: number }>;
 }
 
 function getErrorMessage(err: unknown, fallback: string): string {
@@ -208,10 +214,33 @@ const EventDetails = () => {
       matchesByCourt.set(match.courtNumber, list);
     });
 
-    return matchTable.courts
-      .filter((court) => !court.isManual)
-      .map((court) => {
-        const entries = new Map<string, { id: string; name: string; points: number; diff: number }>();
+    return matchTable.courts.map((court) => {
+      if (court.isManual) {
+        const manualWinners = court.players.filter((p) => p.isWinner);
+        const winners = manualWinners.map((p) => ({ id: p.id, name: p.name }));
+        const manualElo = manualWinners.map((p) => {
+          const previousElo = p.previousElo ?? p.elo;
+          const newElo = p.manualElo ?? p.newElo ?? p.elo;
+          return {
+            id: p.id,
+            name: p.name,
+            previousElo,
+            newElo,
+            diff: newElo - previousElo,
+          };
+        });
+        
+        return {
+          courtNumber: court.courtNumber,
+          winners,
+          points: 0,
+          diff: 0,
+          isManual: true,
+          manualElo,
+        };
+      }
+
+      const entries = new Map<string, { id: string; name: string; points: number; diff: number }>();
         court.players.forEach((player) => {
           entries.set(player.id, { id: player.id, name: player.name, points: 0, diff: 0 });
         });
@@ -465,19 +494,61 @@ const EventDetails = () => {
             {canViewMatchTable && (
               <Card className="shadow-lg border-0">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Trophy className="w-5 h-5 text-primary" /> Court Winners
-                  </CardTitle>
-                  <CardDescription>Top players per court based on points and difference.</CardDescription>
+                  {matchTable?.mode === "MANUAL_ELO" ? (
+      <>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Trophy className="w-5 h-5 text-primary" /> ELO Changes
+        </CardTitle>
+        <CardDescription>Rating changes for all participants.</CardDescription>
+      </>
+    ) : (
+      <>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Trophy className="w-5 h-5 text-primary" /> Court Winners
+        </CardTitle>
+        <CardDescription>Top players per court based on points and difference.</CardDescription>
+      </>
+    )}
                 </CardHeader>
                 <CardContent>
                   {matchTableLoading ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin" /> Loading match results...
                     </div>
-                  ) : courtWinners.length > 0 ? (
+                  ) : (matchTable.mode === "MANUAL_ELO" ? matchTable.courts[0]?.players.length > 0 : courtWinners.length > 0) ? (
                     <div className="overflow-x-auto">
-                      <Table>
+                      {matchTable.mode === "MANUAL_ELO" ? (
+                        <Table className="w-full min-w-[600px]">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-1/4">Player</TableHead>
+                              <TableHead className="text-right w-1/4">Previous ELO</TableHead>
+                              <TableHead className="text-right w-1/4">New ELO</TableHead>
+                              <TableHead className="text-right w-1/4">Difference</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {matchTable.courts[0]?.players.map((p) => {
+                              const prev = p.previousElo ?? p.elo;
+                              const current = matchTable.status === "CONFIRMED" ? (p.newElo ?? p.elo) : (p.manualElo ?? p.elo);
+                              const diff = current - prev;
+                              return (
+                                <TableRow key={`elo-${p.id}`}>
+                                  <TableCell className="font-medium">
+                                    {p.name} {p.isWinner && <Trophy className="w-3 h-3 inline text-yellow-500" />}
+                                  </TableCell>
+                                  <TableCell className="text-right">{prev}</TableCell>
+                                  <TableCell className="text-right font-bold">{current}</TableCell>
+                                  <TableCell className={`text-right ${diff > 0 ? "text-emerald-600" : diff < 0 ? "text-rose-600" : "text-muted-foreground"}`}>
+                                    {diff > 0 ? `+${diff}` : diff}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      ) : (
+<Table className="w-full min-w-[600px]">
                         <TableHeader>
                           <TableRow>
                             <TableHead>Court</TableHead>
@@ -489,26 +560,43 @@ const EventDetails = () => {
                         <TableBody>
                           {courtWinners.map((court) => (
                             <TableRow key={`court-winner-${court.courtNumber}`}>
-                              <TableCell className="font-medium">Court {court.courtNumber}</TableCell>
+                              <TableCell className="font-medium">Court {court.courtNumber} {court.isManual && <span className="text-xs text-muted-foreground">(Manual)</span>}</TableCell>
                               <TableCell>{court.winners.map((winner) => winner.name).join(" / ")}</TableCell>
                               <TableCell className="text-right">
-                                {formatStandingPoints(court.points)}
+                                {court.isManual
+                                  ? court.manualElo?.length
+                                    ? court.manualElo
+                                        .map((entry) => `${entry.previousElo} → ${entry.newElo}`)
+                                        .join(" / ")
+                                    : "N/A"
+                                  : formatStandingPoints(court.points)}
                               </TableCell>
                               <TableCell
-                                className={`text-right ${
-                                  court.diff > 0
-                                    ? "text-emerald-600"
-                                    : court.diff < 0
-                                      ? "text-rose-600"
-                                      : "text-muted-foreground"
-                                }`}
+                                className={
+                                  court.isManual
+                                    ? "text-right"
+                                    : `text-right ${
+                                        court.diff > 0
+                                          ? "text-emerald-600"
+                                          : court.diff < 0
+                                            ? "text-rose-600"
+                                            : "text-muted-foreground"
+                                      }`
+                                }
                               >
-                                {formatStandingDiff(court.diff)}
+                                {court.isManual
+                                  ? court.manualElo?.length
+                                    ? court.manualElo
+                                        .map((entry) => (entry.diff > 0 ? `+${entry.diff}` : String(entry.diff)))
+                                        .join(" / ")
+                                    : "N/A"
+                                  : formatStandingDiff(court.diff)}
                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">

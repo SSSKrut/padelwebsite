@@ -6,8 +6,8 @@ const mocks = vi.hoisted(() => ({
   eventFindUnique: vi.fn(),
   userFindUnique: vi.fn(),
   userUpdate: vi.fn(),
-  queryRaw: vi.fn(),
-  executeRaw: vi.fn(),
+  eventScoreFindMany: vi.fn(),
+  eventScoreUpsert: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -19,8 +19,7 @@ vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     event: { findUnique: mocks.eventFindUnique },
     user: { findUnique: mocks.userFindUnique, update: mocks.userUpdate },
-    $queryRaw: mocks.queryRaw,
-    $executeRaw: mocks.executeRaw,
+    eventScore: { findMany: mocks.eventScoreFindMany, upsert: mocks.eventScoreUpsert },
     $transaction: mocks.transaction,
   },
 }));
@@ -87,7 +86,7 @@ describe("admin-event-scores", () => {
     const createdAt = new Date("2026-04-06T10:00:00.000Z");
     const updatedAt = new Date("2026-04-06T11:00:00.000Z");
 
-    vi.mocked(prisma.$queryRaw).mockResolvedValue([
+    vi.mocked(prisma.eventScore.findMany).mockResolvedValue([
       { userId: USER_ID, previousElo: 1000, newElo: 1100, createdAt, updatedAt },
     ] as never);
 
@@ -111,7 +110,7 @@ describe("admin-event-scores", () => {
     } as never);
     vi.mocked(prisma.user.findUnique).mockResolvedValue({ elo: 1200 } as never);
     vi.mocked(prisma.user.update).mockResolvedValue({ id: USER_ID } as never);
-    vi.mocked(prisma.$executeRaw).mockResolvedValue(undefined as never);
+    vi.mocked(prisma.eventScore.upsert).mockResolvedValue({} as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "POST",
@@ -128,14 +127,14 @@ describe("admin-event-scores", () => {
       where: { id: USER_ID },
       data: { elo: 1300 },
     });
-    expect(prisma.$executeRaw).toHaveBeenCalled();
+    expect(prisma.eventScore.upsert).toHaveBeenCalled();
   });
 
   it("allows scoring users even when not registered for the event", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue({ id: EVENT_ID } as never);
     vi.mocked(prisma.user.findUnique).mockResolvedValue({ elo: 900 } as never);
     vi.mocked(prisma.user.update).mockResolvedValue({ id: USER_ID } as never);
-    vi.mocked(prisma.$executeRaw).mockResolvedValue(undefined as never);
+    vi.mocked(prisma.eventScore.upsert).mockResolvedValue({} as never);
 
     const { statusCode } = await callHandler({
       httpMethod: "POST",

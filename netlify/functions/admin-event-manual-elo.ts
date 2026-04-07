@@ -1,7 +1,6 @@
 import { defineHandler } from "./lib/apiHandler";
 import { prisma } from "./lib/prisma";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 
 const manualEloSchema = z.object({
   eventId: z.string().uuid(),
@@ -9,6 +8,7 @@ const manualEloSchema = z.object({
     z.object({
       userId: z.string().uuid(),
       newElo: z.number().int().min(0),
+      isWinner: z.boolean().optional(),
     }),
   ),
 });
@@ -55,15 +55,27 @@ export const handler = defineHandler({
       return { statusCode: 400, body: JSON.stringify({ error: "User is not registered for this event" }) };
     }
 
+    const users = await prisma.user.findMany({
+      where: { id: { in: entries.map((entry) => entry.userId) } },
+      select: { id: true, elo: true },
+    });
+
+    const userEloMap = new Map(users.map((user) => [user.id, user.elo] as const));
+    const missingUser = entries.find((entry) => !userEloMap.has(entry.userId));
+
+    if (missingUser) {
+      return { statusCode: 404, body: JSON.stringify({ error: "User not found" }) };
+    }
+
     await prisma.$transaction(async (tx) => {
       for (const entry of entries) {
-        await tx.$executeRaw`
-          INSERT INTO "EventManualElo" ("id", "eventId", "userId", "newElo", "createdAt", "updatedAt")
-          VALUES (${randomUUID()}, ${eventId}, ${entry.userId}, ${entry.newElo}, NOW(), NOW())
-          ON CONFLICT ("eventId", "userId") DO UPDATE SET
-            "newElo" = EXCLUDED."newElo",
-            "updatedAt" = NOW()
-        `;
+        const isWinner = entry.isWinner ?? false;
+        const previousElo = userEloMap.get(entry.userId) ?? 0;
+        await tx.eventManualElo.upsert({
+          where: { eventId_userId: { eventId, userId: entry.userId } },
+          update: { newElo: entry.newElo, isWinner, previousElo },
+          create: { eventId, userId: entry.userId, newElo: entry.newElo, isWinner, previousElo },
+        });
       }
     });
 

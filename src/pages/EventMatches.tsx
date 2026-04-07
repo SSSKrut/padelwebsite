@@ -44,6 +44,8 @@ interface MatchTablePlayer {
   name: string;
   elo: number;
   manualElo?: number;
+  previousElo?: number;
+  newElo?: number;
 }
 
 interface MatchTableCourt {
@@ -65,6 +67,7 @@ interface MatchTableMatch {
 }
 
 interface MatchTableResponse {
+  mode: "AUTO_COURTS" | "MANUAL_ELO";
   eventId: string;
   status: MatchTableStatus;
   generatedAt: string | null;
@@ -105,6 +108,7 @@ const EventMatches = () => {
   const [scoreDrafts, setScoreDrafts] = useState<Record<string, { score1: string; score2: string }>>({});
   const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, number>>({});
   const [manualEloDrafts, setManualEloDrafts] = useState<Record<string, string>>({});
+  const [manualWinnerDrafts, setManualWinnerDrafts] = useState<Record<string, boolean>>({});
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
 
   const matchesByCourt = useMemo(() => {
@@ -177,15 +181,18 @@ const EventMatches = () => {
   useEffect(() => {
     if (!matchTable) return;
     const nextManual: Record<string, string> = {};
+    const nextWinners: Record<string, boolean> = {};
     matchTable.courts
       .filter((court) => court.isManual)
       .forEach((court) => {
         court.players.forEach((player) => {
           const fallback = player.manualElo ?? player.elo;
           nextManual[player.id] = String(fallback);
+          nextWinners[player.id] = player.isWinner ?? false;
         });
       });
     setManualEloDrafts(nextManual);
+    setManualWinnerDrafts(nextWinners);
   }, [matchTable]);
 
   useEffect(() => {
@@ -229,7 +236,7 @@ const EventMatches = () => {
   });
 
   const generateTable = useMutation({
-    mutationFn: (payload: { eventId: string }) =>
+    mutationFn: (payload: { eventId: string; mode: "AUTO_COURTS" | "MANUAL_ELO" }) =>
       apiFetch("/.netlify/functions/admin-event-match-table", "POST", payload),
     onSuccess: () => {
       toast.success("Match table generated");
@@ -253,7 +260,7 @@ const EventMatches = () => {
   });
 
   const saveManualElo = useMutation({
-    mutationFn: (payload: { eventId: string; entries: { userId: string; newElo: number }[] }) =>
+    mutationFn: (payload: { eventId: string; entries: { userId: string; newElo: number; isWinner: boolean }[] }) =>
       apiFetch("/.netlify/functions/admin-event-manual-elo", "POST", payload),
     onSuccess: () => {
       toast.success("Manual ELO saved");
@@ -307,6 +314,7 @@ const EventMatches = () => {
       return {
         userId: player.id,
         newElo: Number.parseInt(raw ?? "", 10),
+        isWinner: manualWinnerDrafts[player.id] ?? false,
       };
     });
 
@@ -319,11 +327,6 @@ const EventMatches = () => {
     saveManualElo.mutate({ eventId: id, entries });
   };
 
-  const formatResultValue = (score1: number | null, score2: number | null) => {
-    if (score1 === null || score2 === null) return "-";
-    if (score1 === score2) return "0.5";
-    return score1 > score2 ? "1" : "0";
-  };
 
   const formatStandingPoints = (value: number) =>
     Number.isInteger(value) ? String(value) : value.toFixed(1);
@@ -569,11 +572,11 @@ const EventMatches = () => {
                       confirmAction(
                         "Regenerate match table",
                         "This will clear all entered scores and manual ELO values. Continue?",
-                        () => generateTable.mutate({ eventId: event.id }),
+                        () => generateTable.mutate({ eventId: event.id, mode: "AUTO_COURTS" }),
                       );
                       return;
                     }
-                    generateTable.mutate({ eventId: event.id });
+                    generateTable.mutate({ eventId: event.id, mode: "AUTO_COURTS" });
                   }}
                   disabled={generateTable.isPending}
                 >
@@ -582,7 +585,29 @@ const EventMatches = () => {
                   ) : (
                     <RefreshCw className="w-4 h-4 mr-2" />
                   )}
-                  Generate Auto Table
+                  Generate King of the Court
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (hasEnteredResults) {
+                      confirmAction(
+                        "Regenerate match table",
+                        "This will clear all entered scores and manual ELO values. Continue?",
+                        () => generateTable.mutate({ eventId: event.id, mode: "MANUAL_ELO" }),
+                      );
+                      return;
+                    }
+                    generateTable.mutate({ eventId: event.id, mode: "MANUAL_ELO" });
+                  }}
+                  disabled={generateTable.isPending}
+                >
+                  {generateTable.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  Generate Manual ELO (Admin)
                 </Button>
                 {status === "OPEN" && (
                   <Button
@@ -669,7 +694,7 @@ const EventMatches = () => {
                 <TabsList className="flex flex-wrap">
                   {matchTable.courts.map((court) => (
                     <TabsTrigger key={court.courtNumber} value={`court-${court.courtNumber}`}>
-                      Court {court.courtNumber}
+                      {matchTable.mode === "MANUAL_ELO" ? "Participants List" : `Court ${court.courtNumber}`}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -678,7 +703,11 @@ const EventMatches = () => {
                   <TabsContent key={court.courtNumber} value={`court-${court.courtNumber}`}>
                     <Card className="shadow-lg border-0">
                       <CardHeader>
-                        <CardTitle>Court {court.courtNumber}</CardTitle>
+                        {matchTable.mode === "MANUAL_ELO" ? (
+    <CardTitle>Tournament Participants (Manual ELO)</CardTitle>
+  ) : (
+    <CardTitle>Court {court.courtNumber}</CardTitle>
+  )}
                         <CardDescription>
                           {court.isManual
                             ? "Less than 5 players — manual ELO required."
@@ -700,10 +729,11 @@ const EventMatches = () => {
                         {court.isManual ? (
                           <div className="space-y-3">
                             <div className="overflow-x-auto">
-                              <Table>
+                              <Table className="w-full min-w-[600px]">
                                 <TableHeader>
                                   <TableRow>
                                     <TableHead>Player</TableHead>
+                                    <TableHead className="text-center">Winner</TableHead>
                                     <TableHead className="text-right">Current ELO</TableHead>
                                     <TableHead className="text-right">Manual ELO</TableHead>
                                   </TableRow>
@@ -712,7 +742,24 @@ const EventMatches = () => {
                                   {court.players.map((player) => (
                                     <TableRow key={player.id}>
                                       <TableCell className="font-medium">{player.name}</TableCell>
-                                      <TableCell className="text-right text-muted-foreground">{player.elo}</TableCell>
+                                      <TableCell className="text-center">
+                                        {isAdmin && status !== "CONFIRMED" ? (
+                                          <input
+                                            type="checkbox"
+                                            className="w-4 h-4 cursor-pointer"
+                                            checked={manualWinnerDrafts[player.id] ?? false}
+                                            onChange={(e) =>
+                                              setManualWinnerDrafts((prev) => ({
+                                                ...prev,
+                                                [player.id]: e.target.checked,
+                                              }))
+                                            }
+                                          />
+                                        ) : (
+                                          player.isWinner ? <span className="text-primary font-bold">✓</span> : <span className="text-muted-foreground">-</span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="text-right text-muted-foreground">{player.previousElo ?? player.elo}</TableCell>
                                       <TableCell className="text-right">
                                         {isAdmin && status !== "CONFIRMED" ? (
                                           <Input
@@ -729,7 +776,7 @@ const EventMatches = () => {
                                           />
                                         ) : (
                                           <span className="text-sm">
-                                            {player.manualElo ?? player.elo}
+                                            {player.newElo ?? player.manualElo ?? (player.previousElo ?? player.elo)}
                                           </span>
                                         )}
                                       </TableCell>
@@ -738,6 +785,22 @@ const EventMatches = () => {
                                 </TableBody>
                               </Table>
                             </div>
+                            {status === "CONFIRMED" && (
+                              <div className="mt-4 p-4 rounded-lg bg-primary/10 border border-primary/20 text-center">
+                                {(() => {
+                                  const winners = court.players.filter((p) => p.isWinner);
+                                  if (winners.length === 0) {
+                                    return <p className="text-sm font-semibold text-muted-foreground">No winners selected</p>;
+                                  }
+                                  
+                                  return (
+                                    <p className="text-sm font-semibold text-primary">
+                                      {winners.length > 1 ? "Winners" : "Winner"}: {winners.map(w => w.name).join(" / ")} 
+                                    </p>
+                                  );
+                                })()}
+                              </div>
+                            )}
                             {isAdmin && status !== "CONFIRMED" && (
                               <div className="flex justify-end">
                                 <Button
@@ -753,9 +816,9 @@ const EventMatches = () => {
                           </div>
                         ) : (
                           <div className="space-y-4">
-                            <div className="grid gap-4 lg:grid-cols-2">
+                            <div className="grid gap-4 lg:grid-cols-1">
                               <div className="overflow-x-auto">
-                                <Table>
+                                <Table className="w-full min-w-[600px]">
                                   <TableHeader>
                                     <TableRow>
                                       <TableHead>Round</TableHead>
@@ -831,37 +894,10 @@ const EventMatches = () => {
                                   </TableBody>
                                 </Table>
                               </div>
-
-                              <div className="overflow-x-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Pair 1 P1</TableHead>
-                                      <TableHead>Pair 1 P2</TableHead>
-                                      <TableHead>Pair 2 P1</TableHead>
-                                      <TableHead>Pair 2 P2</TableHead>
-                                      <TableHead className="text-right">Result</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {(matchesByCourt.get(court.courtNumber) ?? []).map((match) => (
-                                      <TableRow key={`${match.id}-summary`}>
-                                        <TableCell>{match.pair1[0]?.name ?? "-"}</TableCell>
-                                        <TableCell>{match.pair1[1]?.name ?? "-"}</TableCell>
-                                        <TableCell>{match.pair2[0]?.name ?? "-"}</TableCell>
-                                        <TableCell>{match.pair2[1]?.name ?? "-"}</TableCell>
-                                        <TableCell className="text-right">
-                                          {formatResultValue(match.score1, match.score2)}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
                             </div>
 
                             <div className="overflow-x-auto">
-                              <Table>
+                              <Table className="w-full min-w-[600px]">
                                 <TableHeader>
                                   <TableRow>
                                     <TableHead>Name</TableHead>

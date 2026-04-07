@@ -10,6 +10,10 @@ import {
   resultFromScores,
 } from "./lib/matchTable";
 
+const generateSchema = z.object({ 
+  eventId: z.string().uuid(),
+  mode: z.enum(["AUTO_COURTS", "MANUAL_ELO"]).optional().default("AUTO_COURTS"),
+});
 const eventIdSchema = z.object({ eventId: z.string().uuid() });
 const assignmentsSchema = z.object({
   eventId: z.string().uuid(),
@@ -145,7 +149,7 @@ export const handler = defineHandler({
   requireAdmin: true,
   handler: async ({ event }) => {
     if (event.httpMethod === "POST") {
-      const parsed = eventIdSchema.safeParse(event.body ? JSON.parse(event.body) : {});
+      const parsed = generateSchema.safeParse(event.body ? JSON.parse(event.body) : {});
       if (!parsed.success) {
         return {
           statusCode: 400,
@@ -156,7 +160,7 @@ export const handler = defineHandler({
         };
       }
 
-      const { eventId } = parsed.data;
+      const { eventId, mode } = parsed.data;
 
       const guard = await loadRegenerationGuard(eventId);
       if (!guard.ok) {
@@ -182,7 +186,11 @@ export const handler = defineHandler({
         .sort((a, b) => b.elo - a.elo)
         .map((p) => ({ id: p.id }));
 
-      const courts = generateCourtAssignments(sortedParticipants);
+      let courts = generateCourtAssignments(sortedParticipants);
+
+      if (mode === "MANUAL_ELO") {
+        courts = [{ courtNumber: 1, userIds: sortedParticipants.map(p => p.id) }];
+      }
 
       await prisma.$transaction(async (tx) => {
         if (guard.rollbackScores.length > 0 && guard.eventRecord.matchTableStatus === "CONFIRMED") {
@@ -196,60 +204,48 @@ export const handler = defineHandler({
           await tx.eventScore.deleteMany({ where: { eventId } });
         }
 
-        await tx.$executeRaw`DELETE FROM "EventMatch" WHERE "eventId" = ${eventId}`;
-        await tx.$executeRaw`DELETE FROM "EventCourtAssignment" WHERE "eventId" = ${eventId}`;
-        await tx.$executeRaw`DELETE FROM "EventManualElo" WHERE "eventId" = ${eventId}`;
+        await tx.eventMatch.deleteMany({ where: { eventId } });
+        await tx.eventCourtAssignment.deleteMany({ where: { eventId } });
+        await tx.eventManualElo.deleteMany({ where: { eventId } });
 
-        for (const court of courts) {
-          for (const userId of court.userIds) {
-            await tx.$executeRaw`
-              INSERT INTO "EventCourtAssignment" ("id", "eventId", "userId", "courtNumber", "createdAt")
-              VALUES (${randomUUID()}, ${eventId}, ${userId}, ${court.courtNumber}, NOW())
-            `;
-          }
-
-          const matches = buildMatchesForCourt(court.courtNumber, court.userIds).map((match) => ({
-            ...match,
+        const assignmentRows = courts.flatMap((court) =>
+          court.userIds.map((userId) => ({
             eventId,
-          }));
+            userId,
+            courtNumber: court.courtNumber,
+          })),
+        );
 
-          for (const match of matches) {
-            await tx.$executeRaw`
-              INSERT INTO "EventMatch" (
-                "id",
-                "eventId",
-                "courtNumber",
-                "round",
-                "pair1Player1Id",
-                "pair1Player2Id",
-                "pair2Player1Id",
-                "pair2Player2Id",
-                "createdAt",
-                "updatedAt"
-              )
-              VALUES (
-                ${match.id},
-                ${eventId},
-                ${match.courtNumber},
-                ${match.round},
-                ${match.pair1Player1Id},
-                ${match.pair1Player2Id},
-                ${match.pair2Player1Id},
-                ${match.pair2Player2Id},
-                NOW(),
-                NOW()
-              )
-            `;
-          }
+        if (assignmentRows.length > 0) {
+          await tx.eventCourtAssignment.createMany({ data: assignmentRows, skipDuplicates: true });
         }
 
-        await tx.$executeRaw`
-          UPDATE "Event"
-          SET "matchTableStatus" = 'OPEN',
-              "matchTableGeneratedAt" = NOW(),
-              "matchTableConfirmedAt" = NULL
-          WHERE "id" = ${eventId}
-        `;
+        const matchRows = courts.flatMap((court) =>
+          buildMatchesForCourt(court.courtNumber, court.userIds).map((match) => ({
+            id: match.id,
+            eventId,
+            courtNumber: match.courtNumber,
+            round: match.round,
+            pair1Player1Id: match.pair1Player1Id,
+            pair1Player2Id: match.pair1Player2Id,
+            pair2Player1Id: match.pair2Player1Id,
+            pair2Player2Id: match.pair2Player2Id,
+          })),
+        );
+
+        if (matchRows.length > 0) {
+          await tx.eventMatch.createMany({ data: matchRows });
+        }
+
+        await tx.event.update({
+          where: { id: eventId },
+          data: {
+            matchTableStatus: "OPEN",
+            matchTableGeneratedAt: new Date(),
+            matchTableConfirmedAt: null,
+            matchTableMode: mode,
+          },
+        });
       });
 
       const table = await loadMatchTable(eventId);
@@ -312,60 +308,47 @@ export const handler = defineHandler({
           await tx.eventScore.deleteMany({ where: { eventId } });
         }
 
-        await tx.$executeRaw`DELETE FROM "EventMatch" WHERE "eventId" = ${eventId}`;
-        await tx.$executeRaw`DELETE FROM "EventCourtAssignment" WHERE "eventId" = ${eventId}`;
-        await tx.$executeRaw`DELETE FROM "EventManualElo" WHERE "eventId" = ${eventId}`;
+        await tx.eventMatch.deleteMany({ where: { eventId } });
+        await tx.eventCourtAssignment.deleteMany({ where: { eventId } });
+        await tx.eventManualElo.deleteMany({ where: { eventId } });
 
-        for (const [courtNumber, userIds] of courtsMap.entries()) {
-          for (const userId of userIds) {
-            await tx.$executeRaw`
-              INSERT INTO "EventCourtAssignment" ("id", "eventId", "userId", "courtNumber", "createdAt")
-              VALUES (${randomUUID()}, ${eventId}, ${userId}, ${courtNumber}, NOW())
-            `;
-          }
-
-          const matches = buildMatchesForCourt(courtNumber, userIds).map((match) => ({
-            ...match,
+        const assignmentRows = Array.from(courtsMap.entries()).flatMap(([courtNumber, userIds]) =>
+          userIds.map((userId) => ({
             eventId,
-          }));
+            userId,
+            courtNumber,
+          })),
+        );
 
-          for (const match of matches) {
-            await tx.$executeRaw`
-              INSERT INTO "EventMatch" (
-                "id",
-                "eventId",
-                "courtNumber",
-                "round",
-                "pair1Player1Id",
-                "pair1Player2Id",
-                "pair2Player1Id",
-                "pair2Player2Id",
-                "createdAt",
-                "updatedAt"
-              )
-              VALUES (
-                ${match.id},
-                ${eventId},
-                ${match.courtNumber},
-                ${match.round},
-                ${match.pair1Player1Id},
-                ${match.pair1Player2Id},
-                ${match.pair2Player1Id},
-                ${match.pair2Player2Id},
-                NOW(),
-                NOW()
-              )
-            `;
-          }
+        if (assignmentRows.length > 0) {
+          await tx.eventCourtAssignment.createMany({ data: assignmentRows, skipDuplicates: true });
         }
 
-        await tx.$executeRaw`
-          UPDATE "Event"
-          SET "matchTableStatus" = 'OPEN',
-              "matchTableGeneratedAt" = NOW(),
-              "matchTableConfirmedAt" = NULL
-          WHERE "id" = ${eventId}
-        `;
+        const matchRows = Array.from(courtsMap.entries()).flatMap(([courtNumber, userIds]) =>
+          buildMatchesForCourt(courtNumber, userIds).map((match) => ({
+            id: match.id,
+            eventId,
+            courtNumber: match.courtNumber,
+            round: match.round,
+            pair1Player1Id: match.pair1Player1Id,
+            pair1Player2Id: match.pair1Player2Id,
+            pair2Player1Id: match.pair2Player1Id,
+            pair2Player2Id: match.pair2Player2Id,
+          })),
+        );
+
+        if (matchRows.length > 0) {
+          await tx.eventMatch.createMany({ data: matchRows });
+        }
+
+        await tx.event.update({
+          where: { id: eventId },
+          data: {
+            matchTableStatus: "OPEN",
+            matchTableGeneratedAt: new Date(),
+            matchTableConfirmedAt: null,
+          },
+        });
       });
 
       const table = await loadMatchTable(eventId);
@@ -385,41 +368,38 @@ export const handler = defineHandler({
 
     const { eventId } = parsed.data;
 
-    const statusRows = await prisma.$queryRaw<{ matchTableStatus: string }[]>`
-      SELECT "matchTableStatus"
-      FROM "Event"
-      WHERE "id" = ${eventId}
-      LIMIT 1
-    `;
+    const eventRecord = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { matchTableStatus: true },
+    });
 
-    if (!statusRows.length) {
+    if (!eventRecord) {
       return { statusCode: 404, body: JSON.stringify({ error: "Event not found" }) };
     }
 
-    if (statusRows[0].matchTableStatus !== "OPEN") {
+    if (eventRecord.matchTableStatus !== "OPEN") {
       return { statusCode: 400, body: JSON.stringify({ error: "Match table is not open" }) };
     }
 
-    const assignments = await prisma.$queryRaw<AssignmentRow[]>`
-      SELECT "userId", "courtNumber"
-      FROM "EventCourtAssignment"
-      WHERE "eventId" = ${eventId}
-    `;
+    const assignments: AssignmentRow[] = await prisma.eventCourtAssignment.findMany({
+      where: { eventId },
+      select: { userId: true, courtNumber: true },
+    });
 
-    const matches = await prisma.$queryRaw<MatchRow[]>`
-      SELECT
-        "id",
-        "courtNumber",
-        "round",
-        "pair1Player1Id",
-        "pair1Player2Id",
-        "pair2Player1Id",
-        "pair2Player2Id",
-        "score1",
-        "score2"
-      FROM "EventMatch"
-      WHERE "eventId" = ${eventId}
-    `;
+    const matches: MatchRow[] = await prisma.eventMatch.findMany({
+      where: { eventId },
+      select: {
+        id: true,
+        courtNumber: true,
+        round: true,
+        pair1Player1Id: true,
+        pair1Player2Id: true,
+        pair2Player1Id: true,
+        pair2Player2Id: true,
+        score1: true,
+        score2: true,
+      },
+    });
 
     const courtsMap = new Map<number, string[]>();
     assignments.forEach((assignment) => {
@@ -446,11 +426,10 @@ export const handler = defineHandler({
       return { statusCode: 400, body: JSON.stringify({ error: "All match scores must be filled" }) };
     }
 
-    const manualEloRows = await prisma.$queryRaw<ManualEloRow[]>`
-      SELECT "userId", "newElo"
-      FROM "EventManualElo"
-      WHERE "eventId" = ${eventId}
-    `;
+    const manualEloRows: ManualEloRow[] = await prisma.eventManualElo.findMany({
+      where: { eventId },
+      select: { userId: true, newElo: true },
+    });
 
     const manualEloMap = new Map(manualEloRows.map((row) => [row.userId, row.newElo]));
     const missingManual = Array.from(manualPlayerIds).filter((id) => !manualEloMap.has(id));
@@ -508,14 +487,11 @@ export const handler = defineHandler({
         const delta = Math.round(ratingChange * ELO_K_FACTOR);
         const newElo = previousElo + delta;
 
-        await tx.$executeRaw`
-          INSERT INTO "EventScore" ("id", "eventId", "userId", "previousElo", "newElo", "createdAt", "updatedAt")
-          VALUES (${randomUUID()}, ${eventId}, ${userId}, ${previousElo}, ${newElo}, NOW(), NOW())
-          ON CONFLICT ("eventId", "userId") DO UPDATE SET
-            "previousElo" = EXCLUDED."previousElo",
-            "newElo" = EXCLUDED."newElo",
-            "updatedAt" = NOW()
-        `;
+        await tx.eventScore.upsert({
+          where: { eventId_userId: { eventId, userId } },
+          update: { previousElo, newElo },
+          create: { eventId, userId, previousElo, newElo },
+        });
 
         await tx.user.update({
           where: { id: userId },
@@ -529,14 +505,11 @@ export const handler = defineHandler({
         if (!manualPlayerIds.has(userId)) continue;
         const previousElo = manualEloCurrentMap.get(userId) ?? 0;
 
-        await tx.$executeRaw`
-          INSERT INTO "EventScore" ("id", "eventId", "userId", "previousElo", "newElo", "createdAt", "updatedAt")
-          VALUES (${randomUUID()}, ${eventId}, ${userId}, ${previousElo}, ${newElo}, NOW(), NOW())
-          ON CONFLICT ("eventId", "userId") DO UPDATE SET
-            "previousElo" = EXCLUDED."previousElo",
-            "newElo" = EXCLUDED."newElo",
-            "updatedAt" = NOW()
-        `;
+        await tx.eventScore.upsert({
+          where: { eventId_userId: { eventId, userId } },
+          update: { previousElo, newElo },
+          create: { eventId, userId, previousElo, newElo },
+        });
 
         await tx.user.update({
           where: { id: userId },
@@ -546,12 +519,13 @@ export const handler = defineHandler({
         updates.push({ userId, previousElo, newElo });
       }
 
-      await tx.$executeRaw`
-        UPDATE "Event"
-        SET "matchTableStatus" = 'CONFIRMED',
-            "matchTableConfirmedAt" = NOW()
-        WHERE "id" = ${eventId}
-      `;
+      await tx.event.update({
+        where: { id: eventId },
+        data: {
+          matchTableStatus: "CONFIRMED",
+          matchTableConfirmedAt: new Date(),
+        },
+      });
     });
 
     return {

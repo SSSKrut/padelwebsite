@@ -29,6 +29,11 @@ enum EventStatus {
   ARCHIVED
 }
 
+enum MatchTableMode {
+  AUTO_COURTS
+  MANUAL_ELO
+}
+
 enum MatchTableStatus {
   DRAFT
   OPEN
@@ -44,18 +49,18 @@ model User {
   phone        String?
   createdAt    DateTime @default(now())
 
-  role         Role     @default(UNVERIFIED_USER)
-  elo          Int      @default(1000)
+  role Role @default(UNVERIFIED_USER)
+  elo  Int  @default(1000)
 
-  achievements          UserAchievement[]
-  registrations         EventRegistration[]
-  waitlistEntries       EventWaitlist[]
-  eventScores           EventScore[]
-  courtAssignments      EventCourtAssignment[]
-  manualEloEntries      EventManualElo[]
-  tokens                VerificationToken[]
-  premiumSubscriptions  PremiumSubscription[] @relation("PremiumUser")
-  premiumGrantedBy      PremiumSubscription[] @relation("PremiumGranter")
+  achievements         UserAchievement[]
+  registrations        EventRegistration[]
+  waitlistEntries      EventWaitlist[]
+  eventScores          EventScore[]
+  courtAssignments     EventCourtAssignment[]
+  manualEloEntries     EventManualElo[]
+  tokens               VerificationToken[]
+  premiumSubscriptions PremiumSubscription[]  @relation("PremiumUser")
+  premiumGrantedBy     PremiumSubscription[]  @relation("PremiumGranter")
 }
 
 enum TokenType {
@@ -71,55 +76,56 @@ model VerificationToken {
   createdAt DateTime  @default(now())
   usedAt    DateTime?
 
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Event {
-  id              String      @id @default(uuid())
-  title           String
-  description     String?
-  date            DateTime
-  endDate         DateTime?
-  location        String?
-  status          EventStatus @default(DRAFT)
-  publishAt       DateTime?
-  reminderSentAt  DateTime?
-  maxParticipants Int         @default(16)
-  createdAt       DateTime    @default(now())
+  id                    String           @id @default(uuid())
+  title                 String
+  description           String?
+  date                  DateTime
+  endDate               DateTime?
+  location              String?
+  status                EventStatus      @default(DRAFT)
+  publishAt             DateTime?
+  reminderSentAt        DateTime?
+  maxParticipants       Int              @default(16)
+  createdAt             DateTime         @default(now())
   matchTableStatus      MatchTableStatus @default(DRAFT)
+  matchTableMode        MatchTableMode @default(AUTO_COURTS)
   matchTableGeneratedAt DateTime?
   matchTableConfirmedAt DateTime?
 
-  participants EventRegistration[]
-  waitlist     EventWaitlist[]
-  scores       EventScore[]
+  participants     EventRegistration[]
+  waitlist         EventWaitlist[]
+  scores           EventScore[]
   courtAssignments EventCourtAssignment[]
   matches          EventMatch[]
   manualEloEntries EventManualElo[]
 }
 
 model PremiumSubscription {
-  id          String    @id @default(uuid())
-  grantedAt   DateTime  @default(now())
-  revokedAt   DateTime?
+  id        String    @id @default(uuid())
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
 
-  userId      String
-  user        User      @relation("PremiumUser", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("PremiumUser", fields: [userId], references: [id], onDelete: Cascade)
 
   grantedById String
-  grantedBy   User      @relation("PremiumGranter", fields: [grantedById], references: [id], onDelete: Cascade)
+  grantedBy   User   @relation("PremiumGranter", fields: [grantedById], references: [id], onDelete: Cascade)
 }
 
 model EventRegistration {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  eventId   String
-  userId    String
+  eventId String
+  userId  String
 
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
 }
@@ -128,11 +134,11 @@ model EventWaitlist {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  eventId   String
-  userId    String
+  eventId String
+  userId  String
 
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
 }
@@ -168,19 +174,19 @@ model EventCourtAssignment {
 }
 
 model EventMatch {
-  id              String   @id @default(uuid())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  eventId         String
-  courtNumber     Int
-  round           Int
-  pair1Player1Id  String
-  pair1Player2Id  String
-  pair2Player1Id  String
-  pair2Player2Id  String
-  score1          Int?
-  score2          Int?
-  updatedById     String?
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  eventId        String
+  courtNumber    Int
+  round          Int
+  pair1Player1Id String
+  pair1Player2Id String
+  pair2Player1Id String
+  pair2Player2Id String
+  score1         Int?
+  score2         Int?
+  updatedById    String?
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
@@ -193,7 +199,9 @@ model EventManualElo {
   updatedAt DateTime @updatedAt
   eventId   String
   userId    String
+  previousElo Int?
   newElo    Int
+  isWinner  Boolean  @default(false)
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -202,20 +210,20 @@ model EventManualElo {
 }
 
 model Achievement {
-  id          String   @id @default(uuid())
-  title       String   @unique
+  id          String  @id @default(uuid())
+  title       String  @unique
   description String?
   icon        String?
 
-  users       UserAchievement[]
+  users UserAchievement[]
 }
 
 model UserAchievement {
-  id            String   @id @default(uuid())
-  dateAwarded   DateTime @default(now())
+  id          String   @id @default(uuid())
+  dateAwarded DateTime @default(now())
 
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   achievementId String
   achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)

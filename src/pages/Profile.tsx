@@ -103,8 +103,14 @@ const Profile = () => {
   };
 
   const myEvents = profile.registrations?.map((r: any) => r.event) || [];
-  const upcomingEvents = myEvents.filter((e: any) => e.status !== "ARCHIVED");
-  const archivedEvents = myEvents.filter((e: any) => e.status === "ARCHIVED");
+  const sortByDateAsc = (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime();
+  const sortByDateDesc = (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime();
+  const upcomingEvents = myEvents
+    .filter((e: any) => e.status !== "ARCHIVED")
+    .sort(sortByDateAsc);
+  const archivedEvents = myEvents
+    .filter((e: any) => e.status === "ARCHIVED")
+    .sort(sortByDateDesc);
 
   return (
     <div className="container mx-auto px-4 py-12 min-h-screen flex flex-col lg:flex-row gap-8">

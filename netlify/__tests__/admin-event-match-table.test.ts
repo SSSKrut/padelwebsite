@@ -4,15 +4,23 @@ import type { HandlerEvent, HandlerContext, HandlerResponse } from "@netlify/fun
 const mocks = vi.hoisted(() => ({
   verifyUser: vi.fn(),
   eventFindUnique: vi.fn(),
+  eventUpdate: vi.fn(),
   eventRegistrationFindMany: vi.fn(),
-  queryRaw: vi.fn(),
-  executeRaw: vi.fn(),
+  eventCourtAssignmentFindMany: vi.fn(),
+  eventCourtAssignmentDeleteMany: vi.fn(),
+  eventCourtAssignmentCreateMany: vi.fn(),
+  eventMatchFindMany: vi.fn(),
+  eventMatchDeleteMany: vi.fn(),
+  eventMatchCreateMany: vi.fn(),
+  eventManualEloFindMany: vi.fn(),
+  eventManualEloDeleteMany: vi.fn(),
   transaction: vi.fn(),
   userFindMany: vi.fn(),
   userUpdate: vi.fn(),
   eventScoreFindMany: vi.fn(),
   eventScoreFindFirst: vi.fn(),
   eventScoreDeleteMany: vi.fn(),
+  eventScoreUpsert: vi.fn(),
   loadMatchTable: vi.fn(),
 }));
 
@@ -22,16 +30,29 @@ vi.mock("../functions/lib/auth", () => ({
 
 vi.mock("../functions/lib/prisma", () => ({
   prisma: {
-    event: { findUnique: mocks.eventFindUnique },
+    event: { findUnique: mocks.eventFindUnique, update: mocks.eventUpdate },
     eventRegistration: { findMany: mocks.eventRegistrationFindMany },
+    eventCourtAssignment: {
+      findMany: mocks.eventCourtAssignmentFindMany,
+      deleteMany: mocks.eventCourtAssignmentDeleteMany,
+      createMany: mocks.eventCourtAssignmentCreateMany,
+    },
+    eventMatch: {
+      findMany: mocks.eventMatchFindMany,
+      deleteMany: mocks.eventMatchDeleteMany,
+      createMany: mocks.eventMatchCreateMany,
+    },
+    eventManualElo: {
+      findMany: mocks.eventManualEloFindMany,
+      deleteMany: mocks.eventManualEloDeleteMany,
+    },
     user: { findMany: mocks.userFindMany, update: mocks.userUpdate },
     eventScore: {
       findMany: mocks.eventScoreFindMany,
       findFirst: mocks.eventScoreFindFirst,
       deleteMany: mocks.eventScoreDeleteMany,
+      upsert: mocks.eventScoreUpsert,
     },
-    $queryRaw: mocks.queryRaw,
-    $executeRaw: mocks.executeRaw,
     $transaction: mocks.transaction,
   },
 }));
@@ -101,9 +122,23 @@ describe("admin-event-match-table", () => {
     vi.mocked(prisma.eventScore.findFirst).mockResolvedValue(null as never);
     vi.mocked(prisma.eventScore.deleteMany).mockResolvedValue({ count: 0 } as never);
     const transactionClient = {
-      $executeRaw: mocks.executeRaw,
+      eventMatch: {
+        deleteMany: mocks.eventMatchDeleteMany,
+        createMany: mocks.eventMatchCreateMany,
+      },
+      eventCourtAssignment: {
+        deleteMany: mocks.eventCourtAssignmentDeleteMany,
+        createMany: mocks.eventCourtAssignmentCreateMany,
+      },
+      eventManualElo: {
+        deleteMany: mocks.eventManualEloDeleteMany,
+      },
+      event: { update: mocks.eventUpdate },
       user: { update: mocks.userUpdate },
-      eventScore: { deleteMany: mocks.eventScoreDeleteMany },
+      eventScore: {
+        deleteMany: mocks.eventScoreDeleteMany,
+        upsert: mocks.eventScoreUpsert,
+      },
     } as unknown as TransactionClient;
     vi.mocked(prisma.$transaction).mockImplementation(async (fn: TransactionCallback) => fn(transactionClient));
     vi.mocked(loadMatchTable).mockResolvedValue({
@@ -149,10 +184,7 @@ describe("admin-event-match-table", () => {
     const { statusCode } = await callHandler();
 
     expect(statusCode).toBe(200);
-    const manualDeleteCall = mocks.executeRaw.mock.calls.find((call) =>
-      typeof call[0]?.[0] === "string" && call[0][0].includes("\"EventManualElo\""),
-    );
-    expect(manualDeleteCall).toBeTruthy();
+    expect(prisma.eventManualElo.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
   });
 
   it("returns 400 when assignments miss participants", async () => {
@@ -216,7 +248,7 @@ describe("admin-event-match-table", () => {
   });
 
   it("rejects confirmations when match table is not open", async () => {
-    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ matchTableStatus: "CONFIRMED" }] as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "CONFIRMED" } as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "PUT",
@@ -228,28 +260,27 @@ describe("admin-event-match-table", () => {
   });
 
   it("rejects confirmations when scores are missing", async () => {
-    vi.mocked(prisma.$queryRaw)
-      .mockResolvedValueOnce([{ matchTableStatus: "OPEN" }] as never)
-      .mockResolvedValueOnce([
-        { userId: PLAYER_IDS[0], courtNumber: 1 },
-        { userId: PLAYER_IDS[1], courtNumber: 1 },
-        { userId: PLAYER_IDS[2], courtNumber: 1 },
-        { userId: PLAYER_IDS[3], courtNumber: 1 },
-        { userId: PLAYER_IDS[4], courtNumber: 1 },
-      ] as never)
-      .mockResolvedValueOnce([
-        {
-          id: "match-1",
-          courtNumber: 1,
-          round: 1,
-          pair1Player1Id: PLAYER_IDS[0],
-          pair1Player2Id: PLAYER_IDS[1],
-          pair2Player1Id: PLAYER_IDS[2],
-          pair2Player2Id: PLAYER_IDS[3],
-          score1: null,
-          score2: 4,
-        },
-      ] as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+      { userId: PLAYER_IDS[4], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([
+      {
+        id: "match-1",
+        courtNumber: 1,
+        round: 1,
+        pair1Player1Id: PLAYER_IDS[0],
+        pair1Player2Id: PLAYER_IDS[1],
+        pair2Player1Id: PLAYER_IDS[2],
+        pair2Player2Id: PLAYER_IDS[3],
+        score1: null,
+        score2: 4,
+      },
+    ] as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "PUT",
@@ -261,16 +292,15 @@ describe("admin-event-match-table", () => {
   });
 
   it("rejects confirmations when manual ELO values are missing", async () => {
-    vi.mocked(prisma.$queryRaw)
-      .mockResolvedValueOnce([{ matchTableStatus: "OPEN" }] as never)
-      .mockResolvedValueOnce([
-        { userId: PLAYER_IDS[0], courtNumber: 1 },
-        { userId: PLAYER_IDS[1], courtNumber: 1 },
-        { userId: PLAYER_IDS[2], courtNumber: 1 },
-        { userId: PLAYER_IDS[3], courtNumber: 1 },
-      ] as never)
-      .mockResolvedValueOnce([] as never)
-      .mockResolvedValueOnce([] as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([] as never);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValueOnce([] as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "PUT",
@@ -282,29 +312,28 @@ describe("admin-event-match-table", () => {
   });
 
   it("confirms match table and updates player ELO", async () => {
-    vi.mocked(prisma.$queryRaw)
-      .mockResolvedValueOnce([{ matchTableStatus: "OPEN" }] as never)
-      .mockResolvedValueOnce([
-        { userId: PLAYER_IDS[0], courtNumber: 1 },
-        { userId: PLAYER_IDS[1], courtNumber: 1 },
-        { userId: PLAYER_IDS[2], courtNumber: 1 },
-        { userId: PLAYER_IDS[3], courtNumber: 1 },
-        { userId: PLAYER_IDS[4], courtNumber: 1 },
-      ] as never)
-      .mockResolvedValueOnce([
-        {
-          id: "match-1",
-          courtNumber: 1,
-          round: 1,
-          pair1Player1Id: PLAYER_IDS[0],
-          pair1Player2Id: PLAYER_IDS[1],
-          pair2Player1Id: PLAYER_IDS[2],
-          pair2Player2Id: PLAYER_IDS[3],
-          score1: 6,
-          score2: 4,
-        },
-      ] as never)
-      .mockResolvedValueOnce([] as never);
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+      { userId: PLAYER_IDS[4], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([
+      {
+        id: "match-1",
+        courtNumber: 1,
+        round: 1,
+        pair1Player1Id: PLAYER_IDS[0],
+        pair1Player2Id: PLAYER_IDS[1],
+        pair2Player1Id: PLAYER_IDS[2],
+        pair2Player2Id: PLAYER_IDS[3],
+        score1: 6,
+        score2: 4,
+      },
+    ] as never);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValueOnce([] as never);
 
     vi.mocked(prisma.user.findMany)
       .mockResolvedValueOnce([

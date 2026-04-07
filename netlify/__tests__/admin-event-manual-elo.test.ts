@@ -5,8 +5,9 @@ const mocks = vi.hoisted(() => ({
   verifyUser: vi.fn(),
   eventFindUnique: vi.fn(),
   eventRegistrationFindMany: vi.fn(),
+  userFindMany: vi.fn(),
   transaction: vi.fn(),
-  executeRaw: vi.fn(),
+  eventManualEloUpsert: vi.fn(),
 }));
 
 vi.mock("../functions/lib/auth", () => ({
@@ -17,8 +18,9 @@ vi.mock("../functions/lib/prisma", () => ({
   prisma: {
     event: { findUnique: mocks.eventFindUnique },
     eventRegistration: { findMany: mocks.eventRegistrationFindMany },
+    user: { findMany: mocks.userFindMany },
+    eventManualElo: { upsert: mocks.eventManualEloUpsert },
     $transaction: mocks.transaction,
-    $executeRaw: mocks.executeRaw,
   },
 }));
 
@@ -66,7 +68,10 @@ describe("admin-event-manual-elo", () => {
     vi.mocked(verifyUser).mockResolvedValue({ id: "admin-1", role: "ADMIN" } as never);
     vi.mocked(prisma.event.findUnique).mockResolvedValue({ id: EVENT_ID } as never);
     vi.mocked(prisma.eventRegistration.findMany).mockResolvedValue([{ userId: USER_ID }] as never);
-    const transactionClient = { $executeRaw: mocks.executeRaw } as unknown as TransactionClient;
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: USER_ID, elo: 1000 }] as never);
+    const transactionClient = {
+      eventManualElo: { upsert: mocks.eventManualEloUpsert },
+    } as unknown as TransactionClient;
     vi.mocked(prisma.$transaction).mockImplementation(async (fn: TransactionCallback) => fn(transactionClient));
   });
 
@@ -118,6 +123,6 @@ describe("admin-event-manual-elo", () => {
     expect(statusCode).toBe(200);
     expect(json).toEqual({ success: true });
     expect(prisma.$transaction).toHaveBeenCalled();
-    expect(prisma.$executeRaw).toHaveBeenCalled();
+    expect(prisma.eventManualElo.upsert).toHaveBeenCalled();
   });
 });

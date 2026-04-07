@@ -1,5 +1,17 @@
-import { describe, it, expect } from "vitest";
-import { calculateEloRating, resultFromScores } from "../functions/lib/matchTable";
+import { describe, it, expect, vi } from "vitest";
+import { calculateEloRating, resultFromScores, loadMatchTable } from "../functions/lib/matchTable";
+import { prisma } from "../functions/lib/prisma";
+
+vi.mock("../functions/lib/prisma", () => ({
+  prisma: {
+    event: { findUnique: vi.fn() },
+    eventCourtAssignment: { findMany: vi.fn() },
+    eventMatch: { findMany: vi.fn() },
+    eventManualElo: { findMany: vi.fn() },
+    user: { findMany: vi.fn() },
+    eventScore: { findMany: vi.fn() },
+  },
+}));
 
 describe("matchTable utils", () => {
   it("derives result from scores", () => {
@@ -12,5 +24,75 @@ describe("matchTable utils", () => {
     const { ratingChange1, ratingChange2 } = calculateEloRating(1000, 1000, 1);
     expect(ratingChange1).toBe(0.5);
     expect(ratingChange2).toBe(-0.5);
+  });
+
+  it("loads match table and attaches previous/new elo correctly from EventScore", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue({
+      matchTableStatus: "CONFIRMED",
+      matchTableMode: "AUTO_COURTS",
+      matchTableGeneratedAt: null,
+      matchTableConfirmedAt: new Date(),
+    } as any);
+
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValue([
+      { userId: "u1", courtNumber: 1 },
+    ] as any);
+
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValue([] as any);
+
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValue([
+      { userId: "u1", newElo: 1200, isWinner: false },
+    ] as any);
+
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: "u1", firstName: "Test", lastName: "One", elo: 1200 }] as any);
+    
+    vi.mocked(prisma.eventScore.findMany).mockResolvedValue([{ userId: "u1", previousElo: 1000, newElo: 1200 }] as any);
+
+    const matchTable = await loadMatchTable("event-1");
+
+    expect(matchTable).toBeDefined();
+    expect(matchTable!.courts.length).toBe(1);
+    const p1 = matchTable!.courts[0].players[0];
+    expect(p1.id).toBe("u1");
+    // Should inject previousElo
+    expect(p1.previousElo).toBe(1000);
+    // Should inject newElo
+    expect(p1.newElo).toBe(1200);
+    // Should fallback primary elo to previousElo to show correctly in UI
+    expect(p1.elo).toBe(1000);
+    // Should preserve manual elo
+    expect(p1.manualElo).toBe(1200);
+  });
+
+  it("loads match table and without EventScore fallback is User.elo", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue({
+      matchTableStatus: "OPEN",
+      matchTableMode: "AUTO_COURTS",
+      matchTableGeneratedAt: new Date(),
+      matchTableConfirmedAt: null,
+    } as any);
+
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValue([
+      { userId: "u1", courtNumber: 1 },
+    ] as any);
+
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValue([] as any);
+
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValue([
+      { userId: "u1", newElo: 1500, isWinner: false },
+    ] as any);
+
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: "u1", firstName: "Test", lastName: "Two", elo: 1000 }] as any);
+    
+    vi.mocked(prisma.eventScore.findMany).mockResolvedValue([] as any);
+
+    const matchTable = await loadMatchTable("event-2");
+
+    expect(matchTable).toBeDefined();
+    const p1 = matchTable!.courts[0].players[0];
+    expect(p1.previousElo).toBeUndefined();
+    expect(p1.newElo).toBeUndefined();
+    expect(p1.elo).toBe(1000);
+    expect(p1.manualElo).toBe(1500);
   });
 });

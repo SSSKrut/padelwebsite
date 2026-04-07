@@ -183,7 +183,7 @@ const EventMatches = () => {
     const nextManual: Record<string, string> = {};
     const nextWinners: Record<string, boolean> = {};
     matchTable.courts
-      .filter((court) => court.isManual)
+      .filter((court) => matchTable.mode === "MANUAL_ELO" || court.isManual)
       .forEach((court) => {
         court.players.forEach((player) => {
           const fallback = player.manualElo ?? player.elo;
@@ -301,7 +301,7 @@ const EventMatches = () => {
   const handleSaveManualElo = () => {
     if (!id || !matchTable) return;
     const manualPlayers = matchTable.courts
-      .filter((court) => court.isManual)
+      .filter((court) => matchTable.mode === "MANUAL_ELO" || court.isManual)
       .flatMap((court) => court.players);
 
     if (!manualPlayers.length) {
@@ -336,10 +336,11 @@ const EventMatches = () => {
 
   const standingsByCourt = useMemo(() => {
     if (!matchTable) return new Map<number, Array<{ id: string; name: string; points: number; diff: number }>>();
+    const manualMode = matchTable.mode === "MANUAL_ELO";
     const map = new Map<number, Array<{ id: string; name: string; points: number; diff: number }>>();
 
     matchTable.courts.forEach((court) => {
-      if (court.isManual) return;
+      if (manualMode || court.isManual) return;
 
       const entries = new Map<string, { id: string; name: string; points: number; diff: number }>();
       court.players.forEach((player) => {
@@ -627,7 +628,7 @@ const EventMatches = () => {
           </CardContent>
         </Card>
 
-        {isAdmin && event.participants.length > 0 && (
+        {isAdmin && event.participants.length > 0 && matchTable?.mode !== "MANUAL_ELO" && (
           <Card className="shadow-lg border-0">
             <CardHeader>
               <CardTitle>Manage Courts</CardTitle>
@@ -699,7 +700,9 @@ const EventMatches = () => {
                   ))}
                 </TabsList>
 
-                {matchTable.courts.map((court) => (
+                {matchTable.courts.map((court) => {
+                  const isManualCourt = matchTable.mode === "MANUAL_ELO" || court.isManual;
+                  return (
                   <TabsContent key={court.courtNumber} value={`court-${court.courtNumber}`}>
                     <Card className="shadow-lg border-0">
                       <CardHeader>
@@ -709,8 +712,10 @@ const EventMatches = () => {
     <CardTitle>Court {court.courtNumber}</CardTitle>
   )}
                         <CardDescription>
-                          {court.isManual
-                            ? "Less than 5 players — manual ELO required."
+                          {isManualCourt
+                            ? matchTable.mode === "MANUAL_ELO"
+                              ? "Manual ELO mode — admin sets ratings and winners."
+                              : "Less than 5 players — manual ELO required."
                             : "5 players · 5 rounds"}
                         </CardDescription>
                       </CardHeader>
@@ -726,7 +731,7 @@ const EventMatches = () => {
                           ))}
                         </div>
 
-                        {court.isManual ? (
+                        {isManualCourt ? (
                           <div className="space-y-3">
                             <div className="overflow-x-auto">
                               <Table className="w-full min-w-[600px]">
@@ -933,7 +938,8 @@ const EventMatches = () => {
                       </CardContent>
                     </Card>
                   </TabsContent>
-                ))}
+                );
+                })}
               </Tabs>
             )}
           </div>

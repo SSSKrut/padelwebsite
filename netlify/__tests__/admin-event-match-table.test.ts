@@ -184,6 +184,8 @@ describe("admin-event-match-table", () => {
     const { statusCode } = await callHandler();
 
     expect(statusCode).toBe(200);
+    expect(prisma.eventMatch.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
+    expect(prisma.eventCourtAssignment.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
     expect(prisma.eventManualElo.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
   });
 

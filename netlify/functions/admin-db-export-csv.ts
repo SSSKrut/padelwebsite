@@ -2,6 +2,7 @@ import type { Handler } from "@netlify/functions";
 import { prisma } from "./lib/prisma";
 import { defineHandler } from "./lib/apiHandler";
 import { loadMatchTable, type MatchTableResponse } from "./lib/matchTable";
+import { calculateCourtStandings } from "./lib/standings";
 
 type UserRow = {
   userId: string;
@@ -79,42 +80,8 @@ function buildStandingsRows(matchTable: MatchTableResponse | null): string[][] {
 
   matchTable.courts.forEach((court) => {
     if (court.isManual) return;
-    const entries = new Map<string, { name: string; points: number; diff: number }>();
-    court.players.forEach((player) => {
-      entries.set(player.id, { name: player.name, points: 0, diff: 0 });
-    });
-
     const matches = matchesByCourt.get(court.courtNumber) ?? [];
-    matches.forEach((match) => {
-      if (match.score1 === null || match.score2 === null) return;
-      const score1 = match.score1;
-      const score2 = match.score2;
-      const pair1Points = score1 === score2 ? 0.5 : score1 > score2 ? 1 : 0;
-      const pair2Points = score1 === score2 ? 0.5 : score1 > score2 ? 0 : 1;
-      const diff1 = score1 - score2;
-      const diff2 = score2 - score1;
-
-      match.pair1.forEach((player) => {
-        const entry = entries.get(player.id);
-        if (!entry) return;
-        entry.points += pair1Points;
-        entry.diff += diff1;
-      });
-
-      match.pair2.forEach((player) => {
-        const entry = entries.get(player.id);
-        if (!entry) return;
-        entry.points += pair2Points;
-        entry.diff += diff2;
-      });
-    });
-
-    const standings = Array.from(entries.values()).sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.diff !== a.diff) return b.diff - a.diff;
-      return a.name.localeCompare(b.name);
-    });
-
+    const standings = calculateCourtStandings(court.players, matches);
     standings.forEach((entry) => {
       rows.push([String(court.courtNumber), entry.name, String(entry.points), String(entry.diff)]);
     });

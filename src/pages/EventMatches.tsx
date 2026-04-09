@@ -1,80 +1,31 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Hero } from "@/components/Hero";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { draggable, dropTargetForElements, monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
+import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { useAuth } from "@/hooks/useAuth";
 import { UserRole } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import padelHero from "@/assets/padel-hero.png";
 import { ArrowLeft, Loader2, RefreshCw, CheckCircle } from "lucide-react";
-import { toast } from "sonner";
 import { formatEventDate } from "@/lib/utils";
 import { useConfirm } from "@/hooks/useConfirm";
-
-interface EventParticipant {
-  id: string;
-  user: {
-    id: string;
-    name: string;
-    elo: number;
-  };
-}
-
-interface EventDetailsResponse {
-  id: string;
-  title: string;
-  date: string;
-  endDate: string | null;
-  location: string | null;
-  status: string;
-  participants: EventParticipant[];
-}
-
-type MatchTableStatus = "DRAFT" | "OPEN" | "CONFIRMED";
-
-interface MatchTablePlayer {
-  id: string;
-  name: string;
-  elo: number;
-  manualElo?: number;
-  previousElo?: number;
-  newElo?: number;
-}
-
-interface MatchTableCourt {
-  courtNumber: number;
-  players: MatchTablePlayer[];
-  isManual: boolean;
-}
-
-interface MatchTableMatch {
-  id: string;
-  courtNumber: number;
-  round: number;
-  pair1: [MatchTablePlayer, MatchTablePlayer];
-  pair2: [MatchTablePlayer, MatchTablePlayer];
-  score1: number | null;
-  score2: number | null;
-  updatedAt: string | null;
-  updatedBy?: MatchTablePlayer | null;
-}
-
-interface MatchTableResponse {
-  mode: "AUTO_COURTS" | "MANUAL_ELO";
-  eventId: string;
-  status: MatchTableStatus;
-  generatedAt: string | null;
-  confirmedAt: string | null;
-  courts: MatchTableCourt[];
-  matches: MatchTableMatch[];
-}
+import { useMatchTableMutations } from "@/hooks/useMatchTableMutations";
+import type {
+  EventParticipant,
+  EventDetailsResponse,
+  MatchTableMatch,
+  MatchTableResponse,
+} from "@/types/events";
+import { calculateCourtStandings } from "@/lib/standings";
+import { PlayerChip } from "@/components/events/PlayerChip";
+import { CourtDropZone } from "@/components/events/CourtDropZone";
+import { ManualEloTable } from "@/components/events/ManualEloTable";
+import { MatchRoundsTable } from "@/components/events/MatchRoundsTable";
+import { CourtStandingsTable } from "@/components/events/CourtStandingsTable";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -109,7 +60,26 @@ const EventMatches = () => {
   const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, number>>({});
   const [manualEloDrafts, setManualEloDrafts] = useState<Record<string, string>>({});
   const [manualWinnerDrafts, setManualWinnerDrafts] = useState<Record<string, boolean>>({});
-  const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+  const {
+    savingMatchId,
+    updateMatch,
+    generateTable,
+    updateAssignments,
+    saveManualElo,
+    confirmTable,
+    handleSaveMatch,
+    handleSaveManualElo,
+    handleApplyAssignments,
+    handleConfirmTable,
+  } = useMatchTableMutations({
+    eventId: id,
+    scoreDrafts,
+    manualEloDrafts,
+    manualWinnerDrafts,
+    assignmentDrafts,
+    matchTable,
+    confirmAction,
+  });
 
   const matchesByCourt = useMemo(() => {
     if (!matchTable?.matches) return new Map<number, MatchTableMatch[]>();
@@ -217,123 +187,6 @@ const EventMatches = () => {
     setAssignmentDrafts(nextAssignments);
   }, [event, matchTable?.courts]);
 
-  const updateMatch = useMutation({
-    mutationFn: (payload: { eventId: string; matchId: string; score1: number; score2: number }) =>
-      apiFetch("/.netlify/functions/event-match-table", "PATCH", payload),
-    onMutate: (payload) => {
-      setSavingMatchId(payload.matchId);
-    },
-    onSuccess: () => {
-      toast.success("Score updated");
-      queryClient.invalidateQueries({ queryKey: ["matchTable", id] });
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Failed to update score");
-    },
-    onSettled: () => {
-      setSavingMatchId(null);
-    },
-  });
-
-  const generateTable = useMutation({
-    mutationFn: (payload: { eventId: string; mode: "AUTO_COURTS" | "MANUAL_ELO" }) =>
-      apiFetch("/.netlify/functions/admin-event-match-table", "POST", payload),
-    onSuccess: () => {
-      toast.success("Match table generated");
-      queryClient.invalidateQueries({ queryKey: ["matchTable", id] });
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Failed to generate table");
-    },
-  });
-
-  const updateAssignments = useMutation({
-    mutationFn: (payload: { eventId: string; assignments: { userId: string; courtNumber: number }[] }) =>
-      apiFetch("/.netlify/functions/admin-event-match-table", "PATCH", payload),
-    onSuccess: () => {
-      toast.success("Court assignments updated");
-      queryClient.invalidateQueries({ queryKey: ["matchTable", id] });
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Failed to update courts");
-    },
-  });
-
-  const saveManualElo = useMutation({
-    mutationFn: (payload: { eventId: string; entries: { userId: string; newElo: number; isWinner: boolean }[] }) =>
-      apiFetch("/.netlify/functions/admin-event-manual-elo", "POST", payload),
-    onSuccess: () => {
-      toast.success("Manual ELO saved");
-      queryClient.invalidateQueries({ queryKey: ["matchTable", id] });
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Failed to save manual ELO");
-    },
-  });
-
-  const confirmTable = useMutation({
-    mutationFn: (payload: { eventId: string }) =>
-      apiFetch("/.netlify/functions/admin-event-match-table", "PUT", payload),
-    onSuccess: () => {
-      toast.success("Match table confirmed and ELO updated");
-      queryClient.invalidateQueries({ queryKey: ["matchTable", id] });
-      queryClient.invalidateQueries({ queryKey: ["event", id] });
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Failed to confirm table");
-    },
-  });
-
-  const handleSaveMatch = (match: MatchTableMatch) => {
-    if (!id) return;
-    const draft = scoreDrafts[match.id];
-    const score1 = Number.parseInt(draft?.score1 ?? "", 10);
-    const score2 = Number.parseInt(draft?.score2 ?? "", 10);
-
-    if (Number.isNaN(score1) || Number.isNaN(score2)) {
-      toast.error("Enter valid numeric scores for both teams.");
-      return;
-    }
-
-    updateMatch.mutate({ eventId: id, matchId: match.id, score1, score2 });
-  };
-
-  const handleSaveManualElo = () => {
-    if (!id || !matchTable) return;
-    const manualPlayers = matchTable.courts
-      .filter((court) => matchTable.mode === "MANUAL_ELO" || court.isManual)
-      .flatMap((court) => court.players);
-
-    if (!manualPlayers.length) {
-      toast.error("No manual courts found.");
-      return;
-    }
-
-    const entries = manualPlayers.map((player) => {
-      const raw = manualEloDrafts[player.id];
-      return {
-        userId: player.id,
-        newElo: Number.parseInt(raw ?? "", 10),
-        isWinner: manualWinnerDrafts[player.id] ?? false,
-      };
-    });
-
-    const invalid = entries.find((entry) => Number.isNaN(entry.newElo) || entry.newElo < 0);
-    if (invalid) {
-      toast.error("Enter valid manual ELO values for all players in manual courts.");
-      return;
-    }
-
-    saveManualElo.mutate({ eventId: id, entries });
-  };
-
-
-  const formatStandingPoints = (value: number) =>
-    Number.isInteger(value) ? String(value) : value.toFixed(1);
-
-  const formatStandingDiff = (value: number) =>
-    value > 0 ? `+${value}` : String(value);
-
   const standingsByCourt = useMemo(() => {
     if (!matchTable) return new Map<number, Array<{ id: string; name: string; points: number; diff: number }>>();
     const manualMode = matchTable.mode === "MANUAL_ELO";
@@ -341,147 +194,12 @@ const EventMatches = () => {
 
     matchTable.courts.forEach((court) => {
       if (manualMode || court.isManual) return;
-
-      const entries = new Map<string, { id: string; name: string; points: number; diff: number }>();
-      court.players.forEach((player) => {
-        entries.set(player.id, { id: player.id, name: player.name, points: 0, diff: 0 });
-      });
-
       const matches = matchesByCourt.get(court.courtNumber) ?? [];
-      matches.forEach((match) => {
-        if (match.score1 === null || match.score2 === null) return;
-
-        const score1 = match.score1;
-        const score2 = match.score2;
-        const pair1Points = score1 === score2 ? 0.5 : score1 > score2 ? 1 : 0;
-        const pair2Points = score1 === score2 ? 0.5 : score1 > score2 ? 0 : 1;
-        const diff1 = score1 - score2;
-        const diff2 = score2 - score1;
-
-        match.pair1.forEach((player) => {
-          const entry = entries.get(player.id);
-          if (!entry) return;
-          entry.points += pair1Points;
-          entry.diff += diff1;
-        });
-
-        match.pair2.forEach((player) => {
-          const entry = entries.get(player.id);
-          if (!entry) return;
-          entry.points += pair2Points;
-          entry.diff += diff2;
-        });
-      });
-
-      const standings = Array.from(entries.values()).sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.diff !== a.diff) return b.diff - a.diff;
-        return a.name.localeCompare(b.name);
-      });
-
-      map.set(court.courtNumber, standings);
+      map.set(court.courtNumber, calculateCourtStandings(court.players, matches));
     });
 
     return map;
   }, [matchTable, matchesByCourt]);
-
-  const PlayerChip = ({
-    participant,
-    courtNumber,
-  }: {
-    participant: EventParticipant;
-    courtNumber: number;
-  }) => {
-    const ref = useRef<HTMLSpanElement | null>(null);
-
-    useEffect(() => {
-      const el = ref.current;
-      if (!el) return;
-
-      return combine(
-        draggable({
-          element: el,
-          getInitialData: () => ({ type: "court-player", userId: participant.user.id }),
-        }),
-        dropTargetForElements({
-          element: el,
-          canDrop: ({ source }) =>
-            source.data.type === "court-player" && source.data.userId !== participant.user.id,
-          getData: () => ({
-            type: "court-player",
-            userId: participant.user.id,
-            courtNumber,
-          }),
-        }),
-      );
-    }, [participant.user.id, courtNumber]);
-
-    return (
-      <span
-        ref={ref}
-        className="text-xs font-medium px-2 py-1 rounded-full bg-muted cursor-move"
-      >
-        {participant.user.name} · {participant.user.elo}
-      </span>
-    );
-  };
-
-  const CourtDropZone = ({
-    courtNumber,
-    children,
-  }: {
-    courtNumber: number;
-    children: ReactNode;
-  }) => {
-    const ref = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-      const el = ref.current;
-      if (!el) return;
-
-      return dropTargetForElements({
-        element: el,
-        canDrop: ({ source }) => source.data.type === "court-player",
-        getData: () => ({ type: "court", courtNumber }),
-      });
-    }, [courtNumber]);
-
-    return (
-      <div ref={ref} className="rounded-lg border bg-background p-3">
-        {children}
-      </div>
-    );
-  };
-
-  const handleApplyAssignments = () => {
-    if (!id) return;
-    const assignments = Object.entries(assignmentDrafts)
-      .filter(([userId]) => UUID_REGEX.test(userId))
-      .map(([userId, courtNumber]) => ({
-        userId,
-        courtNumber,
-      }));
-
-    if (!assignments.length) {
-      toast.error("No valid court assignments to save.");
-      return;
-    }
-
-    confirmAction(
-      "Update Courts",
-      "This will regenerate matchups and clear current scores and manual ELO values. Continue?",
-      () => updateAssignments.mutate({ eventId: id, assignments }),
-    );
-  };
-
-  const handleConfirmTable = () => {
-    if (!id) return;
-    confirmAction(
-      "Confirm Match Table",
-      "Confirming will apply Elo updates and lock scores. Continue?",
-      () => confirmTable.mutate({ eventId: id }),
-    );
-  };
 
   if (authLoading) {
     return <Hero title="Loading..." compact />;
@@ -732,207 +450,44 @@ const EventMatches = () => {
                         </div>
 
                         {isManualCourt ? (
-                          <div className="space-y-3">
-                            <div className="overflow-x-auto">
-                              <Table className="w-full min-w-[600px]">
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Player</TableHead>
-                                    <TableHead className="text-center">Winner</TableHead>
-                                    <TableHead className="text-right">Current ELO</TableHead>
-                                    <TableHead className="text-right">Manual ELO</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {court.players.map((player) => (
-                                    <TableRow key={player.id}>
-                                      <TableCell className="font-medium">{player.name}</TableCell>
-                                      <TableCell className="text-center">
-                                        {isAdmin && status !== "CONFIRMED" ? (
-                                          <input
-                                            type="checkbox"
-                                            className="w-4 h-4 cursor-pointer"
-                                            checked={manualWinnerDrafts[player.id] ?? false}
-                                            onChange={(e) =>
-                                              setManualWinnerDrafts((prev) => ({
-                                                ...prev,
-                                                [player.id]: e.target.checked,
-                                              }))
-                                            }
-                                          />
-                                        ) : (
-                                          player.isWinner ? <span className="text-primary font-bold">✓</span> : <span className="text-muted-foreground">-</span>
-                                        )}
-                                      </TableCell>
-                                      <TableCell className="text-right text-muted-foreground">{player.previousElo ?? player.elo}</TableCell>
-                                      <TableCell className="text-right">
-                                        {isAdmin && status !== "CONFIRMED" ? (
-                                          <Input
-                                            type="number"
-                                            min={0}
-                                            className="w-24 ml-auto text-right"
-                                            value={manualEloDrafts[player.id] ?? ""}
-                                            onChange={(e) =>
-                                              setManualEloDrafts((prev) => ({
-                                                ...prev,
-                                                [player.id]: e.target.value,
-                                              }))
-                                            }
-                                          />
-                                        ) : (
-                                          <span className="text-sm">
-                                            {player.newElo ?? player.manualElo ?? (player.previousElo ?? player.elo)}
-                                          </span>
-                                        )}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                            {status === "CONFIRMED" && (
-                              <div className="mt-4 p-4 rounded-lg bg-primary/10 border border-primary/20 text-center">
-                                {(() => {
-                                  const winners = court.players.filter((p) => p.isWinner);
-                                  if (winners.length === 0) {
-                                    return <p className="text-sm font-semibold text-muted-foreground">No winners selected</p>;
-                                  }
-                                  
-                                  return (
-                                    <p className="text-sm font-semibold text-primary">
-                                      {winners.length > 1 ? "Winners" : "Winner"}: {winners.map(w => w.name).join(" / ")} 
-                                    </p>
-                                  );
-                                })()}
-                              </div>
-                            )}
-                            {isAdmin && status !== "CONFIRMED" && (
-                              <div className="flex justify-end">
-                                <Button
-                                  variant="outline"
-                                  onClick={handleSaveManualElo}
-                                  disabled={saveManualElo.isPending}
-                                >
-                                  {saveManualElo.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                  Save Manual ELO
-                                </Button>
-                              </div>
-                            )}
-                          </div>
+                          <ManualEloTable
+                            court={court}
+                            status={status}
+                            isAdmin={isAdmin}
+                            manualEloDrafts={manualEloDrafts}
+                            manualWinnerDrafts={manualWinnerDrafts}
+                            onManualEloChange={(playerId, value) =>
+                              setManualEloDrafts((prev) => ({ ...prev, [playerId]: value }))
+                            }
+                            onManualWinnerChange={(playerId, checked) =>
+                              setManualWinnerDrafts((prev) => ({ ...prev, [playerId]: checked }))
+                            }
+                            onSave={handleSaveManualElo}
+                            isSaving={saveManualElo.isPending}
+                          />
                         ) : (
                           <div className="space-y-4">
-                            <div className="grid gap-4 lg:grid-cols-1">
-                              <div className="overflow-x-auto">
-                                <Table className="w-full min-w-[600px]">
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Round</TableHead>
-                                      <TableHead>Pair 1</TableHead>
-                                      <TableHead>Pair 2</TableHead>
-                                      <TableHead className="text-right">Score</TableHead>
-                                      <TableHead className="text-right">Action</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {(matchesByCourt.get(court.courtNumber) ?? []).map((match) => (
-                                      <TableRow key={match.id}>
-                                        <TableCell className="font-medium">{match.round}</TableCell>
-                                        <TableCell>
-                                          {match.pair1.map((player) => player.name).join(" / ")}
-                                        </TableCell>
-                                        <TableCell>
-                                          {match.pair2.map((player) => player.name).join(" / ")}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <div className="flex items-center justify-end gap-2">
-                                            <Input
-                                              type="number"
-                                              min={0}
-                                              className="w-16 text-right"
-                                              disabled={!canEditScores}
-                                              value={scoreDrafts[match.id]?.score1 ?? ""}
-                                              onChange={(e) =>
-                                                setScoreDrafts((prev) => ({
-                                                  ...prev,
-                                                  [match.id]: {
-                                                    score1: e.target.value,
-                                                    score2: prev[match.id]?.score2 ?? "",
-                                                  },
-                                                }))
-                                              }
-                                            />
-                                            <span className="text-muted-foreground">:</span>
-                                            <Input
-                                              type="number"
-                                              min={0}
-                                              className="w-16 text-right"
-                                              disabled={!canEditScores}
-                                              value={scoreDrafts[match.id]?.score2 ?? ""}
-                                              onChange={(e) =>
-                                                setScoreDrafts((prev) => ({
-                                                  ...prev,
-                                                  [match.id]: {
-                                                    score1: prev[match.id]?.score1 ?? "",
-                                                    score2: e.target.value,
-                                                  },
-                                                }))
-                                              }
-                                            />
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            disabled={!canEditScores || updateMatch.isPending}
-                                            onClick={() => handleSaveMatch(match)}
-                                          >
-                                            {updateMatch.isPending && savingMatchId === match.id ? (
-                                              <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                              "Save"
-                                            )}
-                                          </Button>
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            </div>
-
-                            <div className="overflow-x-auto">
-                              <Table className="w-full min-w-[600px]">
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead className="text-right">Points</TableHead>
-                                    <TableHead className="text-right">Difference</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {(standingsByCourt.get(court.courtNumber) ?? []).map((entry) => (
-                                    <TableRow key={`${court.courtNumber}-${entry.id}`}>
-                                      <TableCell className="font-medium">{entry.name}</TableCell>
-                                      <TableCell className="text-right">
-                                        {formatStandingPoints(entry.points)}
-                                      </TableCell>
-                                      <TableCell
-                                        className={`text-right ${
-                                          entry.diff > 0
-                                            ? "text-emerald-600"
-                                            : entry.diff < 0
-                                              ? "text-rose-600"
-                                              : "text-muted-foreground"
-                                        }`}
-                                      >
-                                        {formatStandingDiff(entry.diff)}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
+                            <MatchRoundsTable
+                              matches={matchesByCourt.get(court.courtNumber) ?? []}
+                              canEditScores={canEditScores}
+                              scoreDrafts={scoreDrafts}
+                              onScoreChange={(matchId, field, value) =>
+                                setScoreDrafts((prev) => ({
+                                  ...prev,
+                                  [matchId]: {
+                                    score1: field === "score1" ? value : (prev[matchId]?.score1 ?? ""),
+                                    score2: field === "score2" ? value : (prev[matchId]?.score2 ?? ""),
+                                  },
+                                }))
+                              }
+                              onSaveMatch={handleSaveMatch}
+                              isUpdatePending={updateMatch.isPending}
+                              savingMatchId={savingMatchId}
+                            />
+                            <CourtStandingsTable
+                              courtNumber={court.courtNumber}
+                              standings={standingsByCourt.get(court.courtNumber) ?? []}
+                            />
                           </div>
                         )}
                       </CardContent>

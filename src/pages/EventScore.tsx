@@ -13,46 +13,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatEventDate } from "@/lib/utils";
-
-interface EventParticipant {
-  id: string;
-  user: {
-    id: string;
-    name: string;
-    elo: number;
-  };
-}
-
-interface EventDetailsResponse {
-  id: string;
-  title: string;
-  date: string;
-  endDate: string | null;
-  location: string | null;
-  status: string;
-  participants: EventParticipant[];
-}
-
-interface EventScoreEntry {
-  userId: string;
-  previousElo: number;
-  newElo: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface EventScoresResponse {
-  eventId: string;
-  scores: EventScoreEntry[];
-}
-
-interface AdminUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  elo: number;
-  role: UserRole;
-}
+import type {
+  EventParticipant,
+  EventDetailsResponse,
+  EventScoresResponse,
+  AdminUser,
+} from "@/types/events";
 
 const EventScore = () => {
   const { id } = useParams<{ id: string }>();

@@ -13,7 +13,7 @@ export const handler: Handler = async (event) => {
   try {
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
-      const { title, description, date, endDate, location, status, publishAt, maxParticipants } = body;
+      const { title, description, date, endDate, location, status, publishAt, maxParticipants, price, disclaimer } = body;
 
       if (!title || !date) {
         return { statusCode: 400, body: JSON.stringify({ error: "Title and Date are required" }) };
@@ -40,6 +40,8 @@ export const handler: Handler = async (event) => {
           status: status || "DRAFT",
           publishAt: status === "SCHEDULED" && publishAt ? new Date(publishAt) : null,
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : 16,
+          price: price || null,
+          disclaimer: disclaimer || null,
         },
       });
 
@@ -55,7 +57,7 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === "PATCH") {
       const body = JSON.parse(event.body || "{}");
-      const { id, title, description, date, endDate, location, status, publishAt, maxParticipants } = body;
+      const { id, title, description, date, endDate, location, status, publishAt, maxParticipants, price, disclaimer } = body;
       if (!id) return { statusCode: 400, body: JSON.stringify({ error: "Event ID required" }) };
 
       if (maxParticipants !== undefined) {
@@ -87,6 +89,8 @@ export const handler: Handler = async (event) => {
           // Clear publishAt when moving away from SCHEDULED
           ...(status !== undefined && status !== "SCHEDULED" && { publishAt: null }),
           ...(maxParticipants !== undefined && { maxParticipants: parseInt(maxParticipants) }),
+          ...(price !== undefined && { price: price || null }),
+          ...(disclaimer !== undefined && { disclaimer: disclaimer || null }),
         }
       });
       return { statusCode: 200, body: JSON.stringify(updatedEvent) };

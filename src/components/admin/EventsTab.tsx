@@ -112,6 +112,8 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                   description: "",
                   status: "DRAFT",
                   publishAt: null,
+                  price: "",
+                  disclaimer: "",
                 })
               }
             >
@@ -227,6 +229,26 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                   value={eventForm.description || ""}
                   onChange={(e) =>
                     setEventForm({ ...eventForm, description: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label>Price</Label>
+                <Input
+                  placeholder="e.g. 15 EUR"
+                  value={eventForm.price || ""}
+                  onChange={(e) =>
+                    setEventForm({ ...eventForm, price: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label>Disclaimer</Label>
+                <Input
+                  placeholder="Shown before registration"
+                  value={eventForm.disclaimer || ""}
+                  onChange={(e) =>
+                    setEventForm({ ...eventForm, disclaimer: e.target.value })
                   }
                 />
               </div>

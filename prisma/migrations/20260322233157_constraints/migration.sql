@@ -10,7 +10,7 @@
 CREATE TYPE "TokenType" AS ENUM ('EMAIL_VERIFICATION', 'PASSWORD_RESET');
 
 -- AlterEnum
-ALTER TYPE "EventStatus" ADD VALUE 'SCHEDULED';
+ALTER TYPE "EventStatus" ADD VALUE IF NOT EXISTS 'SCHEDULED';
 
 -- AlterEnum
 -- This migration adds more than one value to an enum.
@@ -20,8 +20,10 @@ ALTER TYPE "EventStatus" ADD VALUE 'SCHEDULED';
 -- the enum.
 
 
-ALTER TYPE "Role" ADD VALUE 'SUPER_ADMIN';
-ALTER TYPE "Role" ADD VALUE 'UNVERIFIED_USER';
+ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'SUPER_ADMIN';
+ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'UNVERIFIED_USER';
+COMMIT;
+BEGIN;
 
 -- DropForeignKey
 ALTER TABLE "Achievement" DROP CONSTRAINT "Achievement_userId_fkey";

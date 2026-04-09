@@ -91,6 +91,8 @@ model Event {
   publishAt             DateTime?
   reminderSentAt        DateTime?
   maxParticipants       Int              @default(16)
+  price                 String?
+  disclaimer            String?
   createdAt             DateTime         @default(now())
   matchTableStatus      MatchTableStatus @default(DRAFT)
   matchTableMode        MatchTableMode @default(AUTO_COURTS)

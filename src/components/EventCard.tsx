@@ -14,6 +14,7 @@ export interface EventCardProps {
     description?: string;
     status?: string;
     maxParticipants?: number;
+    price?: string | null;
     _count?: {
       participants: number;
     };
@@ -49,9 +50,14 @@ export function EventCard({ event }: EventCardProps) {
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-4 border-t">
-          <span className="text-sm text-muted-foreground">
-            {participantsCount} / {maxParticipants} participants
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-muted-foreground">
+              {participantsCount} / {maxParticipants} participants
+            </span>
+            {event.price && (
+              <span className="text-sm font-semibold text-primary">{event.price}</span>
+            )}
+          </div>
           <Button asChild>
             <Link to={`/events/${event.id}`}>View Details</Link>
           </Button>

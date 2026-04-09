@@ -27,6 +27,8 @@ export interface EventDetailsResponse {
   location: string;
   status: string;
   maxParticipants: number;
+  price: string | null;
+  disclaimer: string | null;
   participants: EventParticipant[];
   waitlist: EventWaitlistEntry[];
   waitlistCount: number;

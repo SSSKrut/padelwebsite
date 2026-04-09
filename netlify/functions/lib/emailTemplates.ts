@@ -46,6 +46,15 @@ export interface TemplateDataMap {
     eventVenue?: string;
     actionUrl?: string;
   };
+  "event-cancelled": {
+    firstName: string;
+    eventTitle: string;
+    eventDate: string;
+    eventTime?: string;
+    eventVenue?: string;
+    cancelMessage: string;
+    actionUrl?: string;
+  };
   "event-reminder": {
     firstName: string;
     eventTitle: string;
@@ -240,6 +249,31 @@ const templates: {
       </table>
       ${data.actionUrl ? ctaButton(data.actionUrl, "View Event") : ""}
       <p style="color:#52525b;line-height:1.6;">See you on the court!</p>
+    `),
+  }),
+
+  "event-cancelled": (data) => ({
+    subject: `Cancelled: ${data.eventTitle}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;">Event Cancelled</h2>
+      <p style="color:#52525b;line-height:1.6;">
+        We're sorry to inform you that <strong>${escapeHtml(data.eventTitle)}</strong> has been cancelled.
+      </p>
+      <table cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;">
+        <tr>
+          <td style="padding:12px 16px;background:#fafafa;border-radius:8px;">
+            <p style="margin:0 0 4px;"><strong>Date:</strong> ${escapeHtml(data.eventDate)}</p>
+            ${data.eventTime ? `<p style="margin:0 0 4px;"><strong>Time:</strong> ${escapeHtml(data.eventTime)}</p>` : ""}
+            ${data.eventVenue ? `<p style="margin:0;"><strong>Venue:</strong> ${escapeHtml(data.eventVenue)}</p>` : ""}
+          </td>
+        </tr>
+      </table>
+      <div style="margin:16px 0;padding:16px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:4px;">
+        <p style="margin:0;color:#991b1b;font-weight:bold;font-size:13px;">Message from organizer:</p>
+        <p style="margin:8px 0 0;color:#52525b;line-height:1.6;">${escapeHtml(data.cancelMessage).replace(/\n/g, "<br/>")}</p>
+      </div>
+      ${data.actionUrl ? ctaButton(data.actionUrl, "View Events") : ""}
+      <p style="color:#52525b;line-height:1.6;">We hope to see you at a future event!</p>
     `),
   }),
 

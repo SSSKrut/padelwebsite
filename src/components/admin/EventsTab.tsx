@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
-import { Edit, Plus, Trash2, CheckCircle, Clock, RefreshCw, Download, Loader2 } from "lucide-react";
+import { Edit, Plus, Trash2, CheckCircle, Clock, RefreshCw, Download, Loader2, Ban } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { formatEventDate } from "@/lib/utils";
 import { exportEventCsv } from "@/lib/exportEventCsv";
@@ -28,6 +29,8 @@ const formatForDatetimeLocal = (dateString?: string) => {
 export function EventsTab({ confirmAction }: EventsTabProps) {
   const queryClient = useQueryClient();
   const [eventForm, setEventForm] = useState<any>(null);
+  const [cancelForm, setCancelForm] = useState<{ eventId: string; title: string } | null>(null);
+  const [cancelMessage, setCancelMessage] = useState("");
   const [exportingEventId, setExportingEventId] = useState<string | null>(null);
 
   const exportEventUsers = async (eventId: string) => {
@@ -63,6 +66,18 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
     onSuccess: () => {
       toast.success("Event deleted");
       queryClient.invalidateQueries({ queryKey: ["admin_events"] });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const cancelEvent = useMutation({
+    mutationFn: (data: { eventId: string; message: string }) =>
+      apiFetch("/.netlify/functions/admin-event-cancel", "POST", data),
+    onSuccess: (data: any) => {
+      toast.success(`Event cancelled. ${data.notified} participant(s) notified.`);
+      queryClient.invalidateQueries({ queryKey: ["admin_events"] });
+      setCancelForm(null);
+      setCancelMessage("");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -302,6 +317,46 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
           </div>
         )}
 
+        {cancelForm && (
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-4 rounded-xl mb-6">
+            <h4 className="font-semibold mb-1 text-red-800 dark:text-red-200 flex items-center gap-2">
+              <Ban className="w-4 h-4" />
+              Cancel Event: {cancelForm.title}
+            </h4>
+            <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+              This will archive the event and send a cancellation email to all registered participants and waitlisted users.
+            </p>
+            <div className="mb-4">
+              <Label>Cancellation Message</Label>
+              <Textarea
+                placeholder="Explain why the event is being cancelled..."
+                value={cancelMessage}
+                onChange={(e) => setCancelMessage(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                disabled={!cancelMessage.trim() || cancelEvent.isPending}
+                onClick={() =>
+                  confirmAction(
+                    "Cancel Event",
+                    "This will archive the event and notify all participants. Continue?",
+                    () => cancelEvent.mutate({ eventId: cancelForm.eventId, message: cancelMessage }),
+                  )
+                }
+              >
+                {cancelEvent.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                Confirm Cancellation
+              </Button>
+              <Button variant="ghost" onClick={() => { setCancelForm(null); setCancelMessage(""); }}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <p>Loading...</p>
         ) : (
@@ -383,6 +438,15 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                         ) : (
                           <Download className="w-4 h-4" />
                         )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        title="Cancel Event & Notify"
+                        className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                        onClick={() => setCancelForm({ eventId: e.id, title: e.title })}
+                      >
+                        <Ban className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"

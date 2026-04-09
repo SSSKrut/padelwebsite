@@ -61,6 +61,7 @@ model User {
   tokens               VerificationToken[]
   premiumSubscriptions PremiumSubscription[]  @relation("PremiumUser")
   premiumGrantedBy     PremiumSubscription[]  @relation("PremiumGranter")
+  eventCancellations   EventCancellation[]
 }
 
 enum TokenType {
@@ -105,6 +106,7 @@ model Event {
   courtAssignments EventCourtAssignment[]
   matches          EventMatch[]
   manualEloEntries EventManualElo[]
+  cancellation     EventCancellation?
 }
 
 model PremiumSubscription {
@@ -209,6 +211,18 @@ model EventManualElo {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
+}
+
+model EventCancellation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  message   String
+
+  eventId       String @unique
+  cancelledById String
+
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  cancelledBy User  @relation(fields: [cancelledById], references: [id], onDelete: Cascade)
 }
 
 model Achievement {

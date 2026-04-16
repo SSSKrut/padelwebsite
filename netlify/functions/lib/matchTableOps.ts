@@ -1,48 +1,122 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./prisma";
 import { MATCH_PAIRINGS } from "./matchTable";
+import {
+  ROUND_ROBIN_4P_PAIRINGS,
+  normalizeMatchFormatConfig,
+  type MatchFormatConfig,
+} from "./matchFormat";
 
 interface EventScoreRollbackRow {
   userId: string;
   previousElo: number;
 }
 
-export const generateCourtAssignments = (participants: Array<{ id: string }>) => {
+export const generateCourtAssignments = (
+  participants: Array<{ id: string; elo?: number }>,
+  config?: MatchFormatConfig,
+) => {
+  const resolved = normalizeMatchFormatConfig(config);
+  const courtSize = resolved.distribution.courtSize;
   const courts: Array<{ courtNumber: number; userIds: string[] }> = [];
+
+  const ordered = [...participants];
+  if (resolved.distribution.mode === "RANDOM") {
+    for (let i = ordered.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+    }
+  } else {
+    ordered.sort((a, b) => (b.elo ?? 0) - (a.elo ?? 0));
+  }
+
+  if (!ordered.length) {
+    return courts;
+  }
+
+  if (resolved.distribution.balance === "snake") {
+    const courtCount = Math.ceil(ordered.length / courtSize);
+    for (let i = 0; i < courtCount; i += 1) {
+      courts.push({ courtNumber: i + 1, userIds: [] });
+    }
+
+    ordered.forEach((participant, index) => {
+      const cycle = Math.floor(index / courtCount);
+      const position = index % courtCount;
+      const targetIndex = cycle % 2 === 0 ? position : courtCount - 1 - position;
+      courts[targetIndex].userIds.push(participant.id);
+    });
+
+    return courts;
+  }
+
   let courtNumber = 1;
-  for (let i = 0; i < participants.length; i += 5) {
-    const group = participants.slice(i, i + 5).map((p) => p.id);
+  for (let i = 0; i < ordered.length; i += courtSize) {
+    const group = ordered.slice(i, i + courtSize).map((p) => p.id);
     courts.push({ courtNumber, userIds: group });
     courtNumber += 1;
   }
+
   return courts;
 };
 
-export const buildMatchesForCourt = (courtNumber: number, userIds: string[]) => {
-  if (userIds.length !== 5) return [];
-  return MATCH_PAIRINGS.map((pairing) => {
-    const pair1Player1Id = userIds[pairing.pair1[0]];
-    const pair1Player2Id = userIds[pairing.pair1[1]];
-    const pair2Player1Id = userIds[pairing.pair2[0]];
-    const pair2Player2Id = userIds[pairing.pair2[1]];
+export const buildMatchesForCourt = (
+  courtNumber: number,
+  userIds: string[],
+  config?: MatchFormatConfig,
+) => {
+  const resolved = normalizeMatchFormatConfig(config);
+  if (resolved.teamSize !== 2) return [];
 
-    return {
-      id: randomUUID(),
-      eventId: "",
-      courtNumber,
-      round: pairing.round,
-      pair1Player1Id,
-      pair1Player2Id,
-      pair2Player1Id,
-      pair2Player2Id,
-    };
-  });
+  let pairings: Array<{ round: number; pair1: [number, number]; pair2: [number, number] }> = [];
+
+  if (resolved.pairingStrategy === "CUSTOM") {
+    pairings = (resolved.customMatches ?? []).map((match) => ({
+      round: match.round,
+      pair1: match.pair1,
+      pair2: match.pair2,
+    }));
+  } else if (resolved.pairingStrategy === "ROUND_ROBIN_4P" || resolved.playersPerCourt === 4) {
+    if (userIds.length !== 4) return [];
+    pairings = ROUND_ROBIN_4P_PAIRINGS;
+  } else {
+    if (userIds.length !== 5) return [];
+    pairings = MATCH_PAIRINGS;
+  }
+
+  return pairings
+    .filter((pairing) =>
+      pairing.pair1.concat(pairing.pair2).every((index) => index >= 0 && index < userIds.length),
+    )
+    .map((pairing) => {
+      const pair1Player1Id = userIds[pairing.pair1[0]];
+      const pair1Player2Id = userIds[pairing.pair1[1]];
+      const pair2Player1Id = userIds[pairing.pair2[0]];
+      const pair2Player2Id = userIds[pairing.pair2[1]];
+
+      return {
+        id: randomUUID(),
+        eventId: "",
+        courtNumber,
+        round: pairing.round,
+        pair1Player1Id,
+        pair1Player2Id,
+        pair2Player1Id,
+        pair2Player2Id,
+      };
+    });
 };
 
 export const loadRegenerationGuard = async (eventId: string) => {
   const eventRecord = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { id: true, matchTableStatus: true, matchTableConfirmedAt: true },
+    select: {
+      id: true,
+      matchTableStatus: true,
+      matchTableConfirmedAt: true,
+      formatConfig: true,
+      format: { select: { config: true } },
+    },
   });
 
   if (!eventRecord) {

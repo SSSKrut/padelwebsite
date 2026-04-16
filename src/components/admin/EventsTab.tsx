@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { formatEventDate } from "@/lib/utils";
 import { exportEventCsv } from "@/lib/exportEventCsv";
+import type { EventFormat } from "@/types/events";
 
 interface EventsTabProps {
   confirmAction: (title: string, desc: string, action: () => void) => void;
@@ -26,12 +28,124 @@ const formatForDatetimeLocal = (dateString?: string) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
+const DEFAULT_FORMAT_CONFIG_TEXT = `{
+  "playersPerCourt": 5,
+  "teamSize": 2,
+  "rounds": 5,
+  "pairingStrategy": "KOTC_5P_CLASSIC",
+  "distribution": {
+    "mode": "ELO_BUCKET",
+    "courtSize": 5,
+    "balance": "snake",
+    "allowBench": true
+  },
+  "rotation": {
+    "benchEveryRounds": 1,
+    "benchCount": 1
+  },
+  "scoring": {
+    "win": 1,
+    "draw": 0.5,
+    "loss": 0,
+    "tiebreakers": ["points", "diff", "name"]
+  },
+  "elo": {
+    "system": "ELO",
+    "kFactor": 40,
+    "mode": "PER_MATCH"
+  }
+}`;
+
+const stringifyConfig = (config: any) => {
+  if (!config) return "";
+  try {
+    return JSON.stringify(config, null, 2);
+  } catch {
+    return "";
+  }
+};
+
+const parseConfig = (raw: string, label: string) => {
+  if (!raw.trim()) {
+    return { ok: true, value: undefined as any };
+  }
+
+  try {
+    return { ok: true, value: JSON.parse(raw) } as const;
+  } catch {
+    return { ok: false, error: `${label} must be valid JSON.` } as const;
+  }
+};
+
 export function EventsTab({ confirmAction }: EventsTabProps) {
   const queryClient = useQueryClient();
   const [eventForm, setEventForm] = useState<any>(null);
+  const [formatForm, setFormatForm] = useState<any>(null);
   const [cancelForm, setCancelForm] = useState<{ eventId: string; title: string } | null>(null);
   const [cancelMessage, setCancelMessage] = useState("");
   const [exportingEventId, setExportingEventId] = useState<string | null>(null);
+
+  const buildEventForm = (source: any) => {
+    const hasFormatConfig = source?.formatConfig !== undefined && source?.formatConfig !== null;
+    return {
+      ...source,
+      formatId: source?.formatId ?? null,
+      formatConfigEnabled: hasFormatConfig,
+      formatConfigText: hasFormatConfig ? stringifyConfig(source.formatConfig) : "",
+    };
+  };
+
+  const buildFormatForm = (source: EventFormat) => ({
+    ...source,
+    configText: stringifyConfig(source.config),
+  });
+
+  const buildEventPayload = (form: any) => {
+    const payload = { ...form };
+    const formatConfigEnabled = Boolean(payload.formatConfigEnabled);
+    const formatConfigText = String(payload.formatConfigText ?? "");
+
+    delete payload.formatConfigEnabled;
+    delete payload.formatConfigText;
+
+    payload.formatId = payload.formatId || null;
+
+    if (formatConfigEnabled) {
+      const parsed = parseConfig(formatConfigText, "Format config");
+      if (!parsed.ok) {
+        toast.error(parsed.error);
+        return null;
+      }
+      if (parsed.value === undefined) {
+        toast.error("Format config cannot be empty when override is enabled.");
+        return null;
+      }
+      payload.formatConfig = parsed.value;
+    } else {
+      payload.formatConfig = null;
+    }
+
+    return payload;
+  };
+
+  const buildFormatPayload = (form: any) => {
+    const payload = { ...form };
+    const configText = String(payload.configText ?? "");
+    delete payload.configText;
+
+    const parsed = parseConfig(configText, "Format config");
+    if (!parsed.ok) {
+      toast.error(parsed.error);
+      return null;
+    }
+    if (parsed.value !== undefined) {
+      payload.config = parsed.value;
+    } else {
+      payload.config = null;
+    }
+
+    return payload;
+  };
 
   const exportEventUsers = async (eventId: string) => {
     setExportingEventId(eventId);
@@ -49,6 +163,11 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
     queryFn: () => apiFetch("/.netlify/functions/admin-events"),
   });
 
+  const { data: formats, isLoading: formatsLoading } = useQuery<EventFormat[]>({
+    queryKey: ["admin_event_formats"],
+    queryFn: () => apiFetch("/.netlify/functions/admin-event-formats"),
+  });
+
   const mutateEvent = useMutation({
     mutationFn: (data: any) =>
       apiFetch("/.netlify/functions/admin-events", data.id ? "PATCH" : "POST", data),
@@ -56,6 +175,27 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
       toast.success("Event saved successfully");
       queryClient.invalidateQueries({ queryKey: ["admin_events"] });
       setEventForm(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const mutateFormat = useMutation({
+    mutationFn: (data: any) =>
+      apiFetch("/.netlify/functions/admin-event-formats", data.id ? "PATCH" : "POST", data),
+    onSuccess: () => {
+      toast.success("Format saved successfully");
+      queryClient.invalidateQueries({ queryKey: ["admin_event_formats"] });
+      setFormatForm(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteFormat = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch("/.netlify/functions/admin-event-formats", "DELETE", { id }),
+    onSuccess: () => {
+      toast.success("Format deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin_event_formats"] });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -94,6 +234,9 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
   const hasScheduledEvents = events?.some((e: any) => e.status === "SCHEDULED") || false;
   const activeEvents = events?.filter((e: any) => e.status !== "ARCHIVED") || [];
   const pastEvents = events?.filter((e: any) => e.status === "ARCHIVED") || [];
+  const selectedFormat = eventForm?.formatId
+    ? formats?.find((format) => format.id === eventForm.formatId)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -129,6 +272,9 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                   publishAt: null,
                   price: "",
                   disclaimer: "",
+                  formatId: null,
+                  formatConfigEnabled: false,
+                  formatConfigText: "",
                 })
               }
             >
@@ -239,6 +385,107 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                 />
               </div>
               <div className="md:col-span-2">
+                <Label>Match Format</Label>
+                <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                  <Select
+                    value={eventForm.formatId || "none"}
+                    onValueChange={(val) =>
+                      setEventForm({
+                        ...eventForm,
+                        formatId: val === "none" ? null : val,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="md:w-[320px]">
+                      <SelectValue
+                        placeholder={formatsLoading ? "Loading formats..." : "Select format"}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No format (manual)</SelectItem>
+                      {(formats || []).map((format) => (
+                        <SelectItem key={format.id} value={format.id}>
+                          {format.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedFormat && (
+                    <div className="text-xs text-muted-foreground">
+                      {selectedFormat.strategyKey}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Use a format template to define player counts, distribution rules, and scoring.
+                </p>
+              </div>
+              <div className="md:col-span-2 border rounded-xl p-3 flex items-center justify-between gap-4">
+                <div>
+                  <Label>Override format config</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable to customize player counts, distribution, or scoring rules for this event.
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(eventForm.formatConfigEnabled)}
+                  onCheckedChange={(checked) =>
+                    setEventForm({
+                      ...eventForm,
+                      formatConfigEnabled: checked,
+                      formatConfigText: checked
+                        ? eventForm.formatConfigText ||
+                          (selectedFormat?.config ? stringifyConfig(selectedFormat.config) : DEFAULT_FORMAT_CONFIG_TEXT)
+                        : "",
+                    })
+                  }
+                />
+              </div>
+              {eventForm.formatConfigEnabled && (
+                <div className="md:col-span-2">
+                  <Label>Format Config (JSON)</Label>
+                  <Textarea
+                    rows={10}
+                    value={eventForm.formatConfigText || ""}
+                    onChange={(e) =>
+                      setEventForm({
+                        ...eventForm,
+                        formatConfigText: e.target.value,
+                      })
+                    }
+                    placeholder={DEFAULT_FORMAT_CONFIG_TEXT}
+                  />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setEventForm({
+                          ...eventForm,
+                          formatConfigText: selectedFormat?.config
+                            ? stringifyConfig(selectedFormat.config)
+                            : DEFAULT_FORMAT_CONFIG_TEXT,
+                        })
+                      }
+                    >
+                      Use template config
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setEventForm({
+                          ...eventForm,
+                          formatConfigText: DEFAULT_FORMAT_CONFIG_TEXT,
+                        })
+                      }
+                    >
+                      Load example
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="md:col-span-2">
                 <Label>Description</Label>
                 <Input
                   value={eventForm.description || ""}
@@ -300,13 +547,15 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
             )}
             <div className="flex gap-2">
               <Button
-                onClick={() =>
+                onClick={() => {
+                  const payload = buildEventPayload(eventForm);
+                  if (!payload) return;
                   confirmAction(
                     eventForm.id ? "Update Event" : "Create Event",
                     "Are you sure?",
-                    () => mutateEvent.mutate(eventForm),
-                  )
-                }
+                    () => mutateEvent.mutate(payload),
+                  );
+                }}
               >
                 Save
               </Button>
@@ -422,7 +671,7 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setEventForm(e)}
+                        onClick={() => setEventForm(buildEventForm(e))}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -481,6 +730,168 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
       </div>
 
       <div className="rounded-2xl border bg-background/80 shadow-sm overflow-hidden p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Match Formats</h3>
+          <Button
+            onClick={() =>
+              setFormatForm({
+                name: "",
+                strategyKey: "",
+                description: "",
+                configText: DEFAULT_FORMAT_CONFIG_TEXT,
+              })
+            }
+          >
+            <Plus className="w-4 h-4 mr-1" /> New Format
+          </Button>
+        </div>
+
+        {formatForm && (
+          <div className="bg-muted p-4 rounded-xl mb-6">
+            <h4 className="font-semibold mb-3">
+              {formatForm.id ? "Edit Format" : "Create Format"}
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label>Name</Label>
+                <Input
+                  value={formatForm.name}
+                  onChange={(e) =>
+                    setFormatForm({ ...formatForm, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label>Strategy Key</Label>
+                <Input
+                  value={formatForm.strategyKey}
+                  onChange={(e) =>
+                    setFormatForm({ ...formatForm, strategyKey: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Description</Label>
+                <Input
+                  value={formatForm.description || ""}
+                  onChange={(e) =>
+                    setFormatForm({ ...formatForm, description: e.target.value })
+                  }
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Config (JSON)</Label>
+                <Textarea
+                  rows={10}
+                  value={formatForm.configText || ""}
+                  onChange={(e) =>
+                    setFormatForm({ ...formatForm, configText: e.target.value })
+                  }
+                  placeholder={DEFAULT_FORMAT_CONFIG_TEXT}
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setFormatForm({
+                        ...formatForm,
+                        configText: DEFAULT_FORMAT_CONFIG_TEXT,
+                      })
+                    }
+                  >
+                    Load example
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  const payload = buildFormatPayload(formatForm);
+                  if (!payload) return;
+                  confirmAction(
+                    formatForm.id ? "Update Format" : "Create Format",
+                    "Are you sure?",
+                    () => mutateFormat.mutate(payload),
+                  );
+                }}
+              >
+                Save
+              </Button>
+              <Button variant="ghost" onClick={() => setFormatForm(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {formatsLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Strategy Key</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(formats || []).map((format) => (
+                  <TableRow key={format.id}>
+                    <TableCell className="font-medium">{format.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {format.strategyKey}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {format.description || "—"}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setFormatForm(buildFormatForm(format))}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() =>
+                          confirmAction(
+                            "Delete Format",
+                            "This will remove the format template. Continue?",
+                            () => deleteFormat.mutate(format.id),
+                          )
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!formats?.length && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-muted-foreground py-4"
+                    >
+                      No formats yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border bg-background/80 shadow-sm overflow-hidden p-4">
         <h3 className="text-xl font-semibold mb-4 text-muted-foreground">
           Past / Completed Events
         </h3>
@@ -516,7 +927,7 @@ export function EventsTab({ confirmAction }: EventsTabProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setEventForm(e)}
+                        onClick={() => setEventForm(buildEventForm(e))}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>

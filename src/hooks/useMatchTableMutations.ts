@@ -9,6 +9,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 export function useMatchTableMutations({
   eventId,
   scoreDrafts,
+  statusDrafts,
   manualEloDrafts,
   manualWinnerDrafts,
   assignmentDrafts,
@@ -17,6 +18,7 @@ export function useMatchTableMutations({
 }: {
   eventId: string | undefined;
   scoreDrafts: Record<string, { score1: string; score2: string }>;
+  statusDrafts: Record<string, "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST">;
   manualEloDrafts: Record<string, string>;
   manualWinnerDrafts: Record<string, boolean>;
   assignmentDrafts: Record<string, number>;
@@ -27,7 +29,13 @@ export function useMatchTableMutations({
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
 
   const updateMatch = useMutation({
-    mutationFn: (payload: { eventId: string; matchId: string; score1: number; score2: number }) =>
+    mutationFn: (payload: {
+      eventId: string;
+      matchId: string;
+      score1?: number;
+      score2?: number;
+      status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST";
+    }) =>
       apiFetch("/.netlify/functions/event-match-table", "PATCH", payload),
     onMutate: (payload) => {
       setSavingMatchId(payload.matchId);
@@ -96,15 +104,29 @@ export function useMatchTableMutations({
   const handleSaveMatch = (match: MatchTableMatch) => {
     if (!eventId) return;
     const draft = scoreDrafts[match.id];
-    const score1 = Number.parseInt(draft?.score1 ?? "", 10);
-    const score2 = Number.parseInt(draft?.score2 ?? "", 10);
+    const status = statusDrafts[match.id] ?? match.status ?? "SCHEDULED";
+    const rawScore1 = draft?.score1 ?? "";
+    const rawScore2 = draft?.score2 ?? "";
+    const hasScores = rawScore1 !== "" || rawScore2 !== "";
+    const score1 = Number.parseInt(rawScore1, 10);
+    const score2 = Number.parseInt(rawScore2, 10);
 
-    if (Number.isNaN(score1) || Number.isNaN(score2)) {
+    if (hasScores && (Number.isNaN(score1) || Number.isNaN(score2))) {
       toast.error("Enter valid numeric scores for both teams.");
       return;
     }
 
-    updateMatch.mutate({ eventId, matchId: match.id, score1, score2 });
+    if (status === "COMPLETED" && !hasScores) {
+      toast.error("Scores are required to mark match as completed.");
+      return;
+    }
+
+    updateMatch.mutate({
+      eventId,
+      matchId: match.id,
+      status,
+      ...(hasScores && { score1, score2 }),
+    });
   };
 
   const handleSaveManualElo = () => {

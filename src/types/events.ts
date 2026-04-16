@@ -29,11 +29,24 @@ export interface EventDetailsResponse {
   maxParticipants: number;
   price: string | null;
   disclaimer: string | null;
+  formatId?: string | null;
+  formatConfig?: any;
+  matchTableMode?: "AUTO_COURTS" | "MANUAL_ELO";
   participants: EventParticipant[];
   waitlist: EventWaitlistEntry[];
   waitlistCount: number;
   currentUserWaitlistPosition: number | null;
   currentUserWaitlistAhead: number | null;
+}
+
+export interface EventFormat {
+  id: string;
+  name: string;
+  description?: string | null;
+  strategyKey: string;
+  config?: any;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type MatchTableStatus = "DRAFT" | "OPEN" | "CONFIRMED";
@@ -52,6 +65,7 @@ export interface MatchTableCourt {
   courtNumber: number;
   players: MatchTablePlayer[];
   isManual: boolean;
+  manualOverride?: boolean;
 }
 
 export interface MatchTableMatch {
@@ -62,6 +76,7 @@ export interface MatchTableMatch {
   pair2: [MatchTablePlayer, MatchTablePlayer];
   score1: number | null;
   score2: number | null;
+  status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST";
   updatedAt?: string | null;
   updatedBy?: MatchTablePlayer | null;
 }

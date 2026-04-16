@@ -12,6 +12,7 @@ import {
   buildMatchesForCourt,
   loadRegenerationGuard,
 } from "./lib/matchTableOps";
+import { normalizeMatchFormatConfig, validateMatchFormatConfig } from "./lib/matchFormat";
 
 const generateSchema = z.object({ 
   eventId: z.string().uuid(),
@@ -37,6 +38,7 @@ interface MatchRow {
   id: string;
   courtNumber: number;
   round: number;
+  status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST";
   pair1Player1Id: string;
   pair1Player2Id: string;
   pair2Player1Id: string;
@@ -87,15 +89,33 @@ export const handler = defineHandler({
         return { statusCode: 400, body: JSON.stringify({ error: "Event has no participants" }) };
       }
 
-      const sortedParticipants = participants
-        .map((p) => p.user)
-        .sort((a, b) => b.elo - a.elo)
-        .map((p) => ({ id: p.id }));
+      const formatConfig = normalizeMatchFormatConfig(
+        guard.eventRecord.formatConfig ?? guard.eventRecord.format?.config,
+      );
+      const validation = validateMatchFormatConfig(formatConfig);
+      if (!validation.ok) {
+        return { statusCode: 400, body: JSON.stringify({ error: validation.error }) };
+      }
 
-      let courts = generateCourtAssignments(sortedParticipants);
+      if (mode !== "MANUAL_ELO" && !formatConfig.distribution.allowBench) {
+        const remainder = participants.length % formatConfig.distribution.courtSize;
+        if (remainder !== 0) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              error: "Participant count must be divisible by court size when bench is disabled",
+            }),
+          };
+        }
+      }
+
+      const participantRows = participants.map((p) => ({ id: p.user.id, elo: p.user.elo }));
+      const sortedParticipants = [...participantRows].sort((a, b) => (b.elo ?? 0) - (a.elo ?? 0));
+
+      let courts = generateCourtAssignments(participantRows, formatConfig);
 
       if (mode === "MANUAL_ELO") {
-        courts = [{ courtNumber: 1, userIds: sortedParticipants.map(p => p.id) }];
+        courts = [{ courtNumber: 1, userIds: sortedParticipants.map((p) => p.id) }];
       }
 
       await prisma.$transaction(async (tx) => {
@@ -127,7 +147,7 @@ export const handler = defineHandler({
         }
 
         const matchRows = courts.flatMap((court) =>
-          buildMatchesForCourt(court.courtNumber, court.userIds).map((match) => ({
+          buildMatchesForCourt(court.courtNumber, court.userIds, formatConfig).map((match) => ({
             id: match.id,
             eventId,
             courtNumber: match.courtNumber,
@@ -195,6 +215,30 @@ export const handler = defineHandler({
         return { statusCode: 400, body: JSON.stringify({ error: "Assignments contain unknown users" }) };
       }
 
+      const formatConfig = normalizeMatchFormatConfig(
+        guard.eventRecord.formatConfig ?? guard.eventRecord.format?.config,
+      );
+      const validation = validateMatchFormatConfig(formatConfig);
+      if (!validation.ok) {
+        return { statusCode: 400, body: JSON.stringify({ error: validation.error }) };
+      }
+
+      if (!formatConfig.distribution.allowBench) {
+        const invalidCourt = assignments.find(
+          (assignment) =>
+            assignments.filter((a) => a.courtNumber === assignment.courtNumber).length !==
+            formatConfig.distribution.courtSize,
+        );
+        if (invalidCourt) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              error: "Court size must match format when bench is disabled",
+            }),
+          };
+        }
+      }
+
       const courtsMap = new Map<number, string[]>();
       assignments.forEach((assignment) => {
         const group = courtsMap.get(assignment.courtNumber) ?? [];
@@ -231,7 +275,7 @@ export const handler = defineHandler({
         }
 
         const matchRows = Array.from(courtsMap.entries()).flatMap(([courtNumber, userIds]) =>
-          buildMatchesForCourt(courtNumber, userIds).map((match) => ({
+          buildMatchesForCourt(courtNumber, userIds, formatConfig).map((match) => ({
             id: match.id,
             eventId,
             courtNumber: match.courtNumber,
@@ -276,7 +320,11 @@ export const handler = defineHandler({
 
     const eventRecord = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { matchTableStatus: true },
+      select: {
+        matchTableStatus: true,
+        formatConfig: true,
+        format: { select: { config: true } },
+      },
     });
 
     if (!eventRecord) {
@@ -298,6 +346,7 @@ export const handler = defineHandler({
         id: true,
         courtNumber: true,
         round: true,
+        status: true,
         pair1Player1Id: true,
         pair1Player2Id: true,
         pair2Player1Id: true,
@@ -306,6 +355,20 @@ export const handler = defineHandler({
         score2: true,
       },
     });
+
+    const manualOverrides = await prisma.eventCourtOverride.findMany({
+      where: { eventId, isManual: true },
+      select: { courtNumber: true },
+    });
+    const manualOverrideSet = new Set(manualOverrides.map((row) => row.courtNumber));
+
+    const formatConfig = normalizeMatchFormatConfig(
+      eventRecord.formatConfig ?? eventRecord.format?.config,
+    );
+    const validation = validateMatchFormatConfig(formatConfig);
+    if (!validation.ok) {
+      return { statusCode: 400, body: JSON.stringify({ error: validation.error }) };
+    }
 
     const courtsMap = new Map<number, string[]>();
     assignments.forEach((assignment) => {
@@ -318,7 +381,12 @@ export const handler = defineHandler({
     const manualPlayerIds = new Set<string>();
 
     courtsMap.forEach((players, courtNumber) => {
-      if (players.length === 5) {
+      if (manualOverrideSet.has(courtNumber)) {
+        players.forEach((id) => manualPlayerIds.add(id));
+        return;
+      }
+
+      if (players.length === formatConfig.playersPerCourt) {
         fullCourts.add(courtNumber);
       } else {
         players.forEach((id) => manualPlayerIds.add(id));
@@ -326,8 +394,9 @@ export const handler = defineHandler({
     });
 
     const relevantMatches = matches.filter((match) => fullCourts.has(match.courtNumber));
+    const completedMatches = relevantMatches.filter((match) => match.status === "COMPLETED");
 
-    const missingScore = relevantMatches.find((match) => match.score1 === null || match.score2 === null);
+    const missingScore = completedMatches.find((match) => match.score1 === null || match.score2 === null);
     if (missingScore) {
       return { statusCode: 400, body: JSON.stringify({ error: "All match scores must be filled" }) };
     }
@@ -369,7 +438,18 @@ export const handler = defineHandler({
     const manualEloCurrentMap = new Map(manualPlayers.map((player) => [player.id, player.elo]));
     const ratingChangeSum = new Map<string, number>();
 
-    relevantMatches.forEach((match) => {
+    const ratingSettings = await prisma.userRatingSettings.findMany({
+      where: {
+        userId: { in: Array.from(playerIds) },
+        ratingSystem: "ELO",
+      },
+      select: { userId: true, kFactor: true },
+    });
+
+    const kFactorMap = new Map(ratingSettings.map((setting) => [setting.userId, setting.kFactor]));
+    const getKFactor = (userId: string) => kFactorMap.get(userId) ?? ELO_K_FACTOR;
+
+    completedMatches.forEach((match) => {
       const pair1Rating = ((eloMap.get(match.pair1Player1Id) ?? 0) + (eloMap.get(match.pair1Player2Id) ?? 0)) / 2;
       const pair2Rating = ((eloMap.get(match.pair2Player1Id) ?? 0) + (eloMap.get(match.pair2Player2Id) ?? 0)) / 2;
       const score = resultFromScores(match.score1 ?? 0, match.score2 ?? 0);
@@ -390,7 +470,7 @@ export const handler = defineHandler({
     await prisma.$transaction(async (tx) => {
       for (const [userId, ratingChange] of ratingChangeSum.entries()) {
         const previousElo = eloMap.get(userId) ?? 0;
-        const delta = Math.round(ratingChange * ELO_K_FACTOR);
+        const delta = Math.round(ratingChange * getKFactor(userId));
         const newElo = previousElo + delta;
 
         await tx.eventScore.upsert({

@@ -40,6 +40,37 @@ enum MatchTableStatus {
   CONFIRMED
 }
 
+enum EventMatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  WALKOVER
+  NO_CONTEST
+}
+
+enum EventParticipantStatus {
+  ACTIVE
+  WITHDRAWN
+  DNF
+}
+
+enum EventScoreLineStatus {
+  VALID
+  VOIDED
+}
+
+enum RatingSystem {
+  ELO
+}
+
+enum RatingReason {
+  MATCH
+  EVENT_FINAL
+  MANUAL
+  IMPORT
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -62,6 +93,26 @@ model User {
   premiumSubscriptions PremiumSubscription[]  @relation("PremiumUser")
   premiumGrantedBy     PremiumSubscription[]  @relation("PremiumGranter")
   eventCancellations   EventCancellation[]
+  matchParticipants    EventMatchParticipant[] @relation("MatchParticipantUser")
+  matchParticipantReplacements EventMatchParticipant[] @relation("MatchParticipantReplacement")
+  scoreLinesEntered    EventScoreLine[] @relation("ScoreLineEnteredBy")
+  ratingChanges        EventRatingChange[]
+  matchUpdates         EventMatch[] @relation("EventMatchUpdatedBy")
+  ratingSettings       UserRatingSettings[]
+}
+
+model UserRatingSettings {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  userId       String
+  ratingSystem RatingSystem @default(ELO)
+  kFactor      Int      @default(40)
+  notes        String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ratingSystem])
 }
 
 enum TokenType {
@@ -81,6 +132,17 @@ model VerificationToken {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Competition {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  events Event[]
+}
+
 model Event {
   id                    String           @id @default(uuid())
   title                 String
@@ -95,6 +157,9 @@ model Event {
   price                 String?
   disclaimer            String?
   createdAt             DateTime         @default(now())
+  competitionId         String?
+  formatId              String?
+  formatConfig          Json?
   matchTableStatus      MatchTableStatus @default(DRAFT)
   matchTableMode        MatchTableMode @default(AUTO_COURTS)
   matchTableGeneratedAt DateTime?
@@ -107,6 +172,22 @@ model Event {
   matches          EventMatch[]
   manualEloEntries EventManualElo[]
   cancellation     EventCancellation?
+  competition      Competition? @relation(fields: [competitionId], references: [id], onDelete: SetNull)
+  format           EventFormat? @relation(fields: [formatId], references: [id], onDelete: SetNull)
+  ratingChanges    EventRatingChange[]
+  courtOverrides   EventCourtOverride[]
+}
+
+model EventFormat {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  strategyKey String
+  config      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events Event[]
 }
 
 model PremiumSubscription {
@@ -177,6 +258,20 @@ model EventCourtAssignment {
   @@index([eventId, courtNumber])
 }
 
+model EventCourtOverride {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  eventId     String
+  courtNumber Int
+  isManual    Boolean  @default(true)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, courtNumber])
+  @@index([eventId, courtNumber])
+}
+
 model EventMatch {
   id             String   @id @default(uuid())
   createdAt      DateTime @default(now())
@@ -184,6 +279,10 @@ model EventMatch {
   eventId        String
   courtNumber    Int
   round          Int
+  status         EventMatchStatus @default(SCHEDULED)
+  startedAt      DateTime?
+  endedAt        DateTime?
+  lockedByAdmin  Boolean @default(false)
   pair1Player1Id String
   pair1Player2Id String
   pair2Player1Id String
@@ -193,8 +292,88 @@ model EventMatch {
   updatedById    String?
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  updatedBy User? @relation("EventMatchUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  sides EventMatchSide[]
+  scoreLines EventScoreLine[]
+  ratingChanges EventRatingChange[]
 
   @@index([eventId, courtNumber, round])
+}
+
+model EventMatchSide {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  matchId   String
+  sideIndex Int
+  name      String?
+
+  match        EventMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  participants EventMatchParticipant[]
+
+  @@unique([matchId, sideIndex])
+}
+
+model EventMatchParticipant {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  matchSideId  String
+  userId       String
+  seatIndex    Int?
+  status       EventParticipantStatus @default(ACTIVE)
+  notes        String?
+  replacedById String?
+
+  matchSide  EventMatchSide @relation(fields: [matchSideId], references: [id], onDelete: Cascade)
+  user       User           @relation("MatchParticipantUser", fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy User?          @relation("MatchParticipantReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+
+  @@unique([matchSideId, userId])
+  @@index([userId])
+}
+
+model EventScoreLine {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  matchId     String
+  sequence    Int
+  scoreSide1  Int?
+  scoreSide2  Int?
+  status      EventScoreLineStatus @default(VALID)
+  isCounted   Boolean @default(true)
+  enteredById String?
+  enteredAt   DateTime?
+  notes       String?
+
+  match     EventMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  enteredBy User?      @relation("ScoreLineEnteredBy", fields: [enteredById], references: [id], onDelete: SetNull)
+
+  @@unique([matchId, sequence])
+  @@index([matchId, status])
+}
+
+model EventRatingChange {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  appliedAt    DateTime?
+  eventId      String
+  userId       String
+  matchId      String?
+  ratingSystem RatingSystem @default(ELO)
+  reason       RatingReason @default(MATCH)
+  before       Int
+  delta        Int
+  after        Int
+  notes        String?
+
+  event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match EventMatch? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, userId])
+  @@index([matchId])
 }
 
 model EventManualElo {

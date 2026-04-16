@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { publicName } from "./sanitize";
+import { normalizeMatchFormatConfig } from "./matchFormat";
 
 export const MATCH_PAIRINGS: Array<{ round: number; pair1: [number, number]; pair2: [number, number] }> = [
   { round: 1, pair1: [1, 2], pair2: [3, 4] },
@@ -27,6 +28,7 @@ export interface MatchTableCourt {
   courtNumber: number;
   players: MatchTablePlayer[];
   isManual: boolean;
+  manualOverride?: boolean;
 }
 
 export interface MatchTableMatch {
@@ -37,6 +39,7 @@ export interface MatchTableMatch {
   pair2: [MatchTablePlayer, MatchTablePlayer];
   score1: number | null;
   score2: number | null;
+  status?: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST";
   updatedAt: string | null;
   updatedBy?: MatchTablePlayer | null;
 }
@@ -56,6 +59,8 @@ interface EventRow {
   matchTableGeneratedAt: Date | null;
   matchTableConfirmedAt: Date | null;
   matchTableMode: "AUTO_COURTS" | "MANUAL_ELO";
+  formatConfig: unknown | null;
+  format: { config: unknown | null } | null;
 }
 
 interface AssignmentRow {
@@ -67,6 +72,7 @@ interface MatchRow {
   id: string;
   courtNumber: number;
   round: number;
+  status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST";
   pair1Player1Id: string;
   pair1Player2Id: string;
   pair2Player1Id: string;
@@ -110,6 +116,8 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
       matchTableGeneratedAt: true,
       matchTableConfirmedAt: true,
       matchTableMode: true,
+      formatConfig: true,
+      format: { select: { config: true } },
     },
   });
 
@@ -127,6 +135,7 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
       id: true,
       courtNumber: true,
       round: true,
+      status: true,
       pair1Player1Id: true,
       pair1Player2Id: true,
       pair2Player1Id: true,
@@ -143,6 +152,12 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
     where: { eventId },
     select: { userId: true, previousElo: true, newElo: true, isWinner: true },
   });
+
+  const manualOverrides = await prisma.eventCourtOverride.findMany({
+    where: { eventId, isManual: true },
+    select: { courtNumber: true },
+  });
+  const manualOverrideSet = new Set(manualOverrides.map((row) => row.courtNumber));
 
   const manualEloMap = new Map(manualEloRows.map((row) => [row.userId, row]));
 
@@ -203,10 +218,14 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
     courtsMap.set(assignment.courtNumber, court);
   });
 
+  const formatConfig = normalizeMatchFormatConfig(eventRow.formatConfig ?? eventRow.format?.config);
+  const playersPerCourt = formatConfig.playersPerCourt;
+
   const courts = Array.from(courtsMap.values()).sort((a, b) => a.courtNumber - b.courtNumber);
   courts.forEach((court) => {
     court.players.sort((a, b) => b.elo - a.elo);
-    court.isManual = court.players.length < 5;
+    court.manualOverride = manualOverrideSet.has(court.courtNumber);
+    court.isManual = court.manualOverride || court.players.length < playersPerCourt;
   });
 
   const formattedMatches: MatchTableMatch[] = matches.map((match) => {
@@ -228,6 +247,7 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
       pair2,
       score1: match.score1,
       score2: match.score2,
+      status: match.status,
       updatedAt: match.updatedAt ? match.updatedAt.toISOString() : null,
       updatedBy: match.updatedById ? userMap.get(match.updatedById) ?? null : null,
     };

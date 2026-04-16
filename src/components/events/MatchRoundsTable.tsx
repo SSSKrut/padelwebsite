@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
 import type { MatchTableMatch } from "@/types/events";
@@ -8,19 +9,42 @@ export function MatchRoundsTable({
   matches,
   canEditScores,
   scoreDrafts,
+  statusDrafts,
   onScoreChange,
+  onStatusChange,
   onSaveMatch,
   isUpdatePending,
   savingMatchId,
+  statusOptions: statusOptionsProp,
 }: {
   matches: MatchTableMatch[];
   canEditScores: boolean;
   scoreDrafts: Record<string, { score1: string; score2: string }>;
+  statusDrafts: Record<
+    string,
+    "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST"
+  >;
   onScoreChange: (matchId: string, field: "score1" | "score2", value: string) => void;
+  onStatusChange: (
+    matchId: string,
+    status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST",
+  ) => void;
   onSaveMatch: (match: MatchTableMatch) => void;
   isUpdatePending: boolean;
   savingMatchId: string | null;
+  statusOptions?: Array<
+    "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST"
+  >;
 }) {
+  const statusOptions = statusOptionsProp ?? [
+    "SCHEDULED",
+    "IN_PROGRESS",
+    "COMPLETED",
+    "ABANDONED",
+    "WALKOVER",
+    "NO_CONTEST",
+  ] as const;
+
   return (
     <div className="grid gap-4 lg:grid-cols-1">
       <div className="overflow-x-auto">
@@ -30,13 +54,18 @@ export function MatchRoundsTable({
               <TableHead>Round</TableHead>
               <TableHead>Pair 1</TableHead>
               <TableHead>Pair 2</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Score</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {matches.map((match) => (
-              <TableRow key={match.id}>
+            {matches.map((match) => {
+              const status = match.status ?? "SCHEDULED";
+              const lockedStatuses = ["ABANDONED", "WALKOVER", "NO_CONTEST"];
+              const isLocked = lockedStatuses.includes(status);
+              return (
+                <TableRow key={match.id}>
                 <TableCell className="font-medium">{match.round}</TableCell>
                 <TableCell>
                   {match.pair1.map((player) => player.name).join(" / ")}
@@ -44,13 +73,33 @@ export function MatchRoundsTable({
                 <TableCell>
                   {match.pair2.map((player) => player.name).join(" / ")}
                 </TableCell>
+                <TableCell>
+                  <Select
+                    value={statusDrafts[match.id] ?? status}
+                    onValueChange={(value) =>
+                      onStatusChange(match.id, value as (typeof statusOptions)[number])
+                    }
+                    disabled={!canEditScores}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Input
                       type="number"
                       min={0}
                       className="w-16 text-right"
-                      disabled={!canEditScores}
+                      disabled={!canEditScores || isLocked}
                       value={scoreDrafts[match.id]?.score1 ?? ""}
                       onChange={(e) => onScoreChange(match.id, "score1", e.target.value)}
                     />
@@ -59,7 +108,7 @@ export function MatchRoundsTable({
                       type="number"
                       min={0}
                       className="w-16 text-right"
-                      disabled={!canEditScores}
+                      disabled={!canEditScores || isLocked}
                       value={scoreDrafts[match.id]?.score2 ?? ""}
                       onChange={(e) => onScoreChange(match.id, "score2", e.target.value)}
                     />
@@ -69,7 +118,7 @@ export function MatchRoundsTable({
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={!canEditScores || isUpdatePending}
+                    disabled={!canEditScores || isUpdatePending || isLocked}
                     onClick={() => onSaveMatch(match)}
                   >
                     {isUpdatePending && savingMatchId === match.id ? (
@@ -80,7 +129,8 @@ export function MatchRoundsTable({
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>

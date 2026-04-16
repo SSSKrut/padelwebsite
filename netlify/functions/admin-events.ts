@@ -13,7 +13,20 @@ export const handler: Handler = async (event) => {
   try {
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
-      const { title, description, date, endDate, location, status, publishAt, maxParticipants, price, disclaimer } = body;
+      const {
+        title,
+        description,
+        date,
+        endDate,
+        location,
+        status,
+        publishAt,
+        maxParticipants,
+        price,
+        disclaimer,
+        formatId,
+        formatConfig,
+      } = body;
 
       if (!title || !date) {
         return { statusCode: 400, body: JSON.stringify({ error: "Title and Date are required" }) };
@@ -30,6 +43,29 @@ export const handler: Handler = async (event) => {
         return { statusCode: 400, body: JSON.stringify({ error: "publishAt is required for SCHEDULED status" }) };
       }
 
+      let resolvedFormatId: string | null | undefined = undefined;
+      let resolvedFormatConfig: any = formatConfig;
+
+      if (formatId !== undefined) {
+        resolvedFormatId = formatId || null;
+        if (resolvedFormatId) {
+          const format = await prisma.eventFormat.findUnique({
+            where: { id: resolvedFormatId },
+            select: { config: true },
+          });
+
+          if (!format) {
+            return { statusCode: 400, body: JSON.stringify({ error: "Invalid formatId" }) };
+          }
+
+          if (resolvedFormatConfig === undefined) {
+            resolvedFormatConfig = format.config ?? null;
+          }
+        } else if (resolvedFormatConfig === undefined) {
+          resolvedFormatConfig = null;
+        }
+      }
+
       const eventItem = await prisma.event.create({
         data: {
           title,
@@ -42,6 +78,8 @@ export const handler: Handler = async (event) => {
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : 16,
           price: price || null,
           disclaimer: disclaimer || null,
+          ...(resolvedFormatId !== undefined && { formatId: resolvedFormatId }),
+          ...(resolvedFormatConfig !== undefined && { formatConfig: resolvedFormatConfig }),
         },
       });
 
@@ -57,7 +95,21 @@ export const handler: Handler = async (event) => {
 
     if (event.httpMethod === "PATCH") {
       const body = JSON.parse(event.body || "{}");
-      const { id, title, description, date, endDate, location, status, publishAt, maxParticipants, price, disclaimer } = body;
+      const {
+        id,
+        title,
+        description,
+        date,
+        endDate,
+        location,
+        status,
+        publishAt,
+        maxParticipants,
+        price,
+        disclaimer,
+        formatId,
+        formatConfig,
+      } = body;
       if (!id) return { statusCode: 400, body: JSON.stringify({ error: "Event ID required" }) };
 
       if (maxParticipants !== undefined) {
@@ -73,6 +125,33 @@ export const handler: Handler = async (event) => {
         if (!existing?.publishAt && !publishAt) {
           return { statusCode: 400, body: JSON.stringify({ error: "publishAt is required for SCHEDULED status" }) };
         }
+      }
+
+      let resolvedFormatId: string | null | undefined = undefined;
+      let resolvedFormatConfig: any = undefined;
+
+      if (formatId !== undefined) {
+        resolvedFormatId = formatId || null;
+        if (resolvedFormatId) {
+          const format = await prisma.eventFormat.findUnique({
+            where: { id: resolvedFormatId },
+            select: { config: true },
+          });
+
+          if (!format) {
+            return { statusCode: 400, body: JSON.stringify({ error: "Invalid formatId" }) };
+          }
+
+          if (formatConfig === undefined) {
+            resolvedFormatConfig = format.config ?? null;
+          }
+        } else if (formatConfig === undefined) {
+          resolvedFormatConfig = null;
+        }
+      }
+
+      if (formatConfig !== undefined) {
+        resolvedFormatConfig = formatConfig;
       }
 
       const updatedEvent = await prisma.event.update({
@@ -91,6 +170,8 @@ export const handler: Handler = async (event) => {
           ...(maxParticipants !== undefined && { maxParticipants: parseInt(maxParticipants) }),
           ...(price !== undefined && { price: price || null }),
           ...(disclaimer !== undefined && { disclaimer: disclaimer || null }),
+          ...(resolvedFormatId !== undefined && { formatId: resolvedFormatId }),
+          ...(resolvedFormatConfig !== undefined && { formatConfig: resolvedFormatConfig }),
         }
       });
       return { statusCode: 200, body: JSON.stringify(updatedEvent) };

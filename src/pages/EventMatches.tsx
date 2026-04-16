@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Hero } from "@/components/Hero";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { useAuth } from "@/hooks/useAuth";
 import { UserRole } from "@/context/AuthContext";
@@ -14,6 +15,7 @@ import { ArrowLeft, Loader2, RefreshCw, CheckCircle } from "lucide-react";
 import { formatEventDate } from "@/lib/utils";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useMatchTableMutations } from "@/hooks/useMatchTableMutations";
+import { toast } from "sonner";
 import type {
   EventParticipant,
   EventDetailsResponse,
@@ -26,6 +28,7 @@ import { CourtDropZone } from "@/components/events/CourtDropZone";
 import { ManualEloTable } from "@/components/events/ManualEloTable";
 import { MatchRoundsTable } from "@/components/events/MatchRoundsTable";
 import { CourtStandingsTable } from "@/components/events/CourtStandingsTable";
+import { CustomMatchesAdminPanel } from "@/components/events/CustomMatchesAdminPanel";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -56,7 +59,23 @@ const EventMatches = () => {
     enabled: !!id && canAccess,
   });
 
+  const formatConfig = ((): {
+    pairingStrategy?: string;
+    playersPerCourt?: number;
+    rounds?: number;
+  } | null => {
+    if (!event?.formatConfig || typeof event.formatConfig !== "object") {
+      return null;
+    }
+    return event.formatConfig as {
+      pairingStrategy?: string;
+      playersPerCourt?: number;
+      rounds?: number;
+    };
+  })();
+
   const [scoreDrafts, setScoreDrafts] = useState<Record<string, { score1: string; score2: string }>>({});
+  const [statusDrafts, setStatusDrafts] = useState<Record<string, "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST">>({});
   const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, number>>({});
   const [manualEloDrafts, setManualEloDrafts] = useState<Record<string, string>>({});
   const [manualWinnerDrafts, setManualWinnerDrafts] = useState<Record<string, boolean>>({});
@@ -74,11 +93,29 @@ const EventMatches = () => {
   } = useMatchTableMutations({
     eventId: id,
     scoreDrafts,
+    statusDrafts,
     manualEloDrafts,
     manualWinnerDrafts,
     assignmentDrafts,
     matchTable,
     confirmAction,
+  });
+
+  const updateCourtOverride = useMutation({
+    mutationFn: async (payload: { courtNumber: number; isManual: boolean }) => {
+      if (!id) throw new Error("Missing eventId");
+      return apiFetch("/.netlify/functions/admin-event-court-overrides", "PATCH", {
+        eventId: id,
+        ...payload,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Court mode updated");
+      queryClient.invalidateQueries({ queryKey: ["matchTable", id] });
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Failed to update court mode");
+    },
   });
 
   const matchesByCourt = useMemo(() => {
@@ -93,7 +130,10 @@ const EventMatches = () => {
   }, [matchTable?.matches]);
 
   const participantCount = event?.participants.length ?? 0;
-  const courtCount = Math.max(1, Math.ceil(participantCount / 5));
+  const playersPerCourt = Number.isFinite(formatConfig?.playersPerCourt)
+    ? Number(formatConfig.playersPerCourt)
+    : 5;
+  const courtCount = Math.max(1, Math.ceil(participantCount / playersPerCourt));
 
   const assignmentCourts = useMemo(() => {
     if (!event) return [] as Array<{ courtNumber: number; players: EventParticipant[] }>;
@@ -139,13 +179,16 @@ const EventMatches = () => {
   useEffect(() => {
     if (!matchTable) return;
     const nextDrafts: Record<string, { score1: string; score2: string }> = {};
+    const nextStatuses: Record<string, "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST"> = {};
     matchTable.matches.forEach((match) => {
       nextDrafts[match.id] = {
         score1: match.score1 !== null ? String(match.score1) : "",
         score2: match.score2 !== null ? String(match.score2) : "",
       };
+      nextStatuses[match.id] = (match.status ?? "SCHEDULED") as "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST";
     });
     setScoreDrafts(nextDrafts);
+    setStatusDrafts(nextStatuses);
   }, [matchTable]);
 
   useEffect(() => {
@@ -253,6 +296,13 @@ const EventMatches = () => {
     court.players.some((player) => player.manualElo !== null && player.manualElo !== undefined),
   );
   const hasEnteredResults = hasRecordedScores || hasManualElo;
+  const isCustomFormat = formatConfig?.pairingStrategy === "CUSTOM";
+  const showCustomMatchesPanel = !!matchTable && isAdmin && (isCustomFormat || matchTable.mode === "MANUAL_ELO");
+  const statusOptions: Array<
+    "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST"
+  > = isAdmin
+    ? ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "ABANDONED", "WALKOVER", "NO_CONTEST"]
+    : ["IN_PROGRESS", "COMPLETED", "ABANDONED"];
 
   return (
     <div className="min-h-screen bg-muted/20 pb-16">
@@ -389,6 +439,25 @@ const EventMatches = () => {
           </Card>
         )}
 
+        {showCustomMatchesPanel && (
+          <Card className="shadow-lg border-0">
+            <CardHeader>
+              <CardTitle>Custom Matches</CardTitle>
+              <CardDescription>
+                Create and manage custom matches, substitute players, or mark unfinished games.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CustomMatchesAdminPanel
+                eventId={event.id}
+                participants={event.participants}
+                matches={matchTable.matches}
+                status={status}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {matchError && (
           <Card className="shadow-lg border-0">
             <CardContent className="py-8 text-center text-muted-foreground">
@@ -433,9 +502,26 @@ const EventMatches = () => {
                           {isManualCourt
                             ? matchTable.mode === "MANUAL_ELO"
                               ? "Manual ELO mode — admin sets ratings and winners."
-                              : "Less than 5 players — manual ELO required."
-                            : "5 players · 5 rounds"}
+                              : `Less than ${playersPerCourt} players — manual ELO required.`
+                            : `${playersPerCourt} players · ${Number.isFinite(formatConfig?.rounds) ? formatConfig.rounds : "standard"} rounds`}
                         </CardDescription>
+                        {isAdmin && matchTable.mode !== "MANUAL_ELO" && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <Switch
+                              checked={court.manualOverride ?? false}
+                              onCheckedChange={(checked) =>
+                                updateCourtOverride.mutate({
+                                  courtNumber: court.courtNumber,
+                                  isManual: checked,
+                                })
+                              }
+                              disabled={status !== "OPEN" || updateCourtOverride.isPending}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              Force manual ELO for this court
+                            </span>
+                          </div>
+                        )}
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex flex-wrap gap-2">
@@ -471,6 +557,8 @@ const EventMatches = () => {
                               matches={matchesByCourt.get(court.courtNumber) ?? []}
                               canEditScores={canEditScores}
                               scoreDrafts={scoreDrafts}
+                              statusDrafts={statusDrafts}
+                              statusOptions={statusOptions}
                               onScoreChange={(matchId, field, value) =>
                                 setScoreDrafts((prev) => ({
                                   ...prev,
@@ -478,6 +566,12 @@ const EventMatches = () => {
                                     score1: field === "score1" ? value : (prev[matchId]?.score1 ?? ""),
                                     score2: field === "score2" ? value : (prev[matchId]?.score2 ?? ""),
                                   },
+                                }))
+                              }
+                              onStatusChange={(matchId, nextStatus) =>
+                                setStatusDrafts((prev) => ({
+                                  ...prev,
+                                  [matchId]: nextStatus,
                                 }))
                               }
                               onSaveMatch={handleSaveMatch}

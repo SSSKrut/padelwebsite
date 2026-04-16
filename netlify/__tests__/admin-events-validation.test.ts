@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   eventCreate: vi.fn(),
   eventUpdate: vi.fn(),
   eventFindUnique: vi.fn(),
+  eventFormatFindUnique: vi.fn(),
   verifyAdmin: vi.fn(),
 }));
 
@@ -13,6 +14,9 @@ vi.mock("../functions/lib/prisma", () => ({
       create: mocks.eventCreate,
       update: mocks.eventUpdate,
       findUnique: mocks.eventFindUnique,
+    },
+    eventFormat: {
+      findUnique: mocks.eventFormatFindUnique,
     },
   },
 }));
@@ -56,6 +60,53 @@ describe("admin-events validation", () => {
     );
 
     expect(res!.statusCode).toBe(400);
+  });
+
+  it("should reject invalid formatId on POST", async () => {
+    mocks.eventFormatFindUnique.mockResolvedValue(null);
+
+    const res = await handler(
+      mockEvent({
+        body: JSON.stringify({
+          title: "Test Event",
+          date: "2026-06-01",
+          formatId: "bad-format-id",
+        }),
+      }),
+      {} as any
+    );
+
+    expect(res!.statusCode).toBe(400);
+    expect(JSON.parse(res!.body ?? "{}").error).toMatch(/invalid formatId/i);
+    expect(mocks.eventCreate).not.toHaveBeenCalled();
+  });
+
+  it("should apply format config when formatId is provided", async () => {
+    mocks.eventFormatFindUnique.mockResolvedValue({
+      config: { playersPerCourt: 5, rounds: 5 },
+    });
+    mocks.eventCreate.mockResolvedValue({ id: "event-1" });
+
+    const res = await handler(
+      mockEvent({
+        body: JSON.stringify({
+          title: "Test Event",
+          date: "2026-06-01",
+          formatId: "format-1",
+        }),
+      }),
+      {} as any
+    );
+
+    expect(res!.statusCode).toBe(201);
+    expect(mocks.eventCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          formatId: "format-1",
+          formatConfig: { playersPerCourt: 5, rounds: 5 },
+        }),
+      }),
+    );
   });
 
   it("should reject non-numeric maxParticipants on PATCH", async () => {

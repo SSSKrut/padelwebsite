@@ -83,6 +83,7 @@ export const handler: Handler = async (event) => {
         try {
           await sendEmail({
             to: updatedUser.email,
+            userId: updatedUser.id,
             template: "account-approved",
             data: {
               firstName: updatedUser.firstName,

@@ -60,6 +60,7 @@ describe("auth-forgot-password", () => {
     expect(createToken).toHaveBeenCalledWith("user-1", "PASSWORD_RESET");
     expect(sendEmail).toHaveBeenCalledWith({
       to: "ada@example.com",
+      userId: "user-1",
       template: "password-reset",
       data: {
         firstName: "Ada",

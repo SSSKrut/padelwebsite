@@ -213,10 +213,11 @@ describe("event-register handler", () => {
     expect(json.error).toMatch(/locked/i);
   });
 
-  it("does not check registrations when event is locked", async () => {
+  it("still checks existing registration when event is locked", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(6)));
     await callHandler();
-    expect(prisma.eventRegistration.findUnique).not.toHaveBeenCalled();
+    expect(prisma.eventRegistration.findUnique).toHaveBeenCalled();
+    expect(prisma.eventWaitlist.findUnique).toHaveBeenCalled();
   });
 
   // --- Registration ---
@@ -383,6 +384,7 @@ describe("event-register handler", () => {
     vi.mocked(prisma.eventRegistration.create).mockResolvedValue({} as never);
     vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "next-user",
       email: "next@example.com",
       firstName: "Next",
     } as never);
@@ -498,10 +500,23 @@ describe("event-register handler", () => {
     expect(prisma.eventRegistration.create).not.toHaveBeenCalled();
   });
 
-  it("blocks unregistration when event is within 24h", async () => {
+  it("allows unregistration when event is within 24h", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(6), 5));
-    const { statusCode } = await callHandler();
-    expect(statusCode).toBe(403);
+    vi.mocked(prisma.eventRegistration.findUnique)
+      .mockResolvedValueOnce({
+        id: "reg-123",
+        eventId: EVENT_UUID,
+        userId: USER_UUID,
+      } as never)
+      .mockResolvedValueOnce(null);
+    vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.eventRegistration.delete).mockResolvedValue({} as never);
+
+    const { statusCode, json } = await callHandler();
+
+    expect(statusCode).toBe(200);
+    expect(json.message).toMatch(/unregistered/i);
+    expect(prisma.eventRegistration.delete).toHaveBeenCalledWith({ where: { id: "reg-123" } });
   });
 
   // --- Transaction safety ---

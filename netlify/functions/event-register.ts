@@ -53,16 +53,17 @@ export const handler = defineHandler({
       }
     }
 
-    // 24h lock before event start — applies to EVERYONE
     const MS_IN_DAY = 24 * 60 * 60 * 1000;
-    const isLocked = targetEvent.date.getTime() - new Date().getTime() < MS_IN_DAY;
+    const timeUntilStart = targetEvent.date.getTime() - Date.now();
 
-    if (isLocked) {
+    if (timeUntilStart <= 0) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: "Registration/unregistration is locked within 24 hours of the event start" }),
+        body: JSON.stringify({ error: "Event has already started" }),
       };
     }
+
+    const isLocked = timeUntilStart < MS_IN_DAY;
 
     // Use a transaction to prevent race conditions on participant count
     const result = await prisma.$transaction(async (tx) => {
@@ -108,6 +109,13 @@ export const handler = defineHandler({
           },
         },
       });
+
+      if (isLocked && !existingRegistration && !existingWaitlistEntry) {
+        return {
+          statusCode: 403,
+          body: JSON.stringify({ error: "Registration is locked within 24 hours of the event start" }),
+        };
+      }
 
       const promoteNextWaitlistedUser = async () => {
         while (true) {
@@ -217,6 +225,10 @@ export const handler = defineHandler({
       };
     });
 
+    if (result && typeof result === "object" && "statusCode" in result) {
+      return result;
+    }
+
     const safeSendEmail = async (options: Parameters<typeof sendEmail>[0], context: string) => {
       try {
         await sendEmail(options);
@@ -229,6 +241,7 @@ export const handler = defineHandler({
       await safeSendEmail(
         {
           to: user!.email,
+          userId: user!.id,
           template: "event-registration",
           data: {
             firstName: user!.firstName,
@@ -243,6 +256,7 @@ export const handler = defineHandler({
       await safeSendEmail(
         {
           to: user!.email,
+          userId: user!.id,
           template: "event-waitlist",
           data: {
             firstName: user!.firstName,
@@ -257,13 +271,14 @@ export const handler = defineHandler({
     if (result.promotedUserId) {
       const promotedUser = await prisma.user.findUnique({
         where: { id: result.promotedUserId },
-        select: { email: true, firstName: true },
+        select: { id: true, email: true, firstName: true },
       });
 
       if (promotedUser) {
         await safeSendEmail(
           {
             to: promotedUser.email,
+            userId: promotedUser.id,
             template: "event-waitlist-promotion",
             data: {
               firstName: promotedUser.firstName,

@@ -29,6 +29,7 @@ export const handler = defineHandler({
 
 			await sendEmail({
 				to: user.email,
+				userId: user.id,
 				template: "password-reset",
 				data: { firstName: user.firstName, actionUrl },
 			});

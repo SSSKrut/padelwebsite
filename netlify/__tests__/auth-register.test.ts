@@ -101,6 +101,7 @@ describe('auth-register function', () => {
     expect(buildActionUrl).toHaveBeenCalledWith('/verify-email', 'mock-token');
     expect(sendEmail).toHaveBeenCalledWith({
       to: 'newuser@example.com',
+      userId: 'user-2',
       template: 'email-verification',
       data: { firstName: 'John', actionUrl: 'http://localhost:8080/verify-email?token=mock-token' }
     });

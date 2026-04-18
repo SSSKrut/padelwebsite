@@ -149,26 +149,5 @@ export const loadRegenerationGuard = async (eventId: string) => {
     return { ok: true as const, eventRecord, rollbackScores };
   }
 
-  const laterScore = await prisma.eventScore.findFirst({
-    where: {
-      userId: { in: rollbackScores.map((score) => score.userId) },
-      eventId: { not: eventId },
-      createdAt: { gt: eventRecord.matchTableConfirmedAt },
-    },
-    select: { id: true },
-  });
-
-  if (laterScore) {
-    return {
-      ok: false as const,
-      response: {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: "Cannot regenerate match table after later events have updated ELO",
-        }),
-      },
-    };
-  }
-
   return { ok: true as const, eventRecord, rollbackScores };
 };

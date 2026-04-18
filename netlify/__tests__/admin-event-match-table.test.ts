@@ -216,7 +216,7 @@ describe("admin-event-match-table", () => {
     expect(json.error).toMatch(/missing participants/i);
   });
 
-  it("blocks regeneration when later events updated ELO", async () => {
+  it("allows regeneration even when later events updated ELO", async () => {
     const confirmedAt = new Date("2026-04-06T10:00:00.000Z");
     vi.mocked(prisma.event.findUnique).mockResolvedValue({
       id: EVENT_ID,
@@ -226,12 +226,18 @@ describe("admin-event-match-table", () => {
     vi.mocked(prisma.eventScore.findMany).mockResolvedValue([
       { userId: PLAYER_IDS[0], previousElo: 900 },
     ] as never);
-    vi.mocked(prisma.eventScore.findFirst).mockResolvedValue({ id: "score-later" } as never);
+    vi.mocked(prisma.eventRegistration.findMany).mockResolvedValue(
+      PLAYER_IDS.map((id, index) => ({ user: { id, elo: 1000 + index * 10 } })) as never,
+    );
 
-    const { statusCode, json } = await callHandler();
+    const { statusCode } = await callHandler();
 
-    expect(statusCode).toBe(400);
-    expect(json.error).toMatch(/later events/i);
+    expect(statusCode).toBe(200);
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: PLAYER_IDS[0] },
+      data: { elo: 900 },
+    });
+    expect(prisma.eventScore.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
   });
 
   it("rolls back ELO when confirmed and no later events exist", async () => {

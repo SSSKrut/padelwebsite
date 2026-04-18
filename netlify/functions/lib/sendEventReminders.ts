@@ -20,7 +20,7 @@ export async function sendEventReminders(): Promise<number> {
     include: {
       participants: {
         include: {
-          user: { select: { email: true, firstName: true } },
+          user: { select: { id: true, email: true, firstName: true } },
         },
       },
     },
@@ -34,6 +34,7 @@ export async function sendEventReminders(): Promise<number> {
       try {
         await sendEmail({
           to: reg.user.email,
+          userId: reg.user.id,
           template: "event-reminder",
           data: {
             firstName: reg.user.firstName,

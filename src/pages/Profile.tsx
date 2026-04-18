@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
@@ -10,8 +10,80 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Trophy, Crown, Loader2, Save, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+
+type EmailPreferences = {
+  welcome: boolean;
+  emailVerification: boolean;
+  passwordReset: boolean;
+  accountApproved: boolean;
+  eventRegistration: boolean;
+  eventWaitlist: boolean;
+  eventWaitlistPromotion: boolean;
+  eventCancelled: boolean;
+  eventReminder: boolean;
+};
+
+const DEFAULT_EMAIL_PREFERENCES: EmailPreferences = {
+  welcome: true,
+  emailVerification: true,
+  passwordReset: true,
+  accountApproved: true,
+  eventRegistration: true,
+  eventWaitlist: true,
+  eventWaitlistPromotion: true,
+  eventCancelled: true,
+  eventReminder: true,
+};
+
+const EMAIL_PREFERENCE_ITEMS: Array<{
+  key: keyof EmailPreferences;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "welcome",
+    label: "Welcome emails",
+    description: "Account creation confirmations.",
+  },
+  {
+    key: "emailVerification",
+    label: "Email verification",
+    description: "Verification links for new accounts.",
+  },
+  {
+    key: "accountApproved",
+    label: "Account approval",
+    description: "Notifications when an admin approves your account.",
+  },
+  {
+    key: "eventRegistration",
+    label: "Event registration",
+    description: "Confirmation after you register for an event.",
+  },
+  {
+    key: "eventWaitlist",
+    label: "Waitlist added",
+    description: "Alerts when you are added to a waitlist.",
+  },
+  {
+    key: "eventWaitlistPromotion",
+    label: "Waitlist promotion",
+    description: "Emails when you move from the waitlist to the main list.",
+  },
+  {
+    key: "eventCancelled",
+    label: "Event cancelled",
+    description: "Cancellation notices for events you joined or waitlisted.",
+  },
+  {
+    key: "eventReminder",
+    label: "Event reminders",
+    description: "24-hour reminders before events.",
+  },
+];
 
 const Profile = () => {
   const { user } = useAuth();
@@ -29,6 +101,8 @@ const Profile = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const [emailPreferences, setEmailPreferences] = useState<EmailPreferences | null>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
@@ -60,6 +134,27 @@ const Profile = () => {
       toast.error(error.message);
     },
   });
+
+  const emailPreferencesMutation = useMutation({
+    mutationFn: (prefs: Partial<EmailPreferences>) =>
+      apiFetch("/.netlify/functions/profile", "PATCH", { emailPreferences: prefs }),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.setQueryData(["profile"], (old: any) => ({ ...old, ...data.user }));
+      if (data.user?.emailPreferences) {
+        setEmailPreferences(data.user.emailPreferences);
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
+    },
+  });
+
+  useEffect(() => {
+    if (profile?.emailPreferences) {
+      setEmailPreferences(profile.emailPreferences);
+    }
+  }, [profile]);
 
   const handlePasswordChange = () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -100,6 +195,15 @@ const Profile = () => {
 
   const handleSave = () => {
     updateMutation.mutate(formData);
+  };
+
+  const currentEmailPreferences = emailPreferences
+    ?? profile.emailPreferences
+    ?? DEFAULT_EMAIL_PREFERENCES;
+
+  const handlePreferenceToggle = (key: keyof EmailPreferences, value: boolean) => {
+    setEmailPreferences((prev) => ({ ...(prev ?? currentEmailPreferences), [key]: value }));
+    emailPreferencesMutation.mutate({ [key]: value });
   };
 
   const myEvents = profile.registrations?.map((r: any) => r.event) || [];
@@ -230,6 +334,33 @@ const Profile = () => {
               {passwordMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Update Password
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Email Notifications</CardTitle>
+            <CardDescription>
+              Manage which emails you want to receive. Password reset emails are always enabled.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {EMAIL_PREFERENCE_ITEMS.map((item) => (
+              <div
+                key={item.key}
+                className="flex items-center justify-between gap-4 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
+              >
+                <div>
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                </div>
+                <Switch
+                  checked={currentEmailPreferences[item.key]}
+                  onCheckedChange={(checked) => handlePreferenceToggle(item.key, checked)}
+                  disabled={emailPreferencesMutation.isPending}
+                />
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

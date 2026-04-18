@@ -14,6 +14,7 @@ import { Loader2 } from "lucide-react";
 
 type Player = {
   rank: number;
+  rankDelta: number;
   name: string;
   achievements: string[];
   ratingPoints: number;
@@ -86,7 +87,16 @@ const Players = () => {
               {playersData.map((player) => (
                 <TableRow key={`${player.rank}-${player.name}`}>
                   <TableCell className="font-semibold text-primary">
-                    #{player.rank}
+                    <div className="flex items-center gap-2">
+                      <span>#{player.rank}</span>
+                      <span
+                        className={`text-xs font-semibold ${ratingDeltaStyles(
+                          player.rankDelta
+                        )}`}
+                      >
+                        {formatDelta(player.rankDelta)}
+                      </span>
+                    </div>
                   </TableCell>
 
                   <TableCell className="font-medium">{player.name}</TableCell>

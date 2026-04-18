@@ -99,6 +99,8 @@ model User {
   ratingChanges        EventRatingChange[]
   matchUpdates         EventMatch[] @relation("EventMatchUpdatedBy")
   ratingSettings       UserRatingSettings[]
+  emailPreferences     UserEmailPreferences?
+  weeklyRatings        UserWeeklyRating[]
 }
 
 model UserRatingSettings {
@@ -113,6 +115,39 @@ model UserRatingSettings {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ratingSystem])
+}
+
+model UserEmailPreferences {
+  id                      String   @id @default(uuid())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  userId                  String   @unique
+  welcome                 Boolean  @default(true)
+  emailVerification       Boolean  @default(true)
+  passwordReset           Boolean  @default(true)
+  accountApproved         Boolean  @default(true)
+  eventRegistration       Boolean  @default(true)
+  eventWaitlist           Boolean  @default(true)
+  eventWaitlistPromotion  Boolean  @default(true)
+  eventCancelled          Boolean  @default(true)
+  eventReminder           Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserWeeklyRating {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  weekStart DateTime
+  rating    Int
+  rank      Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([weekStart, rank])
 }
 
 enum TokenType {

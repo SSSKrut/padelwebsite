@@ -52,12 +52,16 @@ export function RegistrationCTA({
                 className="w-full flex gap-2"
                 size="lg"
                 onClick={() => registerMutation.mutate()}
-                disabled={registerMutation.isPending || isLocked}
+                disabled={registerMutation.isPending}
               >
                 {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
                 Cancel Registration
               </Button>
-              {isLocked && <p className="text-xs text-center text-destructive">Locked (less than 24h to start)</p>}
+              {isLocked && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Registration is closed within 24 hours, but you can still cancel.
+                </p>
+              )}
             </div>
           );
         }
@@ -70,7 +74,7 @@ export function RegistrationCTA({
                 className="w-full flex gap-2"
                 size="lg"
                 onClick={() => registerMutation.mutate()}
-                disabled={registerMutation.isPending || isLocked}
+                disabled={registerMutation.isPending}
               >
                 {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
                 Leave Waitlist
@@ -78,7 +82,11 @@ export function RegistrationCTA({
               <p className="text-xs text-center text-muted-foreground">
                 You are #{event.currentUserWaitlistPosition} in queue. People ahead of you: {event.currentUserWaitlistAhead}
               </p>
-              {isLocked && <p className="text-xs text-center text-destructive">Locked (less than 24h to start)</p>}
+              {isLocked && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Registration is closed within 24 hours, but you can still leave the waitlist.
+                </p>
+              )}
             </div>
           );
         }
@@ -124,7 +132,7 @@ export function RegistrationCTA({
 
       {!isCompleted && (
         <p className="text-xs text-muted-foreground text-center">
-          Registration and cancellation close 24 hours before the event start.
+          Registration closes 24 hours before the event start. Cancellations and waitlist exits remain available.
         </p>
       )}
 

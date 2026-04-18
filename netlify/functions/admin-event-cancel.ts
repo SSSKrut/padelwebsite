@@ -72,6 +72,7 @@ export const handler = defineHandler({
     const emailPromises = uniqueUsers.map((recipient) =>
       sendEmail({
         to: recipient.email,
+        userId: recipient.id,
         template: "event-cancelled",
         data: {
           firstName: recipient.firstName,

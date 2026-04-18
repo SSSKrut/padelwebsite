@@ -78,6 +78,7 @@ describe("auth-resend-verification", () => {
     expect(createToken).toHaveBeenCalledWith("user-2", "EMAIL_VERIFICATION");
     expect(sendEmail).toHaveBeenCalledWith({
       to: "unverified@example.com",
+      userId: "user-2",
       template: "email-verification",
       data: {
         firstName: "Unverified",

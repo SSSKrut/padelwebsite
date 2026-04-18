@@ -116,6 +116,7 @@ describe("admin-users", () => {
     expect(res!.statusCode).toBe(200);
     expect(sendEmail).toHaveBeenCalledWith({
       to: "test@example.com",
+      userId: "target-1",
       template: "account-approved",
       data: {
         firstName: "Test",

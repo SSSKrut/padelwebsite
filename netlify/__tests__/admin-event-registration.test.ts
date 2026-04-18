@@ -143,6 +143,7 @@ describe("admin-event-registration handler", () => {
       location: "Padel Vienna Arena",
     } as never);
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "next-user",
       email: "next@example.com",
       firstName: "Next",
     } as never);

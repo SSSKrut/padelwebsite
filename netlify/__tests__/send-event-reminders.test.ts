@@ -26,8 +26,8 @@ function makeEvent(overrides: any = {}) {
     date: new Date(Date.now() + 24.5 * 60 * 60 * 1000),
     location: "Padel Vienna Arena",
     participants: [
-      { user: { email: "alice@example.com", firstName: "Alice" } },
-      { user: { email: "bob@example.com", firstName: "Bob" } },
+      { user: { id: "alice-id", email: "alice@example.com", firstName: "Alice" } },
+      { user: { id: "bob-id", email: "bob@example.com", firstName: "Bob" } },
     ],
     ...overrides,
   };
@@ -99,7 +99,7 @@ describe("sendEventReminders", () => {
 
   it("passes correct template data including venue and actionUrl", async () => {
     vi.mocked(prisma.event.findMany).mockResolvedValue([
-      makeEvent({ participants: [{ user: { email: "test@example.com", firstName: "Test" } }] }),
+      makeEvent({ participants: [{ user: { id: "test-id", email: "test@example.com", firstName: "Test" } }] }),
     ] as never);
 
     await sendEventReminders();

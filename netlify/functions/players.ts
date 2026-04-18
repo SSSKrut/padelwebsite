@@ -16,6 +16,22 @@ export const handler: Handler = async () => {
       },
     });
 
+    const latestSnapshot = await prisma.userWeeklyRating.findFirst({
+      orderBy: { weekStart: "desc" },
+      select: { weekStart: true },
+    });
+
+    const weeklySnapshots = latestSnapshot
+      ? await prisma.userWeeklyRating.findMany({
+          where: { weekStart: latestSnapshot.weekStart },
+          select: { userId: true, rating: true, rank: true },
+        })
+      : [];
+
+    const snapshotMap = new Map(
+      weeklySnapshots.map((snapshot) => [snapshot.userId, snapshot]),
+    );
+
     const players = users.map((u, index) => {
       // Group achievements by Title to get counts like "x3 Saturday Winner"
       const achMap = new Map<string, number>();
@@ -31,12 +47,15 @@ export const handler: Handler = async () => {
         return title;
       });
 
+      const snapshot = snapshotMap.get(u.id);
+
       return {
         rank: index + 1,
         name: publicName(u.firstName, u.lastName),
         achievements: formattedAchievements,
         ratingPoints: u.elo,
-        ratingDelta: 0,
+        ratingDelta: snapshot ? u.elo - snapshot.rating : 0,
+        rankDelta: snapshot ? snapshot.rank - (index + 1) : 0,
         role: u.role,
       };
     });

@@ -141,7 +141,7 @@ export const handler = defineHandler({
         }),
         prisma.user.findUnique({
           where: { id: result.promotedUserId },
-          select: { email: true, firstName: true },
+          select: { id: true, email: true, firstName: true },
         }),
       ]);
 
@@ -149,6 +149,7 @@ export const handler = defineHandler({
         await safeSendEmail(
           {
             to: promotedUser.email,
+            userId: promotedUser.id,
             template: "event-waitlist-promotion",
             data: {
               firstName: promotedUser.firstName,

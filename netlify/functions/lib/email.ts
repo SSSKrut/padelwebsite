@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { renderTemplate, type TemplateName, type TemplateData } from "./emailTemplates";
+import { shouldSendEmailForUser } from "./emailPreferences";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -10,6 +11,7 @@ interface SendEmailOptions<T extends TemplateName> {
   to: string | string[];
   template: T;
   data: TemplateData<T>;
+  userId?: string;
   replyTo?: string;
   /** Override the default subject from the template */
   subjectOverride?: string;
@@ -19,9 +21,16 @@ export async function sendEmail<T extends TemplateName>({
   to,
   template,
   data,
+  userId,
   replyTo,
   subjectOverride,
 }: SendEmailOptions<T>) {
+  const shouldSend = await shouldSendEmailForUser(userId, template);
+  if (!shouldSend) {
+    console.info(`[Email] Skipping ${template} for user ${userId ?? "unknown"} due to preferences`);
+    return;
+  }
+
   const { subject, html } = renderTemplate(template, data);
 
   const { error } = await resend.emails.send({

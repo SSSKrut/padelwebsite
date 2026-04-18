@@ -44,6 +44,7 @@ export const handler = defineHandler({
       const actionUrl = buildActionUrl("/verify-email", token);
       await sendEmail({
         to: user.email,
+        userId: user.id,
         template: "email-verification",
         data: { firstName: user.firstName, actionUrl },
       });

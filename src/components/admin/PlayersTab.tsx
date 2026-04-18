@@ -96,6 +96,9 @@ export function PlayersTab({ confirmAction }: PlayersTabProps) {
   return (
     <div className="rounded-2xl border bg-background/80 shadow-sm overflow-hidden p-4">
       <h3 className="text-xl font-semibold mb-4">All Players</h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        Weekly ranking snapshots run Mondays at 03:00 UTC. Use the admin trigger to rebuild if needed.
+      </p>
       {usersLoading ? (
         <p>Loading...</p>
       ) : (

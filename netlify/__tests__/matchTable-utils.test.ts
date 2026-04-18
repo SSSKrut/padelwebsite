@@ -101,6 +101,32 @@ describe("matchTable utils", () => {
     expect(p1.manualElo).toBe(1500);
   });
 
+  it("loads match table when EventCourtOverride table is missing", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue({
+      matchTableStatus: "OPEN",
+      matchTableMode: "AUTO_COURTS",
+      matchTableGeneratedAt: new Date(),
+      matchTableConfirmedAt: null,
+    } as any);
+
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValue([
+      { userId: "u1", courtNumber: 1 },
+    ] as any);
+
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValue([] as any);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValue([] as any);
+    vi.mocked(prisma.eventCourtOverride.findMany).mockRejectedValue({ code: "P2021" } as any);
+    vi.mocked(prisma.user.findMany).mockResolvedValue([
+      { id: "u1", firstName: "Test", lastName: "User", elo: 1000 },
+    ] as any);
+    vi.mocked(prisma.eventScore.findMany).mockResolvedValue([] as any);
+
+    const matchTable = await loadMatchTable("event-missing-override");
+
+    expect(matchTable).toBeDefined();
+    expect(matchTable!.courts[0].manualOverride).toBe(false);
+  });
+
   it("marks courts as manual when a manual override exists", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue({
       matchTableStatus: "OPEN",

@@ -153,10 +153,19 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
     select: { userId: true, previousElo: true, newElo: true, isWinner: true },
   });
 
-  const manualOverrides = await prisma.eventCourtOverride.findMany({
-    where: { eventId, isManual: true },
-    select: { courtNumber: true },
-  });
+  let manualOverrides: Array<{ courtNumber: number }> = [];
+  try {
+    manualOverrides = await prisma.eventCourtOverride.findMany({
+      where: { eventId, isManual: true },
+      select: { courtNumber: true },
+    });
+  } catch (error: any) {
+    if (error?.code === "P2021") {
+      console.warn("[matchTable] EventCourtOverride table missing; proceeding without manual overrides.");
+    } else {
+      throw error;
+    }
+  }
   const manualOverrideSet = new Set(manualOverrides.map((row) => row.courtNumber));
 
   const manualEloMap = new Map(manualEloRows.map((row) => [row.userId, row]));

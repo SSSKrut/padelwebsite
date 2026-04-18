@@ -116,7 +116,7 @@ export function RegistrationCTA({
               disabled={registerMutation.isPending || isLocked}
             >
               {registerMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              {shouldJoinWaitlist ? (userIsPremium ? "Join Premium Waitlist" : "Join Waitlist") : "Register Now"}
+              {shouldJoinWaitlist ? (userIsPremium ? "Join Waitlist" : "Join Waitlist") : "Register Now"}
             </Button>
             {shouldJoinWaitlist && (
               <p className="text-xs text-center text-muted-foreground">

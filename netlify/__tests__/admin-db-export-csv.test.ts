@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as XLSX from "xlsx";
 import type { HandlerContext, HandlerEvent, HandlerResponse } from "@netlify/functions";
 
 const mocks = vi.hoisted(() => ({
@@ -48,13 +49,19 @@ async function callHandler(overrides: Partial<HandlerEvent> = {}) {
   return res as HandlerResponse;
 }
 
+function parseXlsx(res: HandlerResponse) {
+  const buf = Buffer.from(res.body!, "base64");
+  const wb = XLSX.read(buf, { type: "buffer" });
+  return wb;
+}
+
 describe("admin-db-export-csv", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.verifyUser.mockResolvedValue({ id: "admin-1", role: "ADMIN" });
   });
 
-  it("returns event CSV with expected header and rows", async () => {
+  it("returns event XLSX with correct sheets and data", async () => {
     const players = [
       { id: "u1", name: "Ada Lovelace", elo: 1200 },
       { id: "u2", name: "Al Ice", elo: 900 },
@@ -162,26 +169,100 @@ describe("admin-db-export-csv", () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.headers?.["Content-Type"]).toBe("text/csv; charset=utf-8");
-    expect(res.headers?.["Content-Disposition"]).toBe(
-      "attachment; filename=spring_open_2026_abcd1234.csv",
+    expect(res.headers?.["Content-Type"]).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
+    expect(res.headers?.["Content-Disposition"]).toBe(
+      "attachment; filename=spring_open_2026_abcd1234.xlsx",
+    );
+    expect(res.isBase64Encoded).toBe(true);
 
-    const lines = (res.body ?? "").split("\n");
-    expect(lines).toContain("# Participants");
-    expect(lines).toContain("user id,usr name,user surname,mail,is a premium user,elo");
-    expect(lines).toContain("\"u1\",\"Ada\",\"Lovelace\",\"ada@example.com\",\"true\",\"1200\"");
-    expect(lines).toContain("# Court assignments");
-    expect(lines).toContain("court number,user id,player name,mail,elo,manual elo");
-    expect(lines).toContain("\"1\",\"u1\",\"Ada Lovelace\",\"ada@example.com\",\"1200\",\"\"");
-    expect(lines).toContain("# Match results");
-    expect(lines).toContain("court number,round,pair 1,pair 2,score 1,score 2,updated at,updated by");
-    expect(lines).toContain("\"1\",\"1\",\"Ada Lovelace / Al Ice\",\"Bob B. / Cara C.\",\"6\",\"4\",\"2026-04-06T10:00:00.000Z\",\"Ada Lovelace\"");
-    expect(lines).toContain("# Court standings");
-    expect(lines).toContain("court number,player,points,difference");
-    expect(lines).toContain("\"1\",\"Ada Lovelace\",\"1\",\"2\"");
-    expect(lines).toContain("# Event scores");
-    expect(lines).toContain("user id,player,previous elo,new elo,created at,updated at");
+    // Parse the XLSX and verify contents
+    const wb = parseXlsx(res);
+    expect(wb.SheetNames).toEqual([
+      "Participants",
+      "Court assignments",
+      "Match results",
+      "Court standings",
+      "Event scores",
+    ]);
+
+    // Participants sheet
+    const participants = XLSX.utils.sheet_to_json<any>(wb.Sheets["Participants"]);
+    expect(participants).toHaveLength(5);
+    expect(participants[0]).toMatchObject({
+      "User ID": "u1",
+      "First name": "Ada",
+      "Last name": "Lovelace",
+      Email: "ada@example.com",
+      Premium: true,
+      ELO: 1200,
+    });
+    // Verify special characters are preserved (quotes and commas)
+    expect(participants[1]["First name"]).toBe('Al "Ice"');
+    expect(participants[1]["Last name"]).toBe("O,Connor");
+
+    // Court assignments sheet
+    const courts = XLSX.utils.sheet_to_json<any>(wb.Sheets["Court assignments"]);
+    expect(courts).toHaveLength(5);
+    expect(courts[0]).toMatchObject({
+      Court: 1,
+      "User ID": "u1",
+      "Player name": "Ada Lovelace",
+      Email: "ada@example.com",
+      ELO: 1200,
+    });
+
+    // Match results sheet
+    const matches = XLSX.utils.sheet_to_json<any>(wb.Sheets["Match results"]);
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      Court: 1,
+      Round: 1,
+      "Pair 1": "Ada Lovelace / Al Ice",
+      "Pair 2": "Bob B. / Cara C.",
+      "Score 1": 6,
+      "Score 2": 4,
+    });
+
+    // Court standings sheet
+    const standings = XLSX.utils.sheet_to_json<any>(wb.Sheets["Court standings"]);
+    expect(standings.length).toBeGreaterThan(0);
+    const adaStanding = standings.find((s: any) => s.Player === "Ada Lovelace");
+    expect(adaStanding).toBeDefined();
+    expect(adaStanding.Points).toBe(1);
+    expect(adaStanding.Difference).toBe(2);
+
+    // Event scores sheet
+    const scores = XLSX.utils.sheet_to_json<any>(wb.Sheets["Event scores"]);
+    expect(scores).toHaveLength(1);
+    expect(scores[0]).toMatchObject({
+      "User ID": "u1",
+      Player: "Ada Lovelace",
+      "Previous ELO": 1180,
+      "New ELO": 1200,
+    });
+  });
+
+  it("returns event XLSX with empty sheets when no match table", async () => {
+    mocks.eventFindUnique.mockResolvedValue({
+      id: "aaaa-bbbb",
+      title: "Empty Event",
+      participants: [],
+    });
+    mocks.loadMatchTable.mockResolvedValue(null);
+    mocks.eventScoreFindMany.mockResolvedValue([]);
+
+    const res = await callHandler({
+      queryStringParameters: { eventId: "aaaa-bbbb" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const wb = parseXlsx(res);
+    expect(wb.SheetNames).toHaveLength(5);
+
+    const participants = XLSX.utils.sheet_to_json(wb.Sheets["Participants"]);
+    expect(participants).toHaveLength(0);
   });
 
   it("returns users CSV with expected header and rows", async () => {
@@ -214,8 +295,8 @@ describe("admin-db-export-csv", () => {
 
     const lines = (res.body ?? "").split("\n");
     expect(lines[0]).toBe("user id,usr name,user surname,mail,is a premium user,elo");
-    expect(lines[1]).toBe("\"u1\",\"Ada\",\"Lovelace\",\"ada@example.com\",\"true\",\"1200\"");
-    expect(lines[2]).toBe("\"u2\",\"Grace\",\"Hopper\",\"grace@example.com\",\"false\",\"1350\"");
+    expect(lines[1]).toBe('"u1","Ada","Lovelace","ada@example.com","true","1200"');
+    expect(lines[2]).toBe('"u2","Grace","Hopper","grace@example.com","false","1350"');
   });
 
   it("blocks non-admin users", async () => {
@@ -226,6 +307,19 @@ describe("admin-db-export-csv", () => {
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.body ?? "{}")).toEqual({
       error: "Forbidden. Admin access required.",
+    });
+  });
+
+  it("returns 404 when event not found", async () => {
+    mocks.eventFindUnique.mockResolvedValue(null);
+
+    const res = await callHandler({
+      queryStringParameters: { eventId: "nonexistent" },
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body ?? "{}")).toEqual({
+      error: "Event not found",
     });
   });
 });

@@ -1,6 +1,7 @@
 export const apiFetch = async (url: string, method = "GET", body?: any) => {
   let res = await fetch(url, {
     method,
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -9,11 +10,13 @@ export const apiFetch = async (url: string, method = "GET", body?: any) => {
     // Try to refresh token
     const refreshRes = await fetch("/.netlify/functions/auth-refresh", {
       method: "POST",
+      credentials: "include",
     });
     if (refreshRes.ok) {
       // Retry the original request
       res = await fetch(url, {
         method,
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: body ? JSON.stringify(body) : undefined,
       });

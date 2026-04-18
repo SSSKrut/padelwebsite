@@ -8,7 +8,7 @@ export async function exportEventCsv(eventId: string): Promise<void> {
   );
 
   if (!response.ok) {
-    let message = "Failed to export event users CSV";
+    let message = "Failed to export event data";
     try {
       const body = await response.json();
       if (typeof body?.error === "string") {
@@ -23,8 +23,8 @@ export async function exportEventCsv(eventId: string): Promise<void> {
   const blob = await response.blob();
   const fileName = parseFileNameFromContentDisposition(
     response.headers.get("Content-Disposition"),
-    "event_users.csv",
+    "event_export.xlsx",
   );
   triggerBlobDownload(blob, fileName);
-  toast.success("Event users export started");
+  toast.success("Event export started");
 }

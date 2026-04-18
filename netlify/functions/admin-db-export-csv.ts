@@ -1,4 +1,5 @@
 import type { Handler } from "@netlify/functions";
+import * as XLSX from "xlsx";
 import { prisma } from "./lib/prisma";
 import { defineHandler } from "./lib/apiHandler";
 import { loadMatchTable, type MatchTableResponse } from "./lib/matchTable";
@@ -13,10 +14,10 @@ type UserRow = {
   elo: number;
 };
 
-type CsvSection = {
-  title: string;
-  header: string;
-  rows: string[][];
+type SheetData = {
+  name: string;
+  header: string[];
+  rows: (string | number | boolean)[][];
 };
 
 function escapeCsv(value: string): string {
@@ -48,28 +49,19 @@ function buildCsv(rows: UserRow[]): string {
   return [header, ...lines].join("\n");
 }
 
-function buildSection(section: CsvSection): string[] {
-  const lines = [`# ${section.title}`, section.header];
-  section.rows.forEach((row) => {
-    lines.push(row.map((value) => escapeCsv(String(value))).join(","));
-  });
-  return lines;
+function buildXlsx(sheets: SheetData[]): Buffer {
+  const wb = XLSX.utils.book_new();
+  for (const sheet of sheets) {
+    const data = [sheet.header, ...sheet.rows];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+  }
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
 }
 
-function buildEventCsv(sections: CsvSection[]): string {
-  const lines: string[] = [];
-  sections.forEach((section, index) => {
-    if (index > 0) {
-      lines.push("");
-    }
-    lines.push(...buildSection(section));
-  });
-  return lines.join("\n");
-}
-
-function buildStandingsRows(matchTable: MatchTableResponse | null): string[][] {
+function buildStandingsRows(matchTable: MatchTableResponse | null): (string | number)[][] {
   if (!matchTable) return [];
-  const rows: string[][] = [];
+  const rows: (string | number)[][] = [];
 
   const matchesByCourt = new Map<number, MatchTableResponse["matches"]>();
   matchTable.matches.forEach((match) => {
@@ -83,7 +75,7 @@ function buildStandingsRows(matchTable: MatchTableResponse | null): string[][] {
     const matches = matchesByCourt.get(court.courtNumber) ?? [];
     const standings = calculateCourtStandings(court.players, matches);
     standings.forEach((entry) => {
-      rows.push([String(court.courtNumber), entry.name, String(entry.points), String(entry.diff)]);
+      rows.push([court.courtNumber, entry.name, entry.points, entry.diff]);
     });
   });
 
@@ -149,105 +141,100 @@ export const handler: Handler = defineHandler({
         ]),
       );
 
-      const rows: UserRow[] = eventWithUsers.participants.map((registration) => ({
-        userId: registration.user.id,
-        userName: registration.user.firstName,
-        userSurname: registration.user.lastName,
-        mail: registration.user.email,
-        isPremiumUser: registration.user.premiumSubscriptions.length > 0,
-        elo: registration.user.elo,
-      }));
+      const participantRows: (string | number | boolean)[][] = eventWithUsers.participants.map((registration) => [
+        registration.user.id,
+        registration.user.firstName,
+        registration.user.lastName,
+        registration.user.email,
+        registration.user.premiumSubscriptions.length > 0,
+        registration.user.elo,
+      ]);
 
-      const courtRows: string[][] = [];
+      const courtRows: (string | number)[][] = [];
       if (matchTable?.courts?.length) {
         matchTable.courts.forEach((court) => {
           court.players.forEach((player) => {
             const info = participantMap.get(player.id);
             courtRows.push([
-              String(court.courtNumber),
+              court.courtNumber,
               player.id,
               info?.name ?? player.name,
               info?.mail ?? "",
-              String(player.elo),
-              player.manualElo !== null && player.manualElo !== undefined ? String(player.manualElo) : "",
+              player.elo,
+              player.manualElo !== null && player.manualElo !== undefined ? player.manualElo : "",
             ]);
           });
         });
       }
 
-      const matchRows: string[][] = (matchTable?.matches ?? []).map((match) => [
-        String(match.courtNumber),
-        String(match.round),
+      const matchRows: (string | number)[][] = (matchTable?.matches ?? []).map((match) => [
+        match.courtNumber,
+        match.round,
         match.pair1.map((player) => player.name).join(" / "),
         match.pair2.map((player) => player.name).join(" / "),
-        match.score1 !== null ? String(match.score1) : "",
-        match.score2 !== null ? String(match.score2) : "",
+        match.score1 !== null ? match.score1 : "",
+        match.score2 !== null ? match.score2 : "",
         match.updatedAt ?? "",
         match.updatedBy?.name ?? "",
       ]);
 
       const standingsRows = buildStandingsRows(matchTable);
 
-      const scoreRows: string[][] = eventScores.map((score) => {
+      const scoreRows: (string | number)[][] = eventScores.map((score) => {
         const info = participantMap.get(score.userId);
         const createdAt = score.createdAt instanceof Date ? score.createdAt.toISOString() : String(score.createdAt ?? "");
         const updatedAt = score.updatedAt instanceof Date ? score.updatedAt.toISOString() : String(score.updatedAt ?? "");
         return [
           score.userId,
           info?.name ?? "",
-          String(score.previousElo),
-          String(score.newElo),
+          score.previousElo,
+          score.newElo,
           createdAt,
           updatedAt,
         ];
       });
 
-      const csv = buildEventCsv([
+      const xlsxBuffer = buildXlsx([
         {
-          title: "Participants",
-          header: "user id,usr name,user surname,mail,is a premium user,elo",
-          rows: rows.map((row) => [
-            row.userId,
-            row.userName,
-            row.userSurname,
-            row.mail,
-            row.isPremiumUser ? "true" : "false",
-            String(row.elo),
-          ]),
+          name: "Participants",
+          header: ["User ID", "First name", "Last name", "Email", "Premium", "ELO"],
+          rows: participantRows,
         },
         {
-          title: "Court assignments",
-          header: "court number,user id,player name,mail,elo,manual elo",
+          name: "Court assignments",
+          header: ["Court", "User ID", "Player name", "Email", "ELO", "Manual ELO"],
           rows: courtRows,
         },
         {
-          title: "Match results",
-          header: "court number,round,pair 1,pair 2,score 1,score 2,updated at,updated by",
+          name: "Match results",
+          header: ["Court", "Round", "Pair 1", "Pair 2", "Score 1", "Score 2", "Updated at", "Updated by"],
           rows: matchRows,
         },
         {
-          title: "Court standings",
-          header: "court number,player,points,difference",
+          name: "Court standings",
+          header: ["Court", "Player", "Points", "Difference"],
           rows: standingsRows,
         },
         {
-          title: "Event scores",
-          header: "user id,player,previous elo,new elo,created at,updated at",
+          name: "Event scores",
+          header: ["User ID", "Player", "Previous ELO", "New ELO", "Created at", "Updated at"],
           rows: scoreRows,
         },
       ]);
+
       const eventName = sanitizeFilePart(eventWithUsers.title);
       const eventUuidPart = eventWithUsers.id.split("-")[0] ?? eventWithUsers.id.slice(0, 8);
-      const fileName = `${eventName}_${eventUuidPart}.csv`;
+      const fileName = `${eventName}_${eventUuidPart}.xlsx`;
 
       return {
         statusCode: 200,
         headers: {
-          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "Content-Disposition": `attachment; filename=${fileName}`,
           "Cache-Control": "no-store",
         },
-        body: csv,
+        body: xlsxBuffer.toString("base64"),
+        isBase64Encoded: true,
       };
     }
 

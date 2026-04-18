@@ -21,10 +21,11 @@ vi.mock("../functions/lib/email", () => ({
 }));
 
 describe("auth-resend-verification", () => {
+  let eventCounter = 0;
   const createEvent = (body: any) => ({
     httpMethod: "POST",
     body: JSON.stringify(body),
-    headers: {},
+    headers: { "x-forwarded-for": `10.0.0.${++eventCounter}` },
   });
 
   beforeEach(() => {

@@ -103,19 +103,19 @@ export function defineHandler<T extends z.ZodTypeAny = z.ZodTypeAny>(
     } catch (error: any) {
       console.error(`[API Error] ${event.httpMethod} ${event.path}:`, error);
 
-      let message = "Internal Server Error";
-      const code = error?.code;
-      if (code === "P1001" || code === "P1002") {
-        message = "Database connection failed. Check DATABASE_URL.";
-      } else if (code === "P2021") {
-        message = "Database table not found. Run prisma migrate deploy.";
-      } else if (error?.statusCode) {
-        message = error.message || message;
+      // Errors with an explicit statusCode are application-level (e.g. TokenError) — safe to surface
+      if (error?.statusCode) {
+        return {
+          statusCode: error.statusCode,
+          body: JSON.stringify({ error: error.message || "Request failed" }),
+        };
       }
 
+      // Everything else (Prisma codes, unexpected throws) — generic message only.
+      // Details are already logged to console.error above.
       return {
-        statusCode: error?.statusCode || 500,
-        body: JSON.stringify({ error: message }),
+        statusCode: 500,
+        body: JSON.stringify({ error: "Internal Server Error" }),
       };
     }
   };

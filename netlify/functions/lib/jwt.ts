@@ -1,6 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const secret = () => new TextEncoder().encode(process.env.JWT_SECRET!);
+const secret = () => {
+  const key = process.env.JWT_SECRET;
+  if (!key) {
+    throw new Error("JWT_SECRET environment variable is not set");
+  }
+  return new TextEncoder().encode(key);
+};
 
 export async function signAccessToken(payload: Record<string, unknown>): Promise<string> {
   return new SignJWT(payload)

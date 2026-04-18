@@ -117,3 +117,88 @@ describe('defineHandler Role Interactions', () => {
     );
   });
 });
+
+describe('apiHandler error sanitization', () => {
+  it('does not expose Prisma P1001 error codes to client', async () => {
+    const handler = defineHandler({
+      handler: async () => {
+        const err: any = new Error('Connection refused');
+        err.code = 'P1001';
+        throw err;
+      },
+    });
+
+    const result: any = await handler(createEvent(), {} as any);
+
+    expect(result.statusCode).toBe(500);
+    const body = JSON.parse(result.body);
+    expect(body.error).toBe('Internal Server Error');
+    expect(body.error).not.toContain('DATABASE_URL');
+    expect(body.error).not.toContain('P1001');
+  });
+
+  it('does not expose P2021 table-not-found details', async () => {
+    const handler = defineHandler({
+      handler: async () => {
+        const err: any = new Error('Table not found');
+        err.code = 'P2021';
+        throw err;
+      },
+    });
+
+    const result: any = await handler(createEvent(), {} as any);
+
+    expect(result.statusCode).toBe(500);
+    const body = JSON.parse(result.body);
+    expect(body.error).toBe('Internal Server Error');
+    expect(body.error).not.toContain('migrate');
+    expect(body.error).not.toContain('P2021');
+  });
+
+  it('does not expose P1002 connection error details', async () => {
+    const handler = defineHandler({
+      handler: async () => {
+        const err: any = new Error('Connection timed out');
+        err.code = 'P1002';
+        throw err;
+      },
+    });
+
+    const result: any = await handler(createEvent(), {} as any);
+
+    expect(result.statusCode).toBe(500);
+    const body = JSON.parse(result.body);
+    expect(body.error).toBe('Internal Server Error');
+  });
+
+  it('surfaces application-level errors with statusCode', async () => {
+    const handler = defineHandler({
+      handler: async () => {
+        const err: any = new Error('This link has expired.');
+        err.statusCode = 400;
+        throw err;
+      },
+    });
+
+    const result: any = await handler(createEvent(), {} as any);
+
+    expect(result.statusCode).toBe(400);
+    const body = JSON.parse(result.body);
+    expect(body.error).toBe('This link has expired.');
+  });
+
+  it('returns generic 500 for unknown errors', async () => {
+    const handler = defineHandler({
+      handler: async () => {
+        throw new Error('Something unexpected');
+      },
+    });
+
+    const result: any = await handler(createEvent(), {} as any);
+
+    expect(result.statusCode).toBe(500);
+    const body = JSON.parse(result.body);
+    expect(body.error).toBe('Internal Server Error');
+    expect(body.error).not.toContain('unexpected');
+  });
+});

@@ -50,7 +50,7 @@ describe("createToken", () => {
     });
   });
 
-  it("marks tokens as used when consuming", async () => {
+  it("marks tokens as used when consuming (atomic CAS via updateMany)", async () => {
     mocks.findUnique.mockResolvedValue({
       id: "tok-1",
       token: "mock-token",
@@ -59,12 +59,51 @@ describe("createToken", () => {
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       user: { id: "user-1" },
     } as any);
+    mocks.updateMany.mockResolvedValue({ count: 1 });
 
     await consumeToken("mock-token", "EMAIL_VERIFICATION" as any);
 
-    expect(mocks.update).toHaveBeenCalledWith({
-      where: { id: "tok-1" },
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: "tok-1", usedAt: null },
       data: { usedAt: expect.any(Date) },
     });
+  });
+
+  it("throws when CAS fails (race condition — token consumed by another request)", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "tok-2",
+      token: "race-token",
+      type: "PASSWORD_RESET",
+      usedAt: null,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      user: { id: "user-1" },
+    } as any);
+    // Another request consumed the token between findUnique and updateMany
+    mocks.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(consumeToken("race-token", "PASSWORD_RESET" as any)).rejects.toThrow(
+      "This link has already been used."
+    );
+  });
+
+  it("throws on non-existent token", async () => {
+    mocks.findUnique.mockResolvedValue(null);
+    await expect(consumeToken("bad-token", "PASSWORD_RESET" as any)).rejects.toThrow(
+      "Invalid or expired link."
+    );
+  });
+
+  it("throws on expired token", async () => {
+    mocks.findUnique.mockResolvedValue({
+      id: "tok-3",
+      token: "expired",
+      type: "PASSWORD_RESET",
+      usedAt: null,
+      expiresAt: new Date(Date.now() - 1000),
+      user: { id: "user-1" },
+    } as any);
+    await expect(consumeToken("expired", "PASSWORD_RESET" as any)).rejects.toThrow(
+      "This link has expired."
+    );
   });
 });

@@ -3,6 +3,9 @@ import { prisma } from "./lib/prisma";
 import { createToken, buildActionUrl } from "./lib/tokens";
 import { sendEmail } from "./lib/email";
 import { defineHandler } from "./lib/apiHandler";
+import { checkRateLimit, rateLimitedResponse } from "./lib/rateLimit";
+
+const RESEND_RATE_LIMIT = { maxAttempts: 3, windowMs: 15 * 60 * 1000 }; // 3 attempts per 15 min
 
 const RequestSchema = z.object({
   email: z.string().email(),
@@ -13,7 +16,10 @@ const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
 export const handler = defineHandler({
   method: "POST",
   bodySchema: RequestSchema,
-  handler: async ({ body }) => {
+  handler: async ({ body, event }) => {
+    const ip = event.headers["x-forwarded-for"]?.split(",")[0]?.trim() || event.headers["client-ip"] || "unknown";
+    const rl = checkRateLimit(`resend:${ip}`, RESEND_RATE_LIMIT);
+    if (!rl.allowed) return rateLimitedResponse(rl.retryAfterMs);
     const successResponse = {
       message: "If your email is registered and unverified, a new link has been sent.",
     };

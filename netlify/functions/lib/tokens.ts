@@ -37,11 +37,15 @@ export async function consumeToken(token: string, expectedType: TokenType) {
   if (record.usedAt) throw new TokenError("This link has already been used.");
   if (record.expiresAt < new Date()) throw new TokenError("This link has expired.");
 
-  // Mark as used
-  await prisma.verificationToken.update({
-    where: { id: record.id },
+  // Atomic CAS: only mark as used if still unused (prevents race condition)
+  const updated = await prisma.verificationToken.updateMany({
+    where: { id: record.id, usedAt: null },
     data: { usedAt: new Date() },
   });
+
+  if (updated.count === 0) {
+    throw new TokenError("This link has already been used.");
+  }
 
   return record;
 }

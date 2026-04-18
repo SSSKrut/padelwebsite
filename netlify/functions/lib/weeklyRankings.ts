@@ -22,10 +22,15 @@ export async function rebuildWeeklyRankings(referenceDate: Date = new Date()) {
     select: { id: true, elo: true },
   });
 
+  const weeklyRatingModel = (prisma as any).userWeeklyRating;
+  if (!weeklyRatingModel?.upsert) {
+    throw new Error("Prisma client missing UserWeeklyRating model. Run prisma generate.");
+  }
+
   let updated = 0;
   for (let index = 0; index < users.length; index += 1) {
     const user = users[index];
-    await prisma.userWeeklyRating.upsert({
+    await weeklyRatingModel.upsert({
       where: { userId_weekStart: { userId: user.id, weekStart } },
       update: { rating: user.elo, rank: index + 1 },
       create: { userId: user.id, weekStart, rating: user.elo, rank: index + 1 },

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { Edit, Trophy, Crown, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit, Trophy, Crown, ChevronDown, ChevronUp, Loader2, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -67,6 +67,7 @@ export function PlayersTab({ confirmAction }: PlayersTabProps) {
   const [playerForm, setPlayerForm] = useState<any>(null);
   const [grantAchForm, setGrantAchForm] = useState<any>(null);
   const [playerSort, setPlayerSort] = useState<{ field: string; asc: boolean }>({ field: "elo", asc: false });
+  const [isRebuildingWeeklyRankings, setIsRebuildingWeeklyRankings] = useState(false);
 
   const sortedPlayers = useMemo(() => {
     if (!users) return [];
@@ -93,12 +94,49 @@ export function PlayersTab({ confirmAction }: PlayersTabProps) {
     return playerSort.asc ? <ChevronUp className="w-4 h-4 inline" /> : <ChevronDown className="w-4 h-4 inline" />;
   };
 
+  const handleRebuildWeeklyRankings = async () => {
+    setIsRebuildingWeeklyRankings(true);
+    try {
+      const result = await apiFetch("/.netlify/functions/trigger-weekly-rankings", "POST");
+      const updatedCount = typeof result?.updated === "number" ? ` (${result.updated} users)` : "";
+      toast.success(`Weekly rankings rebuilt${updatedCount}`);
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to rebuild weekly rankings");
+    } finally {
+      setIsRebuildingWeeklyRankings(false);
+    }
+  };
+
   return (
     <div className="rounded-2xl border bg-background/80 shadow-sm overflow-hidden p-4">
-      <h3 className="text-xl font-semibold mb-4">All Players</h3>
-      <p className="text-xs text-muted-foreground mb-4">
-        Weekly ranking snapshots run Mondays at 03:00 UTC. Use the admin trigger to rebuild if needed.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <div>
+          <h3 className="text-xl font-semibold">All Players</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Weekly ranking snapshots run Mondays at 03:00 UTC. Use the admin trigger to rebuild if needed.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            confirmAction(
+              "Rebuild weekly rankings",
+              "This will snapshot current ratings for the week. Continue?",
+              handleRebuildWeeklyRankings,
+            )
+          }
+          disabled={isRebuildingWeeklyRankings}
+        >
+          {isRebuildingWeeklyRankings ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
+          Rebuild weekly rankings
+        </Button>
+      </div>
       {usersLoading ? (
         <p>Loading...</p>
       ) : (

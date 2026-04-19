@@ -168,11 +168,13 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
   }
   const manualOverrideSet = new Set(manualOverrides.map((row) => row.courtNumber));
 
+  const visibleMatches = matches.filter((match) => !manualOverrideSet.has(match.courtNumber));
+
   const manualEloMap = new Map(manualEloRows.map((row) => [row.userId, row]));
 
   const userIds = new Set<string>();
   assignments.forEach((assignment) => userIds.add(assignment.userId));
-  matches.forEach((match) => {
+  visibleMatches.forEach((match) => {
     userIds.add(match.pair1Player1Id);
     userIds.add(match.pair1Player2Id);
     userIds.add(match.pair2Player1Id);
@@ -237,7 +239,7 @@ export async function loadMatchTable(eventId: string): Promise<MatchTableRespons
     court.isManual = court.manualOverride || court.players.length < playersPerCourt;
   });
 
-  const formattedMatches: MatchTableMatch[] = matches.map((match) => {
+  const formattedMatches: MatchTableMatch[] = visibleMatches.map((match) => {
     const pair1 = [
       userMap.get(match.pair1Player1Id),
       userMap.get(match.pair1Player2Id),

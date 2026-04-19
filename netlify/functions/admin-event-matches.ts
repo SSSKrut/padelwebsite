@@ -1,7 +1,6 @@
 import { defineHandler } from "./lib/apiHandler";
 import { prisma } from "./lib/prisma";
 import { z } from "zod";
-import { normalizeMatchFormatConfig } from "./lib/matchFormat";
 
 const matchStatusSchema = z.enum([
   "SCHEDULED",
@@ -81,12 +80,7 @@ export const handler = defineHandler({
 
       const eventRecord = await prisma.event.findUnique({
         where: { id: payload.eventId },
-        select: {
-          matchTableStatus: true,
-          matchTableMode: true,
-          formatConfig: true,
-          format: { select: { config: true } },
-        },
+        select: { matchTableStatus: true },
       });
 
       if (!eventRecord) {
@@ -97,16 +91,7 @@ export const handler = defineHandler({
         return { statusCode: 400, body: JSON.stringify({ error: "Match table is not open" }) };
       }
 
-      const formatConfig = normalizeMatchFormatConfig(
-        eventRecord.formatConfig ?? eventRecord.format?.config,
-      );
-
-      if (formatConfig.pairingStrategy !== "CUSTOM" && eventRecord.matchTableMode !== "MANUAL_ELO") {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: "Custom matches are disabled for this event format" }),
-        };
-      }
+      // Custom matches are allowed for any open match table; validation happens per match inputs.
 
       const playerIds = collectPlayerIds(payload);
       const uniquePlayers = new Set(playerIds);
@@ -157,12 +142,7 @@ export const handler = defineHandler({
 
       const eventRecord = await prisma.event.findUnique({
         where: { id: payload.eventId },
-        select: {
-          matchTableStatus: true,
-          matchTableMode: true,
-          formatConfig: true,
-          format: { select: { config: true } },
-        },
+        select: { matchTableStatus: true },
       });
 
       if (!eventRecord) {
@@ -173,16 +153,7 @@ export const handler = defineHandler({
         return { statusCode: 400, body: JSON.stringify({ error: "Match table is not open" }) };
       }
 
-      const formatConfig = normalizeMatchFormatConfig(
-        eventRecord.formatConfig ?? eventRecord.format?.config,
-      );
-
-      if (formatConfig.pairingStrategy !== "CUSTOM" && eventRecord.matchTableMode !== "MANUAL_ELO") {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: "Custom matches are disabled for this event format" }),
-        };
-      }
+      // Custom matches are allowed for any open match table; validation happens per match inputs.
 
       const playerIds = collectPlayerIds(payload);
       if (playerIds.length) {

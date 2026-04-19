@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { EventParticipant, MatchTableMatch } from "@/types/events";
 
 const STATUS_OPTIONS = [
@@ -97,15 +98,19 @@ export function CustomMatchesAdminPanel({
   participants,
   matches,
   status,
+  courtNumbers,
 }: {
   eventId: string;
   participants: EventParticipant[];
   matches: MatchTableMatch[];
   status: "DRAFT" | "OPEN" | "CONFIRMED";
+  courtNumbers: number[];
 }) {
   const queryClient = useQueryClient();
   const [drafts, setDrafts] = useState<Record<string, MatchDraft>>({});
   const [newMatch, setNewMatch] = useState<MatchDraft>(() => emptyDraft(participants));
+  const [scoreDrafts, setScoreDrafts] = useState<Record<string, { score1: string; score2: string }>>({});
+  const [savingScoreId, setSavingScoreId] = useState<string | null>(null);
 
   const canEdit = status === "OPEN";
 
@@ -115,6 +120,17 @@ export function CustomMatchesAdminPanel({
       nextDrafts[match.id] = buildDraftFromMatch(match);
     });
     setDrafts(nextDrafts);
+  }, [matches]);
+
+  useEffect(() => {
+    const nextScores: Record<string, { score1: string; score2: string }> = {};
+    matches.forEach((match) => {
+      nextScores[match.id] = {
+        score1: match.score1 !== null ? String(match.score1) : "",
+        score2: match.score2 !== null ? String(match.score2) : "",
+      };
+    });
+    setScoreDrafts(nextScores);
   }, [matches]);
 
   useEffect(() => {
@@ -128,6 +144,22 @@ export function CustomMatchesAdminPanel({
         .sort((a, b) => a.label.localeCompare(b.label)),
     [participants],
   );
+
+  const orderedCourts = useMemo(() => {
+    const source = courtNumbers.length ? courtNumbers : matches.map((match) => match.courtNumber);
+    const unique = Array.from(new Set(source)).sort((a, b) => a - b);
+    return unique.length ? unique : [1];
+  }, [courtNumbers, matches]);
+
+  const matchesByCourt = useMemo(() => {
+    const map = new Map<number, MatchTableMatch[]>();
+    matches.forEach((match) => {
+      const list = map.get(match.courtNumber) ?? [];
+      list.push(match);
+      map.set(match.courtNumber, list);
+    });
+    return map;
+  }, [matches]);
 
   const selectedPlayers = useMemo(() => new Set(PLAYER_FIELDS.map((field) => newMatch[field]).filter(Boolean)), [
     newMatch,
@@ -202,6 +234,24 @@ export function CustomMatchesAdminPanel({
     },
   });
 
+  const saveScore = useMutation({
+    mutationFn: (payload: { eventId: string; matchId: string; score1?: number; score2?: number; status?: MatchStatus }) =>
+      apiFetch("/.netlify/functions/event-match-table", "PATCH", payload),
+    onMutate: (payload) => {
+      setSavingScoreId(payload.matchId);
+    },
+    onSuccess: () => {
+      toast.success("Score saved");
+      queryClient.invalidateQueries({ queryKey: ["matchTable", eventId] });
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save score");
+    },
+    onSettled: () => {
+      setSavingScoreId(null);
+    },
+  });
+
   const updateDraft = (matchId: string, patch: Partial<MatchDraft>) => {
     setDrafts((prev) => ({
       ...prev,
@@ -232,6 +282,34 @@ export function CustomMatchesAdminPanel({
     }
 
     updateMatch.mutate({ eventId, matchId, ...draft });
+  };
+
+  const handleSaveScore = (match: MatchTableMatch) => {
+    const draft = scoreDrafts[match.id];
+    const rawScore1 = draft?.score1 ?? "";
+    const rawScore2 = draft?.score2 ?? "";
+    const hasScores = rawScore1 !== "" || rawScore2 !== "";
+    const score1 = Number.parseInt(rawScore1, 10);
+    const score2 = Number.parseInt(rawScore2, 10);
+
+    if (hasScores && (Number.isNaN(score1) || Number.isNaN(score2))) {
+      toast.error("Enter valid numeric scores for both teams.");
+      return;
+    }
+
+    const status = drafts[match.id]?.status ?? (match.status ?? "SCHEDULED");
+
+    if (status === "COMPLETED" && !hasScores) {
+      toast.error("Scores are required to mark match as completed.");
+      return;
+    }
+
+    saveScore.mutate({
+      eventId,
+      matchId: match.id,
+      status,
+      ...(hasScores && { score1, score2 }),
+    });
   };
 
   return (
@@ -350,146 +428,209 @@ export function CustomMatchesAdminPanel({
         </div>
       </div>
 
-      <div className="rounded-xl border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Court</TableHead>
-              <TableHead>Round</TableHead>
-              <TableHead>Side A</TableHead>
-              <TableHead>Side B</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {matches.map((match) => {
-              const draft = drafts[match.id] ?? buildDraftFromMatch(match);
-              return (
-                <TableRow key={match.id}>
-                  <TableCell className="w-24">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={draft.courtNumber}
-                      onChange={(e) =>
-                        updateDraft(match.id, { courtNumber: Number.parseInt(e.target.value, 10) || 1 })
-                      }
-                      disabled={!canEdit}
-                    />
-                  </TableCell>
-                  <TableCell className="w-24">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={draft.round}
-                      onChange={(e) =>
-                        updateDraft(match.id, { round: Number.parseInt(e.target.value, 10) || 1 })
-                      }
-                      disabled={!canEdit}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="grid gap-2">
-                      {(["pair1Player1Id", "pair1Player2Id"] as PlayerField[]).map((field) => (
-                        <Select
-                          key={field}
-                          value={draft[field] || "none"}
-                          onValueChange={(value) =>
-                            updateDraft(match.id, { [field]: value === "none" ? "" : value })
-                          }
-                          disabled={!canEdit}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select player" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Select player</SelectItem>
-                            {participantOptions.map((option) => (
-                              <SelectItem key={option.id} value={option.id}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="grid gap-2">
-                      {(["pair2Player1Id", "pair2Player2Id"] as PlayerField[]).map((field) => (
-                        <Select
-                          key={field}
-                          value={draft[field] || "none"}
-                          onValueChange={(value) =>
-                            updateDraft(match.id, { [field]: value === "none" ? "" : value })
-                          }
-                          disabled={!canEdit}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select player" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Select player</SelectItem>
-                            {participantOptions.map((option) => (
-                              <SelectItem key={option.id} value={option.id}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="min-w-[160px]">
-                    <Select
-                      value={draft.status}
-                      onValueChange={(value) => updateDraft(match.id, { status: value as MatchStatus })}
-                      disabled={!canEdit}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleUpdate(match.id)}
-                      disabled={!canEdit || updateMatch.isPending}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => deleteMatch.mutate({ eventId, matchId: match.id })}
-                      disabled={!canEdit || deleteMatch.isPending}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {!matches.length && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-4">
-                  No custom matches yet.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <Tabs defaultValue={`court-${orderedCourts[0]}`} className="space-y-4">
+        <TabsList className="flex flex-wrap">
+          {orderedCourts.map((courtNumber) => (
+            <TabsTrigger key={courtNumber} value={`court-${courtNumber}`}>
+              Court {courtNumber}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {orderedCourts.map((courtNumber) => {
+          const courtMatches = matchesByCourt.get(courtNumber) ?? [];
+          return (
+            <TabsContent key={courtNumber} value={`court-${courtNumber}`}>
+              <div className="rounded-xl border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Court</TableHead>
+                      <TableHead>Round</TableHead>
+                      <TableHead>Side A</TableHead>
+                      <TableHead>Side B</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Score</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {courtMatches.map((match) => {
+                      const draft = drafts[match.id] ?? buildDraftFromMatch(match);
+                      return (
+                        <TableRow key={match.id}>
+                          <TableCell className="w-24">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={draft.courtNumber}
+                              onChange={(e) =>
+                                updateDraft(match.id, { courtNumber: Number.parseInt(e.target.value, 10) || 1 })
+                              }
+                              disabled={!canEdit}
+                            />
+                          </TableCell>
+                          <TableCell className="w-24">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={draft.round}
+                              onChange={(e) =>
+                                updateDraft(match.id, { round: Number.parseInt(e.target.value, 10) || 1 })
+                              }
+                              disabled={!canEdit}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="grid gap-2">
+                              {(["pair1Player1Id", "pair1Player2Id"] as PlayerField[]).map((field) => (
+                                <Select
+                                  key={field}
+                                  value={draft[field] || "none"}
+                                  onValueChange={(value) =>
+                                    updateDraft(match.id, { [field]: value === "none" ? "" : value })
+                                  }
+                                  disabled={!canEdit}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select player" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Select player</SelectItem>
+                                    {participantOptions.map((option) => (
+                                      <SelectItem key={option.id} value={option.id}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="grid gap-2">
+                              {(["pair2Player1Id", "pair2Player2Id"] as PlayerField[]).map((field) => (
+                                <Select
+                                  key={field}
+                                  value={draft[field] || "none"}
+                                  onValueChange={(value) =>
+                                    updateDraft(match.id, { [field]: value === "none" ? "" : value })
+                                  }
+                                  disabled={!canEdit}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select player" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Select player</SelectItem>
+                                    {participantOptions.map((option) => (
+                                      <SelectItem key={option.id} value={option.id}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="min-w-[160px]">
+                            <Select
+                              value={draft.status}
+                              onValueChange={(value) => updateDraft(match.id, { status: value as MatchStatus })}
+                              disabled={!canEdit}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {STATUS_OPTIONS.map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Input
+                                type="number"
+                                min={0}
+                                className="w-16 text-right"
+                                disabled={!canEdit}
+                                value={scoreDrafts[match.id]?.score1 ?? ""}
+                                onChange={(e) =>
+                                  setScoreDrafts((prev) => ({
+                                    ...prev,
+                                    [match.id]: {
+                                      score1: e.target.value,
+                                      score2: prev[match.id]?.score2 ?? "",
+                                    },
+                                  }))
+                                }
+                              />
+                              <span className="text-muted-foreground">:</span>
+                              <Input
+                                type="number"
+                                min={0}
+                                className="w-16 text-right"
+                                disabled={!canEdit}
+                                value={scoreDrafts[match.id]?.score2 ?? ""}
+                                onChange={(e) =>
+                                  setScoreDrafts((prev) => ({
+                                    ...prev,
+                                    [match.id]: {
+                                      score1: prev[match.id]?.score1 ?? "",
+                                      score2: e.target.value,
+                                    },
+                                  }))
+                                }
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdate(match.id)}
+                              disabled={!canEdit || updateMatch.isPending}
+                            >
+                              Save Match
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSaveScore(match)}
+                              disabled={!canEdit || saveScore.isPending}
+                            >
+                              {saveScore.isPending && savingScoreId === match.id ? "Saving..." : "Save Score"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteMatch.mutate({ eventId, matchId: match.id })}
+                              disabled={!canEdit || deleteMatch.isPending}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {!courtMatches.length && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-4">
+                          No matches for this court.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          );
+        })}
+      </Tabs>
     </div>
   );
 }

@@ -322,6 +322,7 @@ export const handler = defineHandler({
       where: { id: eventId },
       select: {
         matchTableStatus: true,
+        matchTableMode: true,
         formatConfig: true,
         format: { select: { config: true } },
       },
@@ -377,23 +378,46 @@ export const handler = defineHandler({
       courtsMap.set(assignment.courtNumber, group);
     });
 
-    const fullCourts = new Set<number>();
-    const manualPlayerIds = new Set<string>();
-
-    courtsMap.forEach((players, courtNumber) => {
-      if (manualOverrideSet.has(courtNumber)) {
-        players.forEach((id) => manualPlayerIds.add(id));
-        return;
-      }
-
-      if (players.length === formatConfig.playersPerCourt) {
-        fullCourts.add(courtNumber);
-      } else {
-        players.forEach((id) => manualPlayerIds.add(id));
-      }
+    const matchesByCourt = new Map<number, MatchRow[]>();
+    matches.forEach((match) => {
+      const list = matchesByCourt.get(match.courtNumber) ?? [];
+      list.push(match);
+      matchesByCourt.set(match.courtNumber, list);
     });
 
-    const relevantMatches = matches.filter((match) => fullCourts.has(match.courtNumber));
+    const fullCourts = new Set<number>();
+    const manualRequiredIds = new Set<string>();
+    const scoreBasedShortCourts = new Set<number>();
+    const isManualMode = eventRecord.matchTableMode === "MANUAL_ELO";
+
+    let relevantMatches = matches.filter((match) => !manualOverrideSet.has(match.courtNumber));
+
+    if (!isManualMode) {
+      courtsMap.forEach((players, courtNumber) => {
+        if (manualOverrideSet.has(courtNumber)) {
+          players.forEach((id) => manualRequiredIds.add(id));
+          return;
+        }
+
+        if (players.length === formatConfig.playersPerCourt) {
+          fullCourts.add(courtNumber);
+        } else {
+          const courtMatches = matchesByCourt.get(courtNumber) ?? [];
+          const hasCompletedScoredMatch = courtMatches.some(
+            (match) => match.status === "COMPLETED" && match.score1 !== null && match.score2 !== null,
+          );
+          if (hasCompletedScoredMatch) {
+            scoreBasedShortCourts.add(courtNumber);
+          } else {
+            players.forEach((id) => manualRequiredIds.add(id));
+          }
+        }
+      });
+
+      relevantMatches = matches.filter(
+        (match) => fullCourts.has(match.courtNumber) || scoreBasedShortCourts.has(match.courtNumber),
+      );
+    }
     const completedMatches = relevantMatches.filter((match) => match.status === "COMPLETED");
 
     const missingScore = completedMatches.find((match) => match.score1 === null || match.score2 === null);
@@ -407,12 +431,12 @@ export const handler = defineHandler({
     });
 
     const manualEloMap = new Map(manualEloRows.map((row) => [row.userId, row.newElo]));
-    const missingManual = Array.from(manualPlayerIds).filter((id) => !manualEloMap.has(id));
+    const missingManual = Array.from(manualRequiredIds).filter((id) => !manualEloMap.has(id));
 
-    if (missingManual.length > 0) {
+    if (!isManualMode && missingManual.length > 0) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Manual ELO is required for courts with fewer than 5 players" }),
+        body: JSON.stringify({ error: "Manual ELO is required for short courts without scored matches" }),
       };
     }
 
@@ -429,13 +453,24 @@ export const handler = defineHandler({
       select: { id: true, elo: true },
     });
 
-    const manualPlayers = await prisma.user.findMany({
-      where: { id: { in: Array.from(manualPlayerIds) } },
-      select: { id: true, elo: true },
-    });
+    const manualEntryIds = Array.from(manualEloMap.keys());
+    const manualPlayers = manualEntryIds.length
+      ? await prisma.user.findMany({
+          where: { id: { in: manualEntryIds } },
+          select: { id: true, elo: true },
+        })
+      : [];
 
     const eloMap = new Map(players.map((player) => [player.id, player.elo]));
     const manualEloCurrentMap = new Map(manualPlayers.map((player) => [player.id, player.elo]));
+    const manualEloOverrides = new Map<string, { previousElo: number; newElo: number }>();
+    manualEloMap.forEach((newElo, userId) => {
+      const previousElo = manualEloCurrentMap.get(userId);
+      if (previousElo === undefined) return;
+      if (newElo !== previousElo) {
+        manualEloOverrides.set(userId, { previousElo, newElo });
+      }
+    });
     const ratingChangeSum = new Map<string, number>();
 
     const ratingSettings = await prisma.userRatingSettings.findMany({
@@ -469,6 +504,7 @@ export const handler = defineHandler({
 
     await prisma.$transaction(async (tx) => {
       for (const [userId, ratingChange] of ratingChangeSum.entries()) {
+        if (manualEloOverrides.has(userId)) continue;
         const previousElo = eloMap.get(userId) ?? 0;
         const delta = Math.round(ratingChange * getKFactor(userId));
         const newElo = previousElo + delta;
@@ -487,9 +523,9 @@ export const handler = defineHandler({
         updates.push({ userId, previousElo, newElo });
       }
 
-      for (const [userId, newElo] of manualEloMap.entries()) {
-        if (!manualPlayerIds.has(userId)) continue;
-        const previousElo = manualEloCurrentMap.get(userId) ?? 0;
+      for (const [userId, override] of manualEloOverrides.entries()) {
+        const previousElo = override.previousElo;
+        const newElo = override.newElo;
 
         await tx.eventScore.upsert({
           where: { eventId_userId: { eventId, userId } },
@@ -517,7 +553,7 @@ export const handler = defineHandler({
     return {
       eventId,
       updatedPlayers: updates,
-      manualPlayers: Array.from(manualPlayerIds),
+      manualPlayers: Array.from(manualRequiredIds),
       status: "CONFIRMED",
     };
   },

@@ -330,6 +330,194 @@ describe("admin-event-match-table", () => {
     expect(json.error).toMatch(/manual elo is required/i);
   });
 
+  it("allows short courts when scored matches exist", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([
+      {
+        id: "match-1",
+        courtNumber: 1,
+        round: 1,
+        status: "COMPLETED",
+        pair1Player1Id: PLAYER_IDS[0],
+        pair1Player2Id: PLAYER_IDS[1],
+        pair2Player1Id: PLAYER_IDS[2],
+        pair2Player2Id: PLAYER_IDS[3],
+        score1: 6,
+        score2: 4,
+      },
+    ] as never);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValueOnce([] as never);
+
+    vi.mocked(prisma.user.findMany)
+      .mockResolvedValueOnce([
+        { id: PLAYER_IDS[0], elo: 1000 },
+        { id: PLAYER_IDS[1], elo: 1000 },
+        { id: PLAYER_IDS[2], elo: 1000 },
+        { id: PLAYER_IDS[3], elo: 1000 },
+      ] as never)
+      .mockResolvedValueOnce([] as never);
+
+    const { statusCode, json } = await callHandler({
+      httpMethod: "PUT",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    expect(statusCode).toBe(200);
+    expect(json.status).toBe("CONFIRMED");
+  });
+
+  it("prefers manual overrides over match-based updates", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+      { userId: PLAYER_IDS[4], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([
+      {
+        id: "match-1",
+        courtNumber: 1,
+        round: 1,
+        status: "COMPLETED",
+        pair1Player1Id: PLAYER_IDS[0],
+        pair1Player2Id: PLAYER_IDS[1],
+        pair2Player1Id: PLAYER_IDS[2],
+        pair2Player2Id: PLAYER_IDS[3],
+        score1: 6,
+        score2: 4,
+      },
+    ] as never);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], newElo: 1400 },
+    ] as never);
+
+    vi.mocked(prisma.user.findMany)
+      .mockResolvedValueOnce([
+        { id: PLAYER_IDS[0], elo: 1000 },
+        { id: PLAYER_IDS[1], elo: 1000 },
+        { id: PLAYER_IDS[2], elo: 1000 },
+        { id: PLAYER_IDS[3], elo: 1000 },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: PLAYER_IDS[0], elo: 1000 },
+      ] as never);
+
+    const { statusCode } = await callHandler({
+      httpMethod: "PUT",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    expect(statusCode).toBe(200);
+    const manualUpdate = vi.mocked(prisma.user.update).mock.calls.find(
+      ([args]) => (args as any).where?.id === PLAYER_IDS[0],
+    );
+    expect(manualUpdate?.[0].data).toEqual({ elo: 1400 });
+  });
+
+  it("uses match scores when manual value is unchanged", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+      { userId: PLAYER_IDS[4], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([
+      {
+        id: "match-1",
+        courtNumber: 1,
+        round: 1,
+        status: "COMPLETED",
+        pair1Player1Id: PLAYER_IDS[0],
+        pair1Player2Id: PLAYER_IDS[1],
+        pair2Player1Id: PLAYER_IDS[2],
+        pair2Player2Id: PLAYER_IDS[3],
+        score1: 6,
+        score2: 4,
+      },
+    ] as never);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], newElo: 1000 },
+    ] as never);
+
+    vi.mocked(prisma.user.findMany)
+      .mockResolvedValueOnce([
+        { id: PLAYER_IDS[0], elo: 1000 },
+        { id: PLAYER_IDS[1], elo: 1000 },
+        { id: PLAYER_IDS[2], elo: 1000 },
+        { id: PLAYER_IDS[3], elo: 1000 },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: PLAYER_IDS[0], elo: 1000 },
+      ] as never);
+
+    const { statusCode } = await callHandler({
+      httpMethod: "PUT",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    expect(statusCode).toBe(200);
+    const matchUpdate = vi.mocked(prisma.user.update).mock.calls.find(
+      ([args]) => (args as any).where?.id === PLAYER_IDS[0],
+    );
+    expect(matchUpdate?.[0].data.elo).toBeGreaterThan(1000);
+  });
+
+  it("uses match scores in manual mode when no manual overrides", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({
+      matchTableStatus: "OPEN",
+      matchTableMode: "MANUAL_ELO",
+    } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+      { userId: PLAYER_IDS[4], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([
+      {
+        id: "match-1",
+        courtNumber: 1,
+        round: 1,
+        status: "COMPLETED",
+        pair1Player1Id: PLAYER_IDS[0],
+        pair1Player2Id: PLAYER_IDS[1],
+        pair2Player1Id: PLAYER_IDS[2],
+        pair2Player2Id: PLAYER_IDS[3],
+        score1: 6,
+        score2: 4,
+      },
+    ] as never);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValueOnce([] as never);
+
+    vi.mocked(prisma.user.findMany)
+      .mockResolvedValueOnce([
+        { id: PLAYER_IDS[0], elo: 1000 },
+        { id: PLAYER_IDS[1], elo: 1000 },
+        { id: PLAYER_IDS[2], elo: 1000 },
+        { id: PLAYER_IDS[3], elo: 1000 },
+      ] as never)
+      .mockResolvedValueOnce([] as never);
+
+    const { statusCode, json } = await callHandler({
+      httpMethod: "PUT",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    expect(statusCode).toBe(200);
+    expect(json.status).toBe("CONFIRMED");
+  });
+
   it("requires manual ELO when a full court is manually overridden", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
     vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([

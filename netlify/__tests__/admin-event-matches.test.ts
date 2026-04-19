@@ -130,13 +130,14 @@ describe("admin-event-matches", () => {
     expect(json.error).toMatch(/duplicate/i);
   });
 
-  it("rejects when custom matches are disabled", async () => {
+  it("allows custom matches for any format", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue({
       matchTableStatus: "OPEN",
-      matchTableMode: "AUTO_COURTS",
-      formatConfig: null,
-      format: null,
     } as never);
+    vi.mocked(prisma.eventRegistration.findMany).mockResolvedValue(
+      PLAYER_IDS.map((id) => ({ userId: id })) as never,
+    );
+    vi.mocked(prisma.eventMatch.create).mockResolvedValue({ id: "match-1" } as never);
 
     const { statusCode, json } = await callHandler({
       httpMethod: "POST",
@@ -151,8 +152,8 @@ describe("admin-event-matches", () => {
       }),
     });
 
-    expect(statusCode).toBe(400);
-    expect(json.error).toMatch(/custom matches are disabled/i);
+    expect(statusCode).toBe(200);
+    expect(json).toHaveProperty("id");
   });
 
   it("resets scores when updating players or court", async () => {

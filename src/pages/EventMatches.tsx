@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { UserRole } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import padelHero from "@/assets/padel-hero.png";
-import { ArrowLeft, Loader2, RefreshCw, CheckCircle } from "lucide-react";
+import { ArrowLeft, Loader2, RefreshCw, CheckCircle, Info } from "lucide-react";
 import { formatEventDate } from "@/lib/utils";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useMatchTableMutations } from "@/hooks/useMatchTableMutations";
@@ -29,6 +29,14 @@ import { ManualEloTable } from "@/components/events/ManualEloTable";
 import { MatchRoundsTable } from "@/components/events/MatchRoundsTable";
 import { CourtStandingsTable } from "@/components/events/CourtStandingsTable";
 import { CustomMatchesAdminPanel } from "@/components/events/CustomMatchesAdminPanel";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -236,8 +244,9 @@ const EventMatches = () => {
     const map = new Map<number, Array<{ id: string; name: string; points: number; diff: number }>>();
 
     matchTable.courts.forEach((court) => {
-      if (manualMode || court.isManual) return;
       const matches = matchesByCourt.get(court.courtNumber) ?? [];
+      const hideStandings = (manualMode || court.isManual) && matches.length === 0;
+      if (hideStandings) return;
       map.set(court.courtNumber, calculateCourtStandings(court.players, matches));
     });
 
@@ -296,8 +305,7 @@ const EventMatches = () => {
     court.players.some((player) => player.manualElo !== null && player.manualElo !== undefined),
   );
   const hasEnteredResults = hasRecordedScores || hasManualElo;
-  const isCustomFormat = formatConfig?.pairingStrategy === "CUSTOM";
-  const showCustomMatchesPanel = !!matchTable && isAdmin && (isCustomFormat || matchTable.mode === "MANUAL_ELO");
+  const showCustomMatchesPanel = !!matchTable && isAdmin;
   const statusOptions: Array<
     "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "ABANDONED" | "WALKOVER" | "NO_CONTEST"
   > = isAdmin
@@ -322,10 +330,50 @@ const EventMatches = () => {
 
         <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle>Match Table Status</CardTitle>
-            <CardDescription>
-              {formatEventDate(event.date, false, event.endDate)} · {event.location ?? "Location TBD"}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>Match Table Status</CardTitle>
+                <CardDescription>
+                  {formatEventDate(event.date, false, event.endDate)} · {event.location ?? "Location TBD"}
+                </CardDescription>
+              </div>
+              {isAdmin && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" title="Scoring rules">
+                      <Info className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Scoring & ELO rules</DialogTitle>
+                      <DialogDescription>
+                        How match results, manual overrides, and court modes affect ratings.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <ul className="list-disc pl-5 space-y-2">
+                        <li>
+                          Only matches with status <strong>COMPLETED</strong> and both scores filled are used for ELO.
+                        </li>
+                        <li>
+                          <strong>Force manual ELO</strong> hides matches for that court and requires manual values.
+                        </li>
+                        <li>
+                          Manual ELO overrides match results only when the value is changed. If unchanged, we use match scores.
+                        </li>
+                        <li>
+                          Short courts (&lt; players per court) use match scores if completed matches exist; otherwise manual ELO is required.
+                        </li>
+                        <li>
+                          Press <strong>Confirm Results</strong> to apply updates and lock the table.
+                        </li>
+                      </ul>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -453,6 +501,7 @@ const EventMatches = () => {
                 participants={event.participants}
                 matches={matchTable.matches}
                 status={status}
+                courtNumbers={matchTable.courts.map((court) => court.courtNumber)}
               />
             </CardContent>
           </Card>
@@ -488,7 +537,8 @@ const EventMatches = () => {
                 </TabsList>
 
                 {matchTable.courts.map((court) => {
-                  const isManualCourt = matchTable.mode === "MANUAL_ELO" || court.isManual;
+                  const courtMatches = matchesByCourt.get(court.courtNumber) ?? [];
+                  const isManualCourt = (matchTable.mode === "MANUAL_ELO" || court.isManual) && courtMatches.length === 0;
                   return (
                   <TabsContent key={court.courtNumber} value={`court-${court.courtNumber}`}>
                     <Card className="shadow-lg border-0">
@@ -554,7 +604,7 @@ const EventMatches = () => {
                         ) : (
                           <div className="space-y-4">
                             <MatchRoundsTable
-                              matches={matchesByCourt.get(court.courtNumber) ?? []}
+                              matches={courtMatches}
                               canEditScores={canEditScores}
                               scoreDrafts={scoreDrafts}
                               statusDrafts={statusDrafts}

@@ -154,6 +154,13 @@ export const handler = defineHandler({
       };
 
       if (existingRegistration) {
+        if (isLocked) {
+          return {
+            statusCode: 403,
+            body: JSON.stringify({ error: "Cancellation is locked within 24 hours of the event start" }),
+          };
+        }
+
         await tx.eventRegistration.delete({
           where: { id: existingRegistration.id },
         });

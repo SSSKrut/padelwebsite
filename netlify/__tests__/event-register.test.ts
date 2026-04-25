@@ -500,7 +500,7 @@ describe("event-register handler", () => {
     expect(prisma.eventRegistration.create).not.toHaveBeenCalled();
   });
 
-  it("allows unregistration when event is within 24h", async () => {
+  it("unallows unregistration when event is within 24h", async () => {
     vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(6), 5));
     vi.mocked(prisma.eventRegistration.findUnique)
       .mockResolvedValueOnce({
@@ -514,9 +514,22 @@ describe("event-register handler", () => {
 
     const { statusCode, json } = await callHandler();
 
+    expect(statusCode).toBe(403);
+    expect(json.error).toMatch(/cancellation is locked/i);
+    expect(prisma.eventRegistration.delete).not.toHaveBeenCalledWith({ where: { id: "reg-123" } });
+  });
+
+  it("allows waitlist exits when event is within 24h", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValue(mockDbEvent(futureDate(6), 16, 16));
+    vi.mocked(prisma.eventRegistration.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.eventWaitlist.findUnique).mockResolvedValue({ id: "wl-1" } as never);
+    vi.mocked(prisma.eventWaitlist.delete).mockResolvedValue({} as never);
+
+    const { statusCode, json } = await callHandler();
+
     expect(statusCode).toBe(200);
-    expect(json.message).toMatch(/unregistered/i);
-    expect(prisma.eventRegistration.delete).toHaveBeenCalledWith({ where: { id: "reg-123" } });
+    expect(json).toEqual({ message: "Removed from waitlist", registered: false, waitlisted: false });
+    expect(prisma.eventWaitlist.delete).toHaveBeenCalledWith({ where: { id: "wl-1" } });
   });
 
   // --- Transaction safety ---

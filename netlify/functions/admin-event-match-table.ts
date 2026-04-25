@@ -133,6 +133,7 @@ export const handler = defineHandler({
         await tx.eventMatch.deleteMany({ where: { eventId } });
         await tx.eventCourtAssignment.deleteMany({ where: { eventId } });
         await tx.eventManualElo.deleteMany({ where: { eventId } });
+        await tx.eventScore.deleteMany({ where: { eventId } });
 
         const assignmentRows = courts.flatMap((court) =>
           court.userIds.map((userId) => ({
@@ -378,6 +379,9 @@ export const handler = defineHandler({
       courtsMap.set(assignment.courtNumber, group);
     });
 
+    // Courts with at least one assigned player - orphan courts (no assignments) are ignored
+    const courtsWithAssignments = new Set(courtsMap.keys());
+
     const matchesByCourt = new Map<number, MatchRow[]>();
     matches.forEach((match) => {
       const list = matchesByCourt.get(match.courtNumber) ?? [];
@@ -390,7 +394,10 @@ export const handler = defineHandler({
     const scoreBasedShortCourts = new Set<number>();
     const isManualMode = eventRecord.matchTableMode === "MANUAL_ELO";
 
-    let relevantMatches = matches.filter((match) => !manualOverrideSet.has(match.courtNumber));
+    // Filter out matches on courts without any assigned players (orphan courts)
+    let relevantMatches = matches.filter(
+      (match) => courtsWithAssignments.has(match.courtNumber) && !manualOverrideSet.has(match.courtNumber),
+    );
 
     if (!isManualMode) {
       courtsMap.forEach((players, courtNumber) => {

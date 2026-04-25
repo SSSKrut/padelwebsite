@@ -74,7 +74,7 @@ export function RegistrationCTA({
                 className="w-full flex gap-2"
                 size="lg"
                 onClick={() => registerMutation.mutate()}
-                disabled={registerMutation.isPending}
+                disabled={registerMutation.isPending || isLocked}
               >
                 {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-5 h-5 text-green-500" />}
                 Leave Waitlist
@@ -84,7 +84,7 @@ export function RegistrationCTA({
               </p>
               {isLocked && (
                 <p className="text-xs text-center text-muted-foreground">
-                  Registration is closed within 24 hours, but you can still leave the waitlist.
+                  Registration and waitlist cancellation are closed within 24 hours.
                 </p>
               )}
             </div>
@@ -132,7 +132,7 @@ export function RegistrationCTA({
 
       {!isCompleted && (
         <p className="text-xs text-muted-foreground text-center">
-          Registration closes 24 hours before the event start. Waitlist exits remain available.
+          Registration and cancellation close 24 hours before the event start.
         </p>
       )}
 

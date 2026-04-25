@@ -178,6 +178,13 @@ export const handler = defineHandler({
       }
 
       if (existingWaitlistEntry) {
+        if (isLocked) {
+          return {
+            statusCode: 403,
+            body: JSON.stringify({ error: "Waitlist cancellation is locked within 24 hours of the event start" }),
+          };
+        }
+
         await tx.eventWaitlist.delete({ where: { id: existingWaitlistEntry.id } });
         return {
           message: "Removed from waitlist",

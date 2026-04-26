@@ -597,4 +597,105 @@ describe("admin-event-match-table", () => {
     expect(json.updatedPlayers).toHaveLength(4);
     expect(prisma.user.update).toHaveBeenCalled();
   });
+
+  it("passes timeout overrides to the transaction in POST", async () => {
+    vi.mocked(prisma.eventRegistration.findMany).mockResolvedValue(
+      PLAYER_IDS.map((id, index) => ({ user: { id, elo: 1000 + index * 10 } })) as never,
+    );
+
+    await callHandler({
+      httpMethod: "POST",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ timeout: 30000 })
+    );
+  });
+
+  it("passes timeout overrides to the transaction in PUT", async () => {
+    vi.mocked(prisma.event.findUnique).mockResolvedValueOnce({ matchTableStatus: "OPEN" } as never);
+    vi.mocked(prisma.eventCourtAssignment.findMany).mockResolvedValueOnce([
+      { userId: PLAYER_IDS[0], courtNumber: 1 },
+      { userId: PLAYER_IDS[1], courtNumber: 1 },
+      { userId: PLAYER_IDS[2], courtNumber: 1 },
+      { userId: PLAYER_IDS[3], courtNumber: 1 },
+    ] as never);
+    vi.mocked(prisma.eventMatch.findMany).mockResolvedValueOnce([
+      {
+        id: "match-1",
+        courtNumber: 1,
+        round: 1,
+        status: "COMPLETED",
+        pair1Player1Id: PLAYER_IDS[0],
+        pair1Player2Id: PLAYER_IDS[1],
+        pair2Player1Id: PLAYER_IDS[2],
+        pair2Player2Id: PLAYER_IDS[3],
+        score1: 6,
+        score2: 4,
+      },
+    ] as never);
+    vi.mocked(prisma.eventManualElo.findMany).mockResolvedValueOnce([] as never);
+    vi.mocked(prisma.user.findMany).mockResolvedValueOnce([] as never);
+
+    await callHandler({
+      httpMethod: "PUT",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ timeout: 30000 })
+    );
+  });
+
+  it("passes timeout overrides to the transaction in PATCH", async () => {
+    vi.mocked(prisma.eventRegistration.findMany).mockResolvedValue(
+      PLAYER_IDS.map((id, index) => ({ userId: id, user: { id, elo: 1000 + index * 10 } })) as never,
+    );
+    
+    await callHandler({
+      httpMethod: "PATCH",
+      body: JSON.stringify({ 
+        eventId: EVENT_ID,
+        assignments: PLAYER_IDS.map((id) => ({ userId: id, courtNumber: 1 })),
+      }),
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ timeout: 30000 })
+    );
+  });
+
+  it("handles multiple regenerations by consistently clearing old data", async () => {
+    vi.mocked(prisma.eventRegistration.findMany).mockResolvedValue(
+      PLAYER_IDS.map((id, index) => ({ user: { id, elo: 1000 + index * 10 } })) as never,
+    );
+
+    // Call first generation
+    await callHandler({
+      httpMethod: "POST",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    expect(prisma.eventMatch.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
+    expect(prisma.eventCourtAssignment.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
+    expect(prisma.eventManualElo.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
+    expect(prisma.eventScore.deleteMany).toHaveBeenCalledWith({ where: { eventId: EVENT_ID } });
+
+    // Assuming someone unenrolls and we regenerate again
+    // Call second generation (same method)
+    await callHandler({
+      httpMethod: "POST",
+      body: JSON.stringify({ eventId: EVENT_ID }),
+    });
+
+    // We check that the mocked deleteMany was called multiple times, simulating clearing over and over
+    expect(prisma.eventMatch.deleteMany).toHaveBeenCalledTimes(2);
+    expect(prisma.eventCourtAssignment.deleteMany).toHaveBeenCalledTimes(2);
+    expect(prisma.eventManualElo.deleteMany).toHaveBeenCalledTimes(2);
+    expect(prisma.eventScore.deleteMany).toHaveBeenCalledTimes(2);
+  });
 });

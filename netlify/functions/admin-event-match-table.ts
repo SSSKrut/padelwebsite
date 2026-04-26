@@ -118,8 +118,9 @@ export const handler = defineHandler({
         courts = [{ courtNumber: 1, userIds: sortedParticipants.map((p) => p.id) }];
       }
 
-      await prisma.$transaction(async (tx) => {
-        if (guard.rollbackScores.length > 0 && guard.eventRecord.matchTableStatus === "CONFIRMED") {
+      await prisma.$transaction(
+        async (tx) => {
+          if (guard.rollbackScores.length > 0 && guard.eventRecord.matchTableStatus === "CONFIRMED") {
           for (const score of guard.rollbackScores) {
             await tx.user.update({
               where: { id: score.userId },
@@ -173,7 +174,7 @@ export const handler = defineHandler({
             matchTableMode: mode,
           },
         });
-      });
+      }, { timeout: 30000 });
 
       const table = await loadMatchTable(eventId);
       return table ?? { eventId, status: "OPEN", courts: [], matches: [] };
@@ -247,8 +248,9 @@ export const handler = defineHandler({
         courtsMap.set(assignment.courtNumber, group);
       });
 
-      await prisma.$transaction(async (tx) => {
-        if (guard.rollbackScores.length > 0 && guard.eventRecord.matchTableStatus === "CONFIRMED") {
+      await prisma.$transaction(
+        async (tx) => {
+          if (guard.rollbackScores.length > 0 && guard.eventRecord.matchTableStatus === "CONFIRMED") {
           for (const score of guard.rollbackScores) {
             await tx.user.update({
               where: { id: score.userId },
@@ -300,7 +302,7 @@ export const handler = defineHandler({
             matchTableConfirmedAt: null,
           },
         });
-      });
+      }, { timeout: 30000 });
 
       const table = await loadMatchTable(eventId);
       return table ?? { eventId, status: "OPEN", courts: [], matches: [] };
@@ -509,8 +511,9 @@ export const handler = defineHandler({
 
     const updates: Array<{ userId: string; previousElo: number; newElo: number }> = [];
 
-    await prisma.$transaction(async (tx) => {
-      for (const [userId, ratingChange] of ratingChangeSum.entries()) {
+    await prisma.$transaction(
+      async (tx) => {
+        for (const [userId, ratingChange] of Array.from(ratingChangeSum.entries())) {
         if (manualEloOverrides.has(userId)) continue;
         const previousElo = eloMap.get(userId) ?? 0;
         const delta = Math.round(ratingChange * getKFactor(userId));
@@ -530,7 +533,7 @@ export const handler = defineHandler({
         updates.push({ userId, previousElo, newElo });
       }
 
-      for (const [userId, override] of manualEloOverrides.entries()) {
+      for (const [userId, override] of Array.from(manualEloOverrides.entries())) {
         const previousElo = override.previousElo;
         const newElo = override.newElo;
 
@@ -555,7 +558,7 @@ export const handler = defineHandler({
           matchTableConfirmedAt: new Date(),
         },
       });
-    });
+    }, { timeout: 30000 });
 
     return {
       eventId,
